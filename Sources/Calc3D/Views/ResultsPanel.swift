@@ -100,7 +100,8 @@ private struct Kpi: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, height: 82, alignment: .leading)
+        .frame(height: 82)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
     }
 }
