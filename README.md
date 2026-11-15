@@ -53,8 +53,10 @@ scripts/
   o cálculo no histórico; "Adicionar a orçamento" inclui o cálculo atual direto em um orçamento.
 - **Peças** (⌘3): histórico de cálculos de peças, com os parâmetros originais. Selecione várias
   (⌘-clique/⇧-clique) para gerar um orçamento ou adicioná-las a um orçamento existente.
-- **Orçamentos** (⌘4): orçamentos com várias peças do histórico e itens manuais, quantidades,
-  cliente e exportação em PDF.
+- **Orçamentos** (⌘4): orçamentos com várias peças, quantidades, cliente e exportação em PDF.
+  "Calcular nova peça…" abre o mesmo formulário da tela Calcular peça (inclusive importação de
+  STL/3MF) e adiciona o preço sugerido ao orçamento, opcionalmente salvando a peça no histórico.
+  "Adicionar do histórico…" inclui várias peças já salvas de uma vez.
 - **Parâmetros fixos** (⌘5 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
   valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
   Mostra quanto custa uma hora de máquina e permite salvar alterações explicitamente.

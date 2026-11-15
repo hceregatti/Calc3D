@@ -86,6 +86,7 @@ final class CalculatorViewModel {
             guard settings != oldValue else { return }
             settingsFeedback = nil
             calculator.settings = settings
+            partDraft?.settings = settings
         }
     }
 
@@ -99,6 +100,10 @@ final class CalculatorViewModel {
 
     /// Cálculo da tela "Calcular peça" (persistido entre aberturas do app).
     let calculator: PartCalculator
+
+    /// Cálculo de peça aberto dentro do editor de orçamento.
+    var partDraft: PartCalculator?
+    var partDraftSavesToHistory = true
 
     var job: PrintJob {
         get { calculator.job }
@@ -263,12 +268,6 @@ final class CalculatorViewModel {
         proposalDraft = proposal
     }
 
-    func addManualItemToDraft() {
-        updateProposalDraft { proposal in
-            proposal.items.append(ProposalItem(name: "Novo produto", unitPrice: 0))
-        }
-    }
-
     /// Adiciona peças do histórico ao orçamento em edição.
     func addQuotesToDraft(_ quotes: [QuoteRecord]) {
         let items = quotes.compactMap(proposalItem(for:))
@@ -328,6 +327,29 @@ final class CalculatorViewModel {
         saveProposal(proposal)
         proposalDraft = proposals.first(where: { $0.id == proposal.id })
         screen = .proposals
+    }
+
+    /// Abre o cálculo completo de uma peça para incluir no orçamento em edição.
+    func startPartDraft() {
+        guard proposalDraft != nil else { return }
+        partDraftSavesToHistory = true
+        partDraft = PartCalculator(settings: settings)
+    }
+
+    func cancelPartDraft() {
+        partDraft = nil
+    }
+
+    /// Adiciona a peça calculada ao orçamento e, se escolhido, ao histórico de peças.
+    func commitPartDraft() {
+        guard let partDraft, partDraft.canPrice else { return }
+        let quote = partDraft.snapshot
+        if partDraftSavesToHistory {
+            quotes.insert(quote, at: 0)
+            quotesStore.save(quotes)
+        }
+        addQuotesToDraft([quote])
+        self.partDraft = nil
     }
 
     /// Navega até um orçamento salvo, pedindo confirmação se houver edição pendente.
@@ -395,6 +417,7 @@ final class CalculatorViewModel {
         }
         if proposalDraft?.id == proposal.id {
             proposalDraft = nil
+            partDraft = nil
         }
     }
 

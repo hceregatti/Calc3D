@@ -73,7 +73,7 @@ struct ResultsPanel: View {
     }
 }
 
-private struct PriceCard: View {
+struct PriceCard: View {
     let result: CostResult
 
     var body: some View {
@@ -131,7 +131,7 @@ private struct Kpi: View {
     }
 }
 
-private struct BreakdownCard: View {
+struct BreakdownCard: View {
     let result: CostResult
 
     var body: some View {
@@ -193,7 +193,7 @@ private struct BreakdownCard: View {
     }
 }
 
-private extension View {
+extension View {
     func card() -> some View {
         padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -26,7 +26,7 @@ struct ProposalEditorView: View {
                         ContentUnavailableView(
                             "Nenhuma peça",
                             systemImage: "cube.box",
-                            description: Text("Adicione peças do histórico ou itens manuais.")
+                            description: Text("Calcule uma nova peça ou adicione peças do histórico.")
                         )
                         .frame(minHeight: 120)
                     }
@@ -35,18 +35,21 @@ struct ProposalEditorView: View {
                         ProposalItemEditor(item: item, model: model)
                     }
 
-                    Button {
-                        model.addManualItemToDraft()
-                    } label: {
-                        Label("Adicionar item manual", systemImage: "plus")
-                    }
+                    HStack {
+                        Button {
+                            model.startPartDraft()
+                        } label: {
+                            Label("Calcular nova peça…", systemImage: "plus")
+                        }
+                        .help("Abre o cálculo completo da peça e adiciona o resultado ao orçamento")
 
-                    Button {
-                        model.isPickingParts = true
-                    } label: {
-                        Label("Adicionar peças do histórico…", systemImage: "cube.box")
+                        Button {
+                            model.isPickingParts = true
+                        } label: {
+                            Label("Adicionar do histórico…", systemImage: "cube.box")
+                        }
+                        .disabled(model.quotes.isEmpty)
                     }
-                    .disabled(model.quotes.isEmpty)
                 } header: {
                     Text("Peças e itens")
                 } footer: {
@@ -94,6 +97,14 @@ struct ProposalEditorView: View {
             }
         }
         .navigationTitle(proposal.title.isEmpty ? "Novo orçamento" : proposal.title)
+        .sheet(isPresented: Binding(
+            get: { model.partDraft != nil },
+            set: { if !$0 { model.cancelPartDraft() } }
+        )) {
+            if let draft = model.partDraft {
+                PartCalculatorSheet(calculator: draft)
+            }
+        }
         .sheet(isPresented: $model.isPickingParts) {
             PartsPickerSheet { quotes in
                 model.addQuotesToDraft(quotes)
@@ -251,3 +262,66 @@ private struct PartsPickerSheet: View {
     }
 }
 
+/// Cálculo completo de uma peça, igual à tela "Calcular peça", para incluir no orçamento.
+private struct PartCalculatorSheet: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let calculator: PartCalculator
+
+    var body: some View {
+        @Bindable var model = model
+
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "cube")
+                    .font(.title2)
+                    .foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Calcular peça para o orçamento")
+                        .font(.title3.bold())
+                    Text("Usa os parâmetros fixos atuais. O preço sugerido entra como item do orçamento.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(16)
+
+            Divider()
+
+            HStack(spacing: 0) {
+                PrintJobForm(calculator: calculator)
+                    .frame(minWidth: 460)
+                Divider()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        PriceCard(result: calculator.result)
+                        BreakdownCard(result: calculator.result)
+                    }
+                    .padding(16)
+                }
+                .frame(width: 360)
+                .background(.background.secondary)
+            }
+
+            Divider()
+
+            HStack {
+                Toggle("Salvar também no histórico de peças", isOn: $model.partDraftSavesToHistory)
+                    .toggleStyle(.checkbox)
+                Spacer()
+                Button("Cancelar", role: .cancel) { model.cancelPartDraft() }
+                    .keyboardShortcut(.cancelAction)
+                Button {
+                    model.commitPartDraft()
+                } label: {
+                    Label("Adicionar ao orçamento", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!calculator.canPrice)
+            }
+            .padding(16)
+        }
+        .frame(minWidth: 900, idealWidth: 980, minHeight: 640, idealHeight: 720)
+    }
+}
