@@ -13,8 +13,11 @@ export function HomeScreen() {
   return (
     <div className="page home">
       <header className="home-header">
-        <h1>Calc3D</h1>
-        <p>Calcule peças, guarde no histórico e monte orçamentos com várias peças.</p>
+        <img src="./icon.png" alt="" width={64} height={64} />
+        <div>
+          <h1>Calc3D</h1>
+          <p>Calcule peças, guarde no histórico e monte orçamentos com várias peças.</p>
+        </div>
       </header>
 
       <div className="action-grid">
