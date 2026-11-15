@@ -10,6 +10,7 @@ enum Screen: String, CaseIterable, Identifiable {
     case parts
     case proposals
     case settings
+    case company
 
     var id: String { rawValue }
 
@@ -20,6 +21,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .parts: "Peças"
         case .proposals: "Orçamentos"
         case .settings: "Parâmetros fixos"
+        case .company: "Personalizar orçamento"
         }
     }
 
@@ -30,6 +32,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .parts: "Histórico de cálculos de peças"
         case .proposals: "Orçamentos com várias peças"
         case .settings: "Máquina, energia, custos e taxas"
+        case .company: "Logo, empresa e condições"
         }
     }
 
@@ -40,6 +43,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .parts: "square.stack.3d.up.fill"
         case .proposals: "doc.text.fill"
         case .settings: "gearshape.fill"
+        case .company: "paintbrush.fill"
         }
     }
 
@@ -50,6 +54,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .parts: .purple
         case .proposals: .green
         case .settings: .gray
+        case .company: .teal
         }
     }
 }
@@ -102,6 +107,14 @@ final class CalculatorViewModel {
     }
 
     private(set) var lastSavedSettings: ShopSettings
+
+    /// Dados da empresa e padrões dos orçamentos (editados com salvar explícito).
+    var companyProfile: CompanyProfile {
+        didSet { if companyProfile != oldValue { companyFeedback = nil } }
+    }
+    private(set) var lastSavedCompanyProfile: CompanyProfile
+    private(set) var companyFeedback: String?
+    var companyHasUnsavedChanges: Bool { companyProfile != lastSavedCompanyProfile }
     var settingsHaveUnsavedChanges: Bool { settings != lastSavedSettings }
     var proposalHasUnsavedChanges: Bool {
         guard let proposalDraft else { return false }
@@ -133,15 +146,21 @@ final class CalculatorViewModel {
     @ObservationIgnored private let store: ParametersStore
     @ObservationIgnored private let quotesStore: QuotesStore
     @ObservationIgnored private let proposalsStore: ProposalsStore
+    @ObservationIgnored let imageStore: ImageStore
 
     init(
         store: ParametersStore = ParametersStore(),
         quotesStore: QuotesStore = QuotesStore(),
-        proposalsStore: ProposalsStore = ProposalsStore()
+        proposalsStore: ProposalsStore = ProposalsStore(),
+        imageStore: ImageStore = ImageStore()
     ) {
         self.store = store
         self.quotesStore = quotesStore
         self.proposalsStore = proposalsStore
+        self.imageStore = imageStore
+        let company = store.loadCompany()
+        self.companyProfile = company
+        self.lastSavedCompanyProfile = company
         let settings = store.loadSettings()
         let job = store.loadJob()
         self.settings = settings
@@ -150,6 +169,7 @@ final class CalculatorViewModel {
         self.quotes = quotesStore.load()
         self.proposals = proposalsStore.load()
         calculator.onJobChange = { job in store.save(job) }
+        pruneImages()
     }
 
     /// Começa uma nova impressão com os valores padrão, mantendo os parâmetros fixos.
@@ -167,6 +187,77 @@ final class CalculatorViewModel {
         store.save(settings)
         lastSavedSettings = settings
         settingsFeedback = "Parâmetros salvos ✔"
+    }
+
+    func saveCompanyProfile() {
+        guard companyHasUnsavedChanges else { return }
+        store.save(companyProfile)
+        lastSavedCompanyProfile = companyProfile
+        companyFeedback = "Dados salvos ✔"
+        pruneImages()
+    }
+
+    func resetCompanyDefaults() {
+        let defaults = CompanyProfile.defaults
+        companyProfile.defaultValidityDays = defaults.defaultValidityDays
+        companyProfile.defaultPaymentTerms = defaults.defaultPaymentTerms
+        companyProfile.defaultDeliveryTime = defaults.defaultDeliveryTime
+        companyProfile.defaultNotes = defaults.defaultNotes
+        companyProfile.footerText = defaults.footerText
+    }
+
+    func chooseCompanyLogo() {
+        guard let id = imageStore.chooseImage(kind: .logo, title: "Escolher logo da empresa") else { return }
+        companyProfile.logoImageID = id
+    }
+
+    func setCompanyLogo(from url: URL) -> Bool {
+        guard let id = imageStore.importImage(from: url, kind: .logo) else { return false }
+        companyProfile.logoImageID = id
+        return true
+    }
+
+    func chooseProductPhoto(for itemID: UUID) {
+        guard let id = imageStore.chooseImage(kind: .product, title: "Escolher foto do produto") else { return }
+        updateProposalItem(itemID) { $0.imageID = id }
+    }
+
+    func setProductPhoto(for itemID: UUID, from url: URL) -> Bool {
+        guard let id = imageStore.importImage(from: url, kind: .product) else { return false }
+        updateProposalItem(itemID) { $0.imageID = id }
+        return true
+    }
+
+    /// Gera um PDF de exemplo com os dados atuais (mesmo não salvos) e abre no Preview.
+    func previewSampleProposalPDF() {
+        var sample = ProposalRecord(defaultsFrom: companyProfile, title: "Orçamento de exemplo")
+        sample.number = companyProfile.nextProposalNumber
+        sample.customerName = "Cliente Exemplo"
+        sample.customerContact = "(11) 90000-0000 · cliente@exemplo.com"
+        sample.items = [
+            ProposalItem(name: "Suporte articulado", details: "PLA preto, acabamento fosco", quantity: 2, unitPrice: 45.9),
+            ProposalItem(name: "Miniatura personalizada", details: "Resina, pintada à mão", quantity: 1, unitPrice: 120),
+        ]
+        sample.shipping = 25
+        let url = FileManager.default.temporaryDirectory.appending(path: "Calc3D-exemplo.pdf")
+        do {
+            try ProposalPDFExporter.write(sample, profile: companyProfile, images: imageStore, to: url)
+            NSWorkspace.shared.open(url)
+            companyFeedback = nil
+        } catch {
+            companyFeedback = error.localizedDescription
+        }
+    }
+
+    /// Mantém só as imagens referenciadas por orçamentos salvos, o rascunho e o perfil.
+    private func pruneImages() {
+        var ids = Set<UUID>()
+        for proposal in proposals + [proposalDraft].compactMap({ $0 }) {
+            ids.formUnion(proposal.items.compactMap(\.imageID))
+        }
+        if let logo = companyProfile.logoImageID { ids.insert(logo) }
+        if let logo = lastSavedCompanyProfile.logoImageID { ids.insert(logo) }
+        imageStore.prune(keeping: ids)
     }
 
     func saveQuote() {
@@ -217,6 +308,9 @@ final class CalculatorViewModel {
     func saveProposal(_ proposal: ProposalRecord) {
         var proposal = proposal
         proposal.updatedAt = .now
+        if proposal.number == nil {
+            proposal.number = takeNextProposalNumber()
+        }
         if let index = proposals.firstIndex(where: { $0.id == proposal.id }) {
             proposals[index] = proposal
         } else {
@@ -225,6 +319,18 @@ final class CalculatorViewModel {
         proposals.sort { $0.updatedAt > $1.updatedAt }
         proposalsStore.save(proposals)
         selectedProposalID = proposal.id
+    }
+
+    /// Reserva o próximo número sequencial sem descartar edições pendentes do perfil.
+    private func takeNextProposalNumber() -> Int {
+        let number = max(lastSavedCompanyProfile.nextProposalNumber, 1)
+        let wasInSync = companyProfile.nextProposalNumber == lastSavedCompanyProfile.nextProposalNumber
+        lastSavedCompanyProfile.nextProposalNumber = number + 1
+        store.save(lastSavedCompanyProfile)
+        if wasInSync {
+            companyProfile.nextProposalNumber = number + 1
+        }
+        return number
     }
 
     func requestNewProposalDraft() {
@@ -268,7 +374,7 @@ final class CalculatorViewModel {
     }
 
     func createProposalDraft() {
-        let proposal = ProposalRecord(title: "Novo orçamento")
+        let proposal = ProposalRecord(defaultsFrom: lastSavedCompanyProfile)
         proposalDraft = proposal
         selectedProposalID = proposal.id
     }
@@ -329,7 +435,7 @@ final class CalculatorViewModel {
             guard let saved = proposals.first(where: { $0.id == proposalID }) else { return }
             proposal = saved
         } else {
-            proposal = ProposalRecord(title: "Novo orçamento")
+            proposal = ProposalRecord(defaultsFrom: lastSavedCompanyProfile)
         }
 
         let items = calculations.compactMap(proposalItem(for:))
@@ -397,11 +503,12 @@ final class CalculatorViewModel {
         panel.allowedContentTypes = [.pdf]
         panel.canCreateDirectories = true
         let baseName = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        panel.nameFieldStringValue = (baseName.isEmpty ? "Orcamento" : baseName) + ".pdf"
+        let prefix = proposal.formattedNumber.map { "Orcamento \($0) - " } ?? ""
+        panel.nameFieldStringValue = prefix + (baseName.isEmpty ? "Orcamento" : baseName) + ".pdf"
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            try ProposalPDFExporter.write(proposal, to: url)
+            try ProposalPDFExporter.write(proposal, profile: lastSavedCompanyProfile, images: imageStore, to: url)
             proposalPDFFeedback = "PDF salvo: \(url.lastPathComponent)"
         } catch {
             proposalPDFFeedback = error.localizedDescription
@@ -412,6 +519,7 @@ final class CalculatorViewModel {
         guard let proposalDraft else { return }
         saveProposal(proposalDraft)
         self.proposalDraft = proposals.first(where: { $0.id == proposalDraft.id })
+        pruneImages()
     }
 
     private func openProposalDraft(_ id: UUID) {
@@ -430,6 +538,7 @@ final class CalculatorViewModel {
             proposalDraft = nil
             partDraft = nil
         }
+        pruneImages()
     }
 
     /// Reutiliza os dados da peça, sem substituir os parâmetros fixos atuais.

@@ -7,6 +7,7 @@ struct ParametersStore {
 
     static let settingsKey = "calc3d.settings.v1"
     static let jobKey = "calc3d.job.v1"
+    static let companyKey = "calc3d.company.v1"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -14,9 +15,11 @@ struct ParametersStore {
 
     func loadSettings() -> ShopSettings { load(Self.settingsKey) ?? .defaults }
     func loadJob() -> PrintJob { load(Self.jobKey) ?? .defaults }
+    func loadCompany() -> CompanyProfile { load(Self.companyKey) ?? .defaults }
 
     func save(_ settings: ShopSettings) { save(settings, key: Self.settingsKey) }
     func save(_ job: PrintJob) { save(job, key: Self.jobKey) }
+    func save(_ company: CompanyProfile) { save(company, key: Self.companyKey) }
 
     private func load<T: Decodable>(_ key: String) -> T? {
         guard let data = defaults.data(forKey: key) else { return nil }

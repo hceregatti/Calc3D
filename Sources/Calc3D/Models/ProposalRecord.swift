@@ -11,6 +11,8 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
     var quantity: Int
     private(set) var unitPriceCents: Int64
     let sourceQuoteID: UUID?
+    /// Foto do produto (arquivo no ImageStore). Sem foto, usa a imagem padrão.
+    var imageID: UUID?
 
     var unitPrice: Double {
         get { Double(unitPriceCents) / 100 }
@@ -33,7 +35,8 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
         details: String = "",
         quantity: Int = 1,
         unitPrice: Double,
-        sourceQuoteID: UUID? = nil
+        sourceQuoteID: UUID? = nil,
+        imageID: UUID? = nil
     ) {
         self.id = id
         self.name = name
@@ -41,9 +44,10 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
         self.quantity = min(max(quantity, 1), Self.maxQuantity)
         self.unitPriceCents = Self.cents(for: unitPrice)
         self.sourceQuoteID = sourceQuoteID
+        self.imageID = imageID
     }
 
-    private static func cents(for value: Double) -> Int64 {
+    static func cents(for value: Double) -> Int64 {
         guard value.isFinite, value > 0 else { return 0 }
         let maximum = Double(maxUnitPriceCents)
         let roundedCents = value >= maximum / 100 ? maximum : (value * 100).rounded(.toNearestOrAwayFromZero)
@@ -53,15 +57,44 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
 
 /// Proposta comercial local, independente dos dados da impressão.
 struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
+    static let maxAdjustmentCents: Int64 = 100_000_000_000
+
     let id: UUID
+    /// Número sequencial, atribuído no primeiro salvamento.
+    var number: Int?
     var title: String
     let createdAt: Date
     var updatedAt: Date
+
+    // Cliente
     var customerName: String
     var customerContact: String
+    var customerDocument: String
+    var customerAddress: String
+
     var items: [ProposalItem]
 
-    var totalCents: Int64? {
+    // Ajustes do total
+    private(set) var discountCents: Int64
+    private(set) var shippingCents: Int64
+
+    // Condições comerciais (vazias não aparecem no PDF)
+    var validityDays: Int
+    var paymentTerms: String
+    var deliveryTime: String
+    var notes: String
+
+    var discount: Double {
+        get { Double(discountCents) / 100 }
+        set { discountCents = min(ProposalItem.cents(for: newValue), Self.maxAdjustmentCents) }
+    }
+
+    var shipping: Double {
+        get { Double(shippingCents) / 100 }
+        set { shippingCents = min(ProposalItem.cents(for: newValue), Self.maxAdjustmentCents) }
+    }
+
+    var itemsTotalCents: Int64? {
         var total: Int64 = 0
         for item in items {
             guard let subtotal = item.subtotalCents else { return nil }
@@ -72,23 +105,96 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
         return total
     }
 
+    var itemsTotal: Double? { itemsTotalCents.map { Double($0) / 100 } }
+
+    var totalCents: Int64? {
+        guard let items = itemsTotalCents else { return nil }
+        let (withShipping, overflow) = items.addingReportingOverflow(shippingCents)
+        guard !overflow else { return nil }
+        return max(0, withShipping - discountCents)
+    }
+
     var total: Double? { totalCents.map { Double($0) / 100 } }
+
+    var formattedNumber: String? {
+        number.map { String(format: "%04d", $0) }
+    }
+
+    var validUntil: Date? {
+        guard validityDays > 0 else { return nil }
+        return Calendar.current.date(byAdding: .day, value: validityDays, to: updatedAt)
+    }
 
     init(
         id: UUID = UUID(),
+        number: Int? = nil,
         title: String = "",
         createdAt: Date = .now,
         updatedAt: Date = .now,
         customerName: String = "",
         customerContact: String = "",
-        items: [ProposalItem] = []
+        customerDocument: String = "",
+        customerAddress: String = "",
+        items: [ProposalItem] = [],
+        validityDays: Int = 0,
+        paymentTerms: String = "",
+        deliveryTime: String = "",
+        notes: String = ""
     ) {
         self.id = id
+        self.number = number
         self.title = title
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.customerName = customerName
         self.customerContact = customerContact
+        self.customerDocument = customerDocument
+        self.customerAddress = customerAddress
         self.items = items
+        self.discountCents = 0
+        self.shippingCents = 0
+        self.validityDays = validityDays
+        self.paymentTerms = paymentTerms
+        self.deliveryTime = deliveryTime
+        self.notes = notes
+    }
+
+    /// Orçamento novo já preenchido com os padrões da empresa.
+    init(defaultsFrom profile: CompanyProfile, title: String = "Novo orçamento") {
+        self.init(
+            title: title,
+            validityDays: profile.defaultValidityDays,
+            paymentTerms: profile.defaultPaymentTerms,
+            deliveryTime: profile.defaultDeliveryTime,
+            notes: profile.defaultNotes
+        )
+    }
+
+    /// Campos novos são opcionais no JSON para manter os orçamentos já salvos.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        number = try c.decodeIfPresent(Int.self, forKey: .number)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        customerName = try c.decodeIfPresent(String.self, forKey: .customerName) ?? ""
+        customerContact = try c.decodeIfPresent(String.self, forKey: .customerContact) ?? ""
+        customerDocument = try c.decodeIfPresent(String.self, forKey: .customerDocument) ?? ""
+        customerAddress = try c.decodeIfPresent(String.self, forKey: .customerAddress) ?? ""
+        items = try c.decodeIfPresent([ProposalItem].self, forKey: .items) ?? []
+        discountCents = max(0, min(try c.decodeIfPresent(Int64.self, forKey: .discountCents) ?? 0, Self.maxAdjustmentCents))
+        shippingCents = max(0, min(try c.decodeIfPresent(Int64.self, forKey: .shippingCents) ?? 0, Self.maxAdjustmentCents))
+        validityDays = try c.decodeIfPresent(Int.self, forKey: .validityDays) ?? 0
+        paymentTerms = try c.decodeIfPresent(String.self, forKey: .paymentTerms) ?? ""
+        deliveryTime = try c.decodeIfPresent(String.self, forKey: .deliveryTime) ?? ""
+        notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, number, title, createdAt, updatedAt
+        case customerName, customerContact, customerDocument, customerAddress
+        case items, discountCents, shippingCents
+        case validityDays, paymentTerms, deliveryTime, notes
     }
 }

@@ -9,34 +9,37 @@ struct ContentView: View {
 
         NavigationSplitView {
             List(selection: $model.screen) {
-                ForEach(Screen.allCases.filter { $0 != .settings }) { screen in
+                ForEach(Screen.allCases.filter { !Screen.footerScreens.contains($0) }) { screen in
                     NavigationLink(value: screen) {
                         SidebarRow(screen: screen)
                     }
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Parâmetros fixos ficam no rodapé da barra lateral.
-                VStack(spacing: 0) {
+                // Configurações ficam no rodapé da barra lateral.
+                VStack(spacing: 2) {
                     Divider()
-                    Button {
-                        model.screen = .settings
-                    } label: {
-                        SidebarRow(screen: .settings, isSelected: model.screen == .settings)
-                            .padding(.horizontal, 8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background {
-                                if model.screen == .settings {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(Color.accentColor)
+                        .padding(.bottom, 6)
+                    ForEach(Screen.footerScreens) { screen in
+                        Button {
+                            model.screen = screen
+                        } label: {
+                            SidebarRow(screen: screen, isSelected: model.screen == screen)
+                                .padding(.horizontal, 8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background {
+                                    if model.screen == screen {
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .fill(Color.accentColor)
+                                    }
                                 }
-                            }
-                            .contentShape(.rect)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 10)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
                 }
+                .padding(.bottom, 8)
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 280)
         } detail: {
@@ -51,6 +54,8 @@ struct ContentView: View {
                 ProposalsView()
             case .settings:
                 ShopSettingsView()
+            case .company:
+                CompanySettingsView()
             }
         }
         .confirmationDialog(
@@ -71,6 +76,11 @@ struct ContentView: View {
             Text("As alterações não salvas neste orçamento serão perdidas.")
         }
     }
+}
+
+extension Screen {
+    /// Telas de configuração exibidas no rodapé da barra lateral.
+    static let footerScreens: [Screen] = [.company, .settings]
 }
 
 /// Linha da barra lateral: ícone centralizado com título e subtítulo.

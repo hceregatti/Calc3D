@@ -15,10 +15,17 @@ struct ProposalEditorView: View {
         VStack(spacing: 0) {
             Form {
                 Section("Orçamento") {
+                    LabeledContent("Número", value: proposal.formattedNumber.map { "Nº \($0)" } ?? "Definido ao salvar")
                     TextField("Título do orçamento", text: textBinding(\.title, in: model))
-                    TextField("Cliente (opcional)", text: textBinding(\.customerName, in: model))
-                    TextField("Contato (opcional)", text: textBinding(\.customerContact, in: model))
                     LabeledContent("Atualizada", value: proposal.updatedAt.formatted(date: .long, time: .shortened))
+                }
+
+                Section("Cliente") {
+                    TextField("Nome ou empresa", text: textBinding(\.customerName, in: model))
+                    TextField("CPF / CNPJ", text: textBinding(\.customerDocument, in: model))
+                    TextField("Telefone / e-mail", text: textBinding(\.customerContact, in: model))
+                    TextField("Endereço", text: textBinding(\.customerAddress, in: model), axis: .vertical)
+                        .lineLimit(1...3)
                 }
 
                 Section {
@@ -57,8 +64,35 @@ struct ProposalEditorView: View {
                 }
 
                 Section {
+                    LabeledContent("Subtotal dos itens", value: proposal.itemsTotal.map(Currency.brl) ?? "Total excede o limite")
+                    LabeledContent("Frete") {
+                        moneyField("Frete", value: moneyBinding(\.shipping, in: model))
+                    }
+                    LabeledContent("Desconto") {
+                        moneyField("Desconto", value: moneyBinding(\.discount, in: model))
+                    }
                     LabeledContent("Total do orçamento", value: proposal.total.map(Currency.brl) ?? "Total excede o limite")
                         .font(.title3.bold())
+                }
+
+                Section {
+                    Stepper(value: Binding(
+                        get: { proposal.validityDays },
+                        set: { value in model.updateProposalDraft { $0.validityDays = min(max(value, 0), 365) } }
+                    ), in: 0...365) {
+                        LabeledContent("Validade", value: proposal.validityDays == 0
+                                       ? "Sem validade" : "\(proposal.validityDays) dias")
+                    }
+                    TextField("Forma de pagamento", text: textBinding(\.paymentTerms, in: model), axis: .vertical)
+                        .lineLimit(1...4)
+                    TextField("Prazo de entrega", text: textBinding(\.deliveryTime, in: model), axis: .vertical)
+                        .lineLimit(1...3)
+                    TextField("Observações", text: textBinding(\.notes, in: model), axis: .vertical)
+                        .lineLimit(2...6)
+                } header: {
+                    Text("Condições")
+                } footer: {
+                    Text("Novos orçamentos começam com os padrões de \"Personalizar orçamento\". Campos vazios não aparecem no PDF.")
                 }
             }
             .formStyle(.grouped)
@@ -112,6 +146,27 @@ struct ProposalEditorView: View {
         }
     }
 
+    private func moneyBinding(
+        _ keyPath: WritableKeyPath<ProposalRecord, Double>,
+        in model: CalculatorViewModel
+    ) -> Binding<Double> {
+        Binding(
+            get: { model.proposalDraft?[keyPath: keyPath] ?? 0 },
+            set: { value in model.updateProposalDraft { $0[keyPath: keyPath] = value } }
+        )
+    }
+
+    private func moneyField(_ title: String, value: Binding<Double>) -> some View {
+        HStack(spacing: 6) {
+            Text("R$").foregroundStyle(.secondary)
+            TextField(title, value: value, format: .number.precision(.fractionLength(2)))
+                .labelsHidden()
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 110)
+        }
+    }
+
     private func textBinding(
         _ keyPath: WritableKeyPath<ProposalRecord, String>,
         in model: CalculatorViewModel
@@ -128,6 +183,24 @@ private struct ProposalItemEditor: View {
     let model: CalculatorViewModel
 
     var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ImageSlot(
+                image: model.imageStore.image(for: item.imageID),
+                width: 76, height: 76,
+                placeholderSymbol: "photo",
+                placeholderText: "Adicionar foto",
+                onChoose: { model.chooseProductPhoto(for: item.id) },
+                onDropFile: { model.setProductPhoto(for: item.id, from: $0) },
+                onRemove: { model.updateProposalItem(item.id) { $0.imageID = nil } }
+            )
+            .padding(.top, 2)
+
+            fields
+        }
+        .padding(.vertical, 6)
+    }
+
+    private var fields: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 TextField("Peça ou item", text: binding(\.name))
@@ -161,7 +234,6 @@ private struct ProposalItemEditor: View {
             LabeledContent("Subtotal", value: item.subtotal.map(Currency.brl) ?? "Valor excede o limite")
                 .font(.callout.bold())
         }
-        .padding(.vertical, 6)
     }
 
     private var priceBinding: Binding<Double> {
