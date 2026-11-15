@@ -58,6 +58,13 @@ final class CalculatorViewModel {
     var job: PrintJob {
         didSet {
             guard job != oldValue else { return }
+            if job.partWeight != oldValue.partWeight { importedWeightNeedsInput = false }
+            if job.printHours != oldValue.printHours || job.printMinutes != oldValue.printMinutes {
+                importedTimeNeedsInput = false
+            }
+            if importFeedback?.hasPrefix("Arquivo importado;") == true || importFeedback?.hasPrefix("Dados do fatiador") == true {
+                refreshImportFeedback()
+            }
             store.save(job)
             recalculate()
         }
@@ -67,6 +74,10 @@ final class CalculatorViewModel {
     private(set) var copyFeedback: String?
     private(set) var quoteFeedback: String?
     private(set) var quotes: [QuoteRecord]
+    private(set) var importFeedback: String?
+    private(set) var isImportingModel = false
+    private(set) var importedWeightNeedsInput = false
+    private(set) var importedTimeNeedsInput = false
 
     @ObservationIgnored private let store: ParametersStore
     @ObservationIgnored private let quotesStore: QuotesStore
@@ -84,6 +95,9 @@ final class CalculatorViewModel {
 
     /// Começa uma nova impressão com os valores padrão, mantendo os parâmetros fixos.
     func newJob() {
+        importFeedback = nil
+        importedWeightNeedsInput = false
+        importedTimeNeedsInput = false
         job = .defaults
         screen = .printJob
     }
@@ -102,8 +116,72 @@ final class CalculatorViewModel {
 
     /// Reutiliza os dados da peça, sem substituir os parâmetros fixos atuais.
     func useQuoteAsBase(_ quote: QuoteRecord) {
+        importFeedback = nil
+        importedWeightNeedsInput = false
+        importedTimeNeedsInput = false
         job = quote.job
         screen = .printJob
+    }
+
+    func importModel() {
+        let panel = NSOpenPanel()
+        panel.title = "Importar modelo 3D"
+        panel.allowedFileTypes = ["stl", "3mf"]
+        panel.allowsOtherFileTypes = false
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        isImportingModel = true
+        importFeedback = nil
+        Task { @MainActor [weak self] in
+            do {
+                let data = try await Task.detached(priority: .userInitiated) {
+                    try ModelFileImporter.importFile(at: url)
+                }.value
+                guard let self else { return }
+                self.isImportingModel = false
+                self.applyImportedModel(data)
+            } catch {
+                guard let self else { return }
+                self.isImportingModel = false
+                self.importFeedback = error.localizedDescription
+            }
+        }
+    }
+
+    func applyImportedModel(_ data: ImportedModelData) {
+        importFeedback = nil
+        var importedJob = job
+        importedJob.name = data.name
+        if let weight = data.weightGrams {
+            importedJob.partWeight = weight
+        } else {
+            importedJob.partWeight = 0
+        }
+        if let seconds = data.durationSeconds, seconds > 0 {
+            let totalMinutes = seconds / 60
+            importedJob.printHours = floor(totalMinutes / 60)
+            importedJob.printMinutes = totalMinutes.truncatingRemainder(dividingBy: 60)
+        } else {
+            importedJob.printHours = 0
+            importedJob.printMinutes = 0
+        }
+        job = importedJob
+        importedWeightNeedsInput = data.weightGrams == nil
+        importedTimeNeedsInput = data.durationSeconds == nil || data.durationSeconds == 0
+
+        refreshImportFeedback()
+    }
+
+    private func refreshImportFeedback() {
+        let missing = [
+            importedWeightNeedsInput ? "peso" : nil,
+            importedTimeNeedsInput ? "tempo de impressão" : nil,
+        ].compactMap { $0 }
+        importFeedback = missing.isEmpty
+            ? "Dados importados. Revise os valores antes de calcular."
+            : "Arquivo importado; preencha: " + missing.joined(separator: " e ") + "."
     }
 
     func copySummary() {

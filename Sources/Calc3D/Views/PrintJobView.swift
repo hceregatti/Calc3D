@@ -25,17 +25,29 @@ private struct PrintJobForm: View {
         Form {
             Section {
                 TextField("Nome da peça ou pedido", text: j.name, prompt: Text("Ex.: Suporte de headset"))
+                Button {
+                    model.importModel()
+                } label: {
+                    Label(model.isImportingModel ? "Lendo arquivo…" : "Importar STL ou 3MF", systemImage: "square.and.arrow.down")
+                }
+                .disabled(model.isImportingModel)
+                if let feedback = model.importFeedback {
+                    Text(feedback)
+                        .font(.caption)
+                        .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Color.orange : Color.secondary)
+                }
             } header: {
                 Label("Identificação", systemImage: "tag")
             }
 
             Section {
                 NumberField(title: "Peso da mesa", value: j.partWeight, unit: "g",
-                            hint: "Valor do fatiador, somando todas as peças")
+                            hint: model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças")
                 NumberField(title: "Desperdício", value: j.wastePercent, unit: "%",
                             hint: "Purga, skirt/brim e troca de cor (AMS/MMU pode passar de 20%)",
                             range: 0...300)
-                NumberField(title: "Horas", value: j.printHours, unit: "h")
+                NumberField(title: "Horas", value: j.printHours, unit: "h",
+                            hint: model.importedTimeNeedsInput ? "Não encontrado no arquivo. Preencha o tempo do fatiador." : nil)
                 NumberField(title: "Minutos", value: j.printMinutes, unit: "min", range: 0...59)
                 LabeledContent {
                     Stepper(value: j.partsPerPlate, in: 1...999) {
