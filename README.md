@@ -1,4 +1,4 @@
-# Calculadora 3D
+# Calc3D
 
 App nativo para macOS (SwiftUI, Apple Silicon) que calcula o custo real e o preço de venda de peças impressas em 3D.
 
@@ -10,7 +10,7 @@ App nativo para macOS (SwiftUI, Apple Silicon) que calcula o custo real e o pre�
 ## Comandos
 
 ```bash
-make app       # compila em release e gera build/Calculadora 3D.app
+make app       # compila em release e gera build/Calc3D.app
 make open      # gera e abre o app
 make install   # copia o app para /Applications
 make run       # executa em modo debug

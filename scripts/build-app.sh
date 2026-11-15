@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Compila em release para Apple Silicon e monta "build/Calculadora 3D.app".
+# Compila em release para Apple Silicon e monta "build/Calc3D.app".
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_NAME="Calculadora 3D"
+APP_NAME="Calc3D"
 EXECUTABLE="Calc3D"
 BUILD_DIR="build"
 APP="$BUILD_DIR/$APP_NAME.app"

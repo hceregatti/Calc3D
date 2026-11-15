@@ -26,7 +26,7 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Calculadora de Impressão 3D")
+            Text("Calc3D")
                 .font(.largeTitle.bold())
             Text("Calcule peças, guarde no histórico e monte orçamentos com várias peças.")
                 .font(.title3)

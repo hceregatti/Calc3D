@@ -13,7 +13,7 @@ struct Calc3DApp: App {
     }
 
     var body: some Scene {
-        Window("Calculadora de Impressão 3D", id: "main") {
+        Window("Calc3D", id: "main") {
             ContentView()
                 .environment(model)
                 .frame(minWidth: 1040, minHeight: 640)

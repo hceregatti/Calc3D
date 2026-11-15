@@ -1,4 +1,4 @@
-APP := build/Calculadora 3D.app
+APP := build/Calc3D.app
 CLT := /Library/Developer/CommandLineTools
 
 # Sem o Xcode completo, o swift-testing precisa destes caminhos explícitos.
@@ -27,7 +27,7 @@ open: app       ## Gera e abre o .app
 	open "$(APP)"
 
 install: app    ## Copia o .app para /Applications
-	rm -rf "/Applications/Calculadora 3D.app"
+	rm -rf "/Applications/Calculadora 3D.app" "/Applications/Calc3D.app"
 	cp -R "$(APP)" /Applications/
 
 clean:
