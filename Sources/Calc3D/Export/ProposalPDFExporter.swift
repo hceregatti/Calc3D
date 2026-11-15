@@ -22,12 +22,15 @@ enum ProposalPDFExporter {
     static func write(_ proposal: ProposalRecord, to url: URL) throws {
         guard !proposal.items.isEmpty else { throw ExportError.noItems }
         guard proposal.items.allSatisfy({
-            $0.quantity > 0 && $0.unitPrice.isFinite && $0.unitPrice >= 0
+            $0.quantity > 0 && $0.quantity <= ProposalItem.maxQuantity && $0.unitPrice.isFinite
+                && $0.unitPrice >= 0 && $0.subtotal?.isFinite == true
         }) else { throw ExportError.invalidItem }
+        guard let total = proposal.total, total.isFinite else { throw ExportError.invalidItem }
 
         var mediaBox = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let output = NSMutableData()
         guard
-            let consumer = CGDataConsumer(url: url as CFURL),
+            let consumer = CGDataConsumer(data: output as CFMutableData),
             let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
         else {
             throw ExportError.cannotCreatePDF
@@ -38,8 +41,10 @@ enum ProposalPDFExporter {
         for item in proposal.items {
             layout.draw(item)
         }
-        layout.drawTotal()
+        layout.drawTotal(total: total)
         layout.finish()
+        let pdfData = output as Data
+        try pdfData.write(to: url, options: .atomic)
     }
 }
 
@@ -92,6 +97,7 @@ private final class PDFLayout {
     }
 
     func draw(_ item: ProposalItem) {
+        guard let subtotal = item.subtotal else { return }
         ensureSpace(54)
         _ = drawParagraph(item.name, x: margin, width: pageSize.width - 2 * margin,
                           font: font(size: 11, weight: .bold), color: primaryInk, spacing: 4)
@@ -100,7 +106,7 @@ private final class PDFLayout {
 
         drawText("\(item.quantity)", x: 340, y: rowTop - 12, font: font(size: 10), color: primaryInk)
         drawText(Currency.brl(item.unitPrice), x: 385, y: rowTop - 12, font: font(size: 10), color: primaryInk)
-        drawText(Currency.brl(item.subtotal), x: 485, y: rowTop - 12, font: font(size: 10, weight: .medium), color: primaryInk)
+        drawText(Currency.brl(subtotal), x: 485, y: rowTop - 12, font: font(size: 10, weight: .medium), color: primaryInk)
         cursorY -= 20
 
         let details = item.details.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -114,11 +120,11 @@ private final class PDFLayout {
         cursorY -= 12
     }
 
-    func drawTotal() {
+    func drawTotal(total: Double) {
         ensureSpace(54)
         cursorY -= 6
         drawText("TOTAL", x: margin, y: cursorY - 18, font: font(size: 12, weight: .bold), color: primaryInk)
-        drawText(Currency.brl(proposal.total), x: pageSize.width - margin - 100, y: cursorY - 18,
+        drawText(Currency.brl(total), x: pageSize.width - margin - 100, y: cursorY - 18,
                  font: font(size: 14, weight: .bold), color: primaryInk)
     }
 

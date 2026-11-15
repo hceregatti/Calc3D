@@ -261,9 +261,7 @@ final class CalculatorViewModel {
         updateProposalDraft { proposal in
             guard let index = proposal.items.firstIndex(where: { $0.id == id }) else { return }
             update(&proposal.items[index])
-            proposal.items[index].quantity = max(1, proposal.items[index].quantity)
-            proposal.items[index].unitPrice = proposal.items[index].unitPrice.isFinite
-                ? max(0, proposal.items[index].unitPrice) : 0
+            proposal.items[index].quantity = min(max(1, proposal.items[index].quantity), ProposalItem.maxQuantity)
         }
     }
 

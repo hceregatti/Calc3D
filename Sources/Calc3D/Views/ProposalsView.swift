@@ -103,7 +103,7 @@ private struct ProposalRow: View {
             HStack {
                 Text(proposal.updatedAt.formatted(date: .abbreviated, time: .shortened))
                 Spacer()
-                Text(Currency.brl(proposal.total))
+                Text(proposal.total.map(Currency.brl) ?? "Total inválido")
                     .monospacedDigit()
             }
             .font(.caption)

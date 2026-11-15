@@ -69,7 +69,7 @@ struct ProposalEditorView: View {
                 }
 
                 Section {
-                    LabeledContent("Total da proposta", value: Currency.brl(proposal.total))
+                    LabeledContent("Total da proposta", value: proposal.total.map(Currency.brl) ?? "Total excede o limite")
                         .font(.title3.bold())
                 }
             }
@@ -87,7 +87,7 @@ struct ProposalEditorView: View {
                 } label: {
                     Label("Exportar PDF", systemImage: "doc.richtext")
                 }
-                .disabled(proposal.items.isEmpty || !isSaved || model.proposalHasUnsavedChanges)
+                .disabled(proposal.items.isEmpty || proposal.total == nil || !isSaved || model.proposalHasUnsavedChanges)
                 .help("Salve a proposta antes de exportar o PDF")
                 Button {
                     model.saveProposalDraft()
@@ -157,7 +157,7 @@ private struct ProposalItemEditor: View {
                     .foregroundStyle(.secondary)
             }
 
-            LabeledContent("Subtotal", value: Currency.brl(item.subtotal))
+            LabeledContent("Subtotal", value: item.subtotal.map(Currency.brl) ?? "Valor excede o limite")
                 .font(.callout.bold())
         }
         .padding(.vertical, 6)
