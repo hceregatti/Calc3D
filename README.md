@@ -114,3 +114,5 @@ make web-build  # gera web/dist/, pronto para hospedar em qualquer servidor est�
   dados, exporte um arquivo JSON (inclui as imagens) para guardar ou importar em outro computador.
 - **Hospedagem**: `web/dist/` usa caminhos relativos, então funciona no GitHub Pages, Netlify,
   Vercel ou em qualquer pasta de um servidor.
+- **GitHub Pages**: o workflow `.github/workflows/pages.yml` roda os testes, gera o build e publica
+  a cada push na `main` que altere `web/`. Endereço: https://hceregatti.github.io/calc/
