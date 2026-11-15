@@ -40,6 +40,28 @@ struct ProposalEditorView: View {
                     } label: {
                         Label("Adicionar produto manual", systemImage: "plus")
                     }
+
+                    Menu {
+                        if model.quotes.isEmpty {
+                            Text("Nenhum cálculo salvo")
+                        }
+                        ForEach(model.quotes) { quote in
+                            let name = quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let title = name.isEmpty ? "Produto sem nome" : name
+                            Button {
+                                model.addQuoteToDraft(quote)
+                            } label: {
+                                Label(
+                                    "\(title) · \(quote.result.suggestedPrice.map(Currency.brl) ?? "Preço indisponível")",
+                                    systemImage: "plus"
+                                )
+                            }
+                            .disabled(quote.result.suggestedPrice == nil)
+                        }
+                    } label: {
+                        Label("Adicionar cálculo salvo", systemImage: "doc.text.magnifyingglass")
+                    }
+                    .disabled(model.quotes.isEmpty)
                 } header: {
                     Text("Produtos")
                 } footer: {

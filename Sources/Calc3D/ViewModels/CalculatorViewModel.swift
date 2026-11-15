@@ -244,6 +244,18 @@ final class CalculatorViewModel {
         }
     }
 
+    func addQuoteToDraft(_ quote: QuoteRecord) {
+        guard let price = quote.result.suggestedPrice, price.isFinite, price >= 0 else { return }
+        let name = quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        updateProposalDraft { proposal in
+            proposal.items.append(ProposalItem(
+                name: name.isEmpty ? "Produto sem nome" : name,
+                unitPrice: price,
+                sourceQuoteID: quote.id
+            ))
+        }
+    }
+
     func updateProposalItem(_ id: UUID, update: (inout ProposalItem) -> Void) {
         updateProposalDraft { proposal in
             guard let index = proposal.items.firstIndex(where: { $0.id == id }) else { return }
