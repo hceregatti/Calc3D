@@ -36,6 +36,24 @@ enum Screen: String, CaseIterable, Identifiable {
     }
 }
 
+enum QuotesArea: String, CaseIterable, Identifiable {
+    case calculations
+    case proposals
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .calculations: "Cálculos salvos"
+        case .proposals: "Propostas"
+        }
+    }
+}
+
+private enum ProposalDraftAction {
+    case create
+    case open(UUID)
+}
+
 @MainActor
 @Observable
 final class CalculatorViewModel {
@@ -49,6 +67,11 @@ final class CalculatorViewModel {
 
     /// Proposta selecionada na área de orçamentos.
     var selectedProposalID: UUID?
+    var quotesArea: QuotesArea = .calculations
+    var proposalDraft: ProposalRecord?
+    var proposalPendingDeletionID: UUID?
+    var isConfirmingProposalDiscard = false
+    private var pendingProposalDraftAction: ProposalDraftAction?
 
     /// Parâmetros fixos, compartilhados entre todas as impressões.
     var settings: ShopSettings {
@@ -61,6 +84,11 @@ final class CalculatorViewModel {
 
     private(set) var lastSavedSettings: ShopSettings
     var settingsHaveUnsavedChanges: Bool { settings != lastSavedSettings }
+    var proposalHasUnsavedChanges: Bool {
+        guard let proposalDraft else { return false }
+        guard let saved = proposals.first(where: { $0.id == proposalDraft.id }) else { return true }
+        return proposalDraft != saved
+    }
 
     /// Dados da impressão atual.
     var job: PrintJob {
@@ -160,11 +188,96 @@ final class CalculatorViewModel {
         selectedProposalID = proposal.id
     }
 
+    func requestNewProposalDraft() {
+        guard proposalHasUnsavedChanges else {
+            createProposalDraft()
+            return
+        }
+        pendingProposalDraftAction = .create
+        isConfirmingProposalDiscard = true
+    }
+
+    func requestOpenProposal(_ id: UUID) {
+        guard proposalDraft?.id != id else { return }
+        guard proposalHasUnsavedChanges else {
+            openProposalDraft(id)
+            return
+        }
+        pendingProposalDraftAction = .open(id)
+        isConfirmingProposalDiscard = true
+        selectedProposalID = proposalDraft?.id
+    }
+
+    func confirmDiscardProposalDraft() {
+        isConfirmingProposalDiscard = false
+        guard let action = pendingProposalDraftAction else { return }
+        pendingProposalDraftAction = nil
+        switch action {
+        case .create:
+            createProposalDraft()
+        case .open(let id):
+            openProposalDraft(id)
+        }
+    }
+
+    func cancelDiscardProposalDraft() {
+        isConfirmingProposalDiscard = false
+        pendingProposalDraftAction = nil
+        selectedProposalID = proposalDraft?.id
+    }
+
+    func createProposalDraft() {
+        let proposal = ProposalRecord(title: "Nova proposta")
+        proposalDraft = proposal
+        selectedProposalID = proposal.id
+    }
+
+    func updateProposalDraft(_ update: (inout ProposalRecord) -> Void) {
+        guard var proposal = proposalDraft else { return }
+        update(&proposal)
+        proposalDraft = proposal
+    }
+
+    func addManualItemToDraft() {
+        updateProposalDraft { proposal in
+            proposal.items.append(ProposalItem(name: "Novo produto", unitPrice: 0))
+        }
+    }
+
+    func updateProposalItem(_ id: UUID, update: (inout ProposalItem) -> Void) {
+        updateProposalDraft { proposal in
+            guard let index = proposal.items.firstIndex(where: { $0.id == id }) else { return }
+            update(&proposal.items[index])
+            proposal.items[index].quantity = max(1, proposal.items[index].quantity)
+            proposal.items[index].unitPrice = proposal.items[index].unitPrice.isFinite
+                ? max(0, proposal.items[index].unitPrice) : 0
+        }
+    }
+
+    func deleteProposalItem(_ id: UUID) {
+        updateProposalDraft { $0.items.removeAll { $0.id == id } }
+    }
+
+    func saveProposalDraft() {
+        guard let proposalDraft else { return }
+        saveProposal(proposalDraft)
+        self.proposalDraft = proposals.first(where: { $0.id == proposalDraft.id })
+    }
+
+    private func openProposalDraft(_ id: UUID) {
+        guard let proposal = proposals.first(where: { $0.id == id }) else { return }
+        proposalDraft = proposal
+        selectedProposalID = proposal.id
+    }
+
     func deleteProposal(_ proposal: ProposalRecord) {
         proposals.removeAll { $0.id == proposal.id }
         proposalsStore.save(proposals)
         if selectedProposalID == proposal.id {
             selectedProposalID = proposals.first?.id
+        }
+        if proposalDraft?.id == proposal.id {
+            proposalDraft = nil
         }
     }
 

@@ -8,30 +8,21 @@ struct QuotesView: View {
     var body: some View {
         @Bindable var model = model
 
-        HStack(spacing: 0) {
-            List(selection: $model.selectedQuoteID) {
-                ForEach(model.quotes) { quote in
-                    QuoteRow(quote: quote)
-                        .tag(quote.id)
+        VStack(spacing: 0) {
+            Picker("Orçamentos", selection: $model.quotesArea) {
+                ForEach(QuotesArea.allCases) { area in
+                    Text(area.title).tag(area)
                 }
             }
-            .frame(minWidth: 240, idealWidth: 290, maxWidth: 340)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(maxWidth: 440)
+            .padding(12)
 
-            Divider()
-
-            if let quote = model.quotes.first(where: { $0.id == model.selectedQuoteID }) {
-                QuoteDetail(quote: quote) {
-                    model.useQuoteAsBase(quote)
-                } onDelete: {
-                    model.quotePendingDeletionID = quote.id
-                }
+            if model.quotesArea == .calculations {
+                calculationsContent
             } else {
-                ContentUnavailableView(
-                    "Selecione um orçamento",
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text("Os registros salvos aparecem nesta lista.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProposalsView()
             }
         }
         .navigationTitle("Orçamentos")
@@ -53,6 +44,38 @@ struct QuotesView: View {
         } message: { quoteID in
             let name = model.quotes.first(where: { $0.id == quoteID })?.job.name ?? ""
             Text("\(name.isEmpty ? "Este orçamento" : "\"\(name)\"") será removido permanentemente.")
+        }
+    }
+
+    private var calculationsContent: some View {
+        HStack(spacing: 0) {
+            List(selection: Binding(
+                get: { model.selectedQuoteID },
+                set: { model.selectedQuoteID = $0 }
+            )) {
+                ForEach(model.quotes) { quote in
+                    QuoteRow(quote: quote)
+                        .tag(quote.id)
+                }
+            }
+            .frame(minWidth: 240, idealWidth: 290, maxWidth: 340)
+
+            Divider()
+
+            if let quote = model.quotes.first(where: { $0.id == model.selectedQuoteID }) {
+                QuoteDetail(quote: quote) {
+                    model.useQuoteAsBase(quote)
+                } onDelete: {
+                    model.quotePendingDeletionID = quote.id
+                }
+            } else {
+                ContentUnavailableView(
+                    "Selecione um cálculo",
+                    systemImage: "doc.text.magnifyingglass",
+                    description: Text("Os cálculos salvos aparecem nesta lista.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
 }
