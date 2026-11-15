@@ -118,14 +118,14 @@ export type CostCategory =
   | 'supplies'
 
 export const CATEGORIES: { id: CostCategory; title: string; color: string }[] = [
-  { id: 'filament', title: 'Filamento', color: '#0a84ff' },
-  { id: 'energy', title: 'Energia', color: '#ff9f0a' },
-  { id: 'depreciation', title: 'Depreciação', color: '#bf5af2' },
-  { id: 'maintenance', title: 'Manutenção', color: '#8e8e93' },
-  { id: 'overhead', title: 'Custos fixos', color: '#30b0c7' },
-  { id: 'failures', title: 'Perdas por falha', color: '#ff453a' },
-  { id: 'labor', title: 'Mão de obra', color: '#ff375f' },
-  { id: 'supplies', title: 'Insumos + embalagem', color: '#a2845e' },
+  { id: 'filament', title: 'Filamento', color: 'var(--c-chart-1)' },
+  { id: 'energy', title: 'Energia', color: 'var(--c-chart-7)' },
+  { id: 'depreciation', title: 'Depreciação', color: 'var(--c-chart-4)' },
+  { id: 'maintenance', title: 'Manutenção', color: 'var(--c-chart-8)' },
+  { id: 'overhead', title: 'Custos fixos', color: 'var(--c-chart-5)' },
+  { id: 'failures', title: 'Perdas por falha', color: 'var(--c-chart-6)' },
+  { id: 'labor', title: 'Mão de obra', color: 'var(--c-chart-2)' },
+  { id: 'supplies', title: 'Insumos + embalagem', color: 'var(--c-chart-3)' },
 ]
 
 export const PRICING_ERROR = 'Margem + impostos + taxas somam 100% ou mais. Reduza algum deles.'

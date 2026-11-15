@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { useApp } from './store'
 import './styles.css'
+import './design-system.css'
 
 // Pede ao navegador para não apagar os dados locais sob pressão de espaço.
 navigator.storage?.persist?.().catch(() => {})

@@ -1,0 +1,321 @@
+/* ==========================================================================
+   Calc3D — Design System (neutro / minimalista)
+   --------------------------------------------------------------------------
+   Como usar no repositório (web/):
+     1. Copie este arquivo para  web/src/design-system.css
+     2. Em web/src/main.tsx, importe DEPOIS do styles.css:
+          import './styles.css'
+          import './design-system.css'
+     3. (Opcional) Fonte Inter — adicione no <head> de web/index.html:
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+   O arquivo redefine as mesmas variáveis do styles.css (--bg, --accent…)
+   e ajusta as classes existentes (.btn, .card, .nav-item, .badge…),
+   então nenhuma tela precisa ser alterada.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* Paleta base */
+  --c-ink:        #1c1c1a;   /* texto principal, botão primário, destaque */
+  --c-ink-2:      #3a3a37;   /* texto secundário forte */
+  --c-muted:      #6b6a66;   /* legendas e dicas (contraste 4.8:1 no fundo) */
+  --c-border:     #e7e6e2;   /* bordas de cartões e campos */
+  --c-divider:    #efeeeb;   /* linhas entre linhas de formulário */
+  --c-fill:       #efeeeb;   /* fundos sutis: KPIs, ícones, campos discretos */
+  --c-active:     #e9e8e4;   /* item ativo/selecionado */
+  --c-bg:         #f6f6f4;   /* fundo do app */
+  --c-surface:    #ffffff;   /* cartões */
+  --c-offwhite:   #f2f1ee;   /* fundo do ícone */
+
+  /* Escala de cinzas para gráficos (claridade crescente) */
+  --c-chart-1: #1c1c1a;
+  --c-chart-2: #3d3c39;
+  --c-chart-3: #5c5b57;
+  --c-chart-4: #7a7975;
+  --c-chart-5: #9a9994;
+  --c-chart-6: #b5b4af;
+  --c-chart-7: #cdccc7;
+  --c-chart-8: #e0dfda;
+
+  /* Estados (discretos, sem saturação forte) */
+  --c-danger:  #8a2b22;
+  --c-warn:    #8a5a12;
+  --c-success: #2f5d3a;
+
+  /* Tipografia */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 11px;   /* rótulos em caixa alta */
+  --fs-sm: 12px;   /* dicas */
+  --fs-md: 13px;   /* legendas */
+  --fs-base: 14px; /* corpo */
+  --fs-lg: 15px;   /* título de seção */
+  --fs-xl: 28px;   /* título da página */
+  --fs-price: 44px;/* preço sugerido */
+
+  /* Espaçamento (base 4) */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  /* Raios */
+  --radius-sm: 8px;    /* campos, steppers */
+  --radius-md: 10px;   /* botões, itens de lista */
+  --radius-lg: 16px;   /* cartões */
+  --radius-icon: 22%;  /* ícone do app */
+
+  /* Alturas de controle */
+  --control-h: 40px;
+  --control-h-sm: 36px;
+
+  /* ---- Mapeamento para as variáveis já usadas no styles.css ---- */
+  --bg: var(--c-bg);
+  --surface: var(--c-surface);
+  --sidebar: var(--c-bg);
+  --text: var(--c-ink);
+  --muted: var(--c-muted);
+  --separator: var(--c-border);
+  --fill: var(--c-fill);
+  --fill-strong: #e2e1dc;
+  --accent: var(--c-ink);
+  --accent-text: var(--c-ink);
+  --danger: var(--c-danger);
+  --warn: var(--c-warn);
+  --success: var(--c-success);
+  --radius: var(--radius-lg);
+  --shadow: none;
+
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  color: var(--text);
+}
+
+/* Tema escuro (segue o sistema, como o styles.css original) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-ink:      #f2f1ee;
+    --c-ink-2:    #d6d5d0;
+    --c-muted:    #9d9c97;
+    --c-border:   #34342f;
+    --c-divider:  #2b2b27;
+    --c-fill:     #2b2b27;
+    --c-active:   #34342f;
+    --c-bg:       #161614;
+    --c-surface:  #1f1f1c;
+    --c-chart-1: #f2f1ee; --c-chart-2: #d6d5d0; --c-chart-3: #b5b4af; --c-chart-4: #9a9994;
+    --c-chart-5: #7a7975; --c-chart-6: #5c5b57; --c-chart-7: #45443f; --c-chart-8: #34342f;
+    --c-danger:  #e8867c;
+    --c-warn:    #e0b067;
+    --c-success: #8fc39b;
+    --fill-strong: #3a3a35;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   2. Layout
+   -------------------------------------------------------------------------- */
+body { background: var(--bg); }
+
+.sidebar {
+  background: var(--c-bg);
+  border-right: 1px solid var(--c-border);
+  padding: var(--space-6) var(--space-4);
+}
+.brand { padding: var(--space-1) var(--space-3) var(--space-6); font-size: 16px; letter-spacing: -0.02em; }
+.brand img { border-radius: 24%; box-shadow: none; }
+
+.page { padding: var(--space-10) var(--space-12) 64px; }
+.page-header h1, .home-header h1 {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. Navegação
+   -------------------------------------------------------------------------- */
+.nav-item {
+  min-height: var(--control-h);
+  border-radius: var(--radius-md);
+  color: var(--c-ink-2);
+}
+.nav-item:hover { background: var(--c-fill); }
+.nav-item.active { background: var(--c-active); color: var(--c-ink); font-weight: 600; }
+.nav-item.active small { color: var(--c-muted); }
+
+
+/* --------------------------------------------------------------------------
+   4. Ícones em selo — remove os gradientes coloridos (estilo inline)
+   -------------------------------------------------------------------------- */
+.badge {
+  background: var(--c-fill) !important;
+  box-shadow: none !important;
+  color: var(--c-ink-2) !important;
+}
+.badge svg { color: inherit !important; stroke: currentColor; }
+.nav-item.active .badge { background: var(--c-surface) !important; }
+
+
+/* --------------------------------------------------------------------------
+   5. Cartões e seções
+   -------------------------------------------------------------------------- */
+.card, .section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+.card { padding: var(--space-6); gap: var(--space-4); }
+.card h3, .section-header { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.01em; }
+.section-header { padding: var(--space-5) var(--space-6) var(--space-1); }
+.row { border-color: var(--c-divider); }
+
+.stat { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-lg); }
+.stat strong { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+
+.kpi { background: var(--c-bg); border-radius: var(--radius-md); }
+
+.price {
+  font-size: var(--fs-price);
+  font-weight: 600;
+  color: var(--c-ink);
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Cartões de ação (Início)
+   -------------------------------------------------------------------------- */
+.action-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+.action-card.prominent {
+  background: var(--c-ink) !important;      /* anula o gradiente inline */
+  border-color: var(--c-ink);
+  color: var(--c-surface);
+}
+.action-card.prominent small { color: color-mix(in srgb, var(--c-surface) 75%, transparent); }
+.action-icon { background: color-mix(in srgb, var(--c-surface) 12%, transparent); border-radius: var(--radius-md); }
+
+
+/* --------------------------------------------------------------------------
+   7. Botões
+   -------------------------------------------------------------------------- */
+.btn {
+  height: var(--control-h);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font-weight: 500;
+  box-shadow: none;
+}
+.btn:hover:not(:disabled) { background: var(--c-fill); }
+.btn.primary { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-surface); }
+.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--c-ink) 86%, var(--c-surface)); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--c-ink-2); }
+.btn.danger { background: var(--c-danger); border-color: var(--c-danger); color: #fff; }
+.danger-text { color: var(--c-danger) !important; }
+.btn.full { justify-content: center; }
+
+.link { color: var(--c-ink-2); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--c-border); }
+.link:hover:not(:disabled) { color: var(--c-ink); text-decoration-color: currentColor; }
+
+.icon-btn { border-radius: var(--radius-sm); color: var(--c-muted); }
+
+
+/* --------------------------------------------------------------------------
+   8. Campos
+   -------------------------------------------------------------------------- */
+.input {
+  min-height: var(--control-h-sm);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-ink);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--c-ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ink) 12%, transparent);
+}
+.input.subtle { background: var(--c-fill); border-color: transparent; }
+.input.title { font-weight: 600; letter-spacing: -0.01em; }
+.unit, .row-label small, .field small { color: var(--c-muted); }
+
+.stepper button { border-radius: var(--radius-sm); border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-ink); }
+
+input[type='checkbox'] { accent-color: var(--c-ink); }
+.switch:checked { background: var(--c-ink); }
+
+.search { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--radius-md); }
+
+
+/* --------------------------------------------------------------------------
+   9. Listas, menus, modais
+   -------------------------------------------------------------------------- */
+.list-row { border-color: var(--c-divider); border-radius: var(--radius-md); }
+.list-row:hover, .recent-row:hover { background: var(--c-fill); }
+.list-row.selected { background: var(--c-active); }
+
+.menu { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(28, 28, 26, 0.08); }
+.menu button:hover { background: var(--c-fill); color: var(--c-ink); }
+
+.modal { border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: 0 16px 48px rgba(28, 28, 26, 0.12); }
+.modal-backdrop { background: rgba(22, 22, 20, 0.35); }
+
+.toast { background: var(--c-ink); color: var(--c-surface); border-radius: var(--radius-md); }
+
+.image-slot { border: 1px dashed #cfcec9; border-radius: 12px; background: var(--c-bg); }
+.image-slot:hover { border-color: var(--c-ink-2); }
+.spinner { border-top-color: var(--c-ink); }
+
+.feedback.warn, .warn { color: var(--c-warn); }
+.error-text { color: var(--c-danger); }
+
+
+/* --------------------------------------------------------------------------
+   10. Gráfico de composição do custo
+   --------------------------------------------------------------------------
+   As cores das categorias vêm de CATEGORIES em src/core/calculator.ts
+   (aplicadas inline). Para o visual neutro, troque os valores de `color`:
+
+     filament     → '#1c1c1a'
+     labor        → '#3d3c39'
+     supplies     → '#5c5b57'
+     depreciation → '#7a7975'
+     overhead     → '#9a9994'
+     failures     → '#b5b4af'
+     energy       → '#cdccc7'
+     maintenance  → '#e0dfda'
+
+   (ou use 'var(--c-chart-1)' … 'var(--c-chart-8)' para seguir o tema escuro)
+   -------------------------------------------------------------------------- */
+.breakdown .dot, .dot { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+.breakdown .total { border-top: 1px solid var(--c-border); font-weight: 600; }
+
+
+/* --------------------------------------------------------------------------
+   11. Ícone do app (SVG) — salve como web/public/icon.svg se quiser
+   --------------------------------------------------------------------------
+   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+     <rect width="100" height="100" rx="22" fill="#F2F1EE"/>
+     <g fill="none" stroke="#1C1C1A" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+       <path d="M50 24 73 37 50 50 27 37Z" fill="#1C1C1A"/>
+       <path d="M27 37V63L50 76V50"/><path d="M73 37V63L50 76"/>
+       <path d="M27 45.7 50 58.7 73 45.7" stroke-width="2"/>
+       <path d="M27 54.4 50 67.4 73 54.4" stroke-width="2"/>
+     </g>
+   </svg>
+   Versão escura: troque rect fill → #1C1C1A e as cores do cubo → #F2F1EE.
+   -------------------------------------------------------------------------- */
