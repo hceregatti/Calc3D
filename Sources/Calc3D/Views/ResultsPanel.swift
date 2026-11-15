@@ -36,6 +36,31 @@ struct ResultsPanel: View {
                     Label("Copiar", systemImage: "doc.on.doc")
                 }
             }
+            Menu {
+                Button {
+                    model.addCurrentCalculationToProposal(nil)
+                } label: {
+                    Label("Criar proposta nova", systemImage: "doc.badge.plus")
+                }
+
+                if !model.proposals.isEmpty {
+                    Section("Adicionar a uma proposta") {
+                        ForEach(model.proposals) { proposal in
+                            let title = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                            Button(title.isEmpty ? "Proposta sem título" : title) {
+                                model.addCurrentCalculationToProposal(proposal.id)
+                            }
+                        }
+                    }
+                }
+            } label: {
+                Label("Adicionar à proposta", systemImage: "doc.badge.plus")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .disabled(!(model.result.suggestedPrice.map { $0.isFinite && $0 >= 0 } ?? false))
+            .help("Adiciona o cálculo atual a uma proposta sem salvá-lo como cálculo simples")
+
             Button("Nova impressão") { model.newJob() }
             if let feedback = model.quoteFeedback ?? model.copyFeedback {
                 Text(feedback)

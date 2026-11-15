@@ -52,6 +52,7 @@ enum QuotesArea: String, CaseIterable, Identifiable {
 private enum ProposalDraftAction {
     case create
     case open(UUID)
+    case addCurrentCalculation(QuoteRecord, proposalID: UUID?)
 }
 
 @MainActor
@@ -251,6 +252,8 @@ final class CalculatorViewModel {
             createProposalDraft()
         case .open(let id):
             openProposalDraft(id)
+        case .addCurrentCalculation(let calculation, let proposalID):
+            appendCalculationToProposal(calculation, proposalID: proposalID)
         }
     }
 
@@ -288,6 +291,38 @@ final class CalculatorViewModel {
                 sourceQuoteID: quote.id
             ))
         }
+    }
+
+    func addCurrentCalculationToProposal(_ proposalID: UUID?) {
+        guard let price = result.suggestedPrice, price.isFinite, price >= 0 else { return }
+        let calculation = QuoteRecord(job: job, settings: settings, result: result)
+        guard proposalHasUnsavedChanges else {
+            appendCalculationToProposal(calculation, proposalID: proposalID)
+            return
+        }
+        pendingProposalDraftAction = .addCurrentCalculation(calculation, proposalID: proposalID)
+        isConfirmingProposalDiscard = true
+    }
+
+    private func appendCalculationToProposal(_ calculation: QuoteRecord, proposalID: UUID?) {
+        var proposal: ProposalRecord
+        if let proposalID {
+            guard let saved = proposals.first(where: { $0.id == proposalID }) else { return }
+            proposal = saved
+        } else {
+            proposal = ProposalRecord(title: "Nova proposta")
+        }
+
+        let name = calculation.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let price = calculation.result.suggestedPrice, price.isFinite, price >= 0 else { return }
+        proposal.items.append(ProposalItem(
+            name: name.isEmpty ? "Produto sem nome" : name,
+            unitPrice: price
+        ))
+        saveProposal(proposal)
+        proposalDraft = proposals.first(where: { $0.id == proposal.id })
+        quotesArea = .proposals
+        screen = .quotes
     }
 
     func updateProposalItem(_ id: UUID, update: (inout ProposalItem) -> Void) {
