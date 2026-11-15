@@ -63,11 +63,17 @@ struct QuotesView: View {
             Divider()
 
             if let quote = model.quotes.first(where: { $0.id == model.selectedQuoteID }) {
-                QuoteDetail(quote: quote) {
-                    model.useQuoteAsBase(quote)
-                } onDelete: {
-                    model.quotePendingDeletionID = quote.id
-                }
+                QuoteDetail(
+                    quote: quote,
+                    nameDraft: Binding(
+                        get: { model.quoteNameDraftID == quote.id ? model.quoteNameDraft : quote.job.name },
+                        set: { model.updateQuoteNameDraft($0, for: quote.id) }
+                    ),
+                    canSaveName: model.quoteNameHasUnsavedChanges(for: quote),
+                    onSaveName: { model.saveQuoteName(for: quote) },
+                    useAsBase: { model.useQuoteAsBase(quote) },
+                    onDelete: { model.quotePendingDeletionID = quote.id }
+                )
             } else {
                 ContentUnavailableView(
                     "Selecione um cálculo",
@@ -104,6 +110,9 @@ private struct QuoteRow: View {
 
 private struct QuoteDetail: View {
     let quote: QuoteRecord
+    @Binding var nameDraft: String
+    let canSaveName: Bool
+    let onSaveName: () -> Void
     let useAsBase: () -> Void
     let onDelete: () -> Void
 
@@ -111,9 +120,12 @@ private struct QuoteDetail: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                         ? "Orçamento sem nome" : quote.job.name)
-                        .font(.title2.bold())
+                    HStack(alignment: .firstTextBaseline) {
+                        TextField("Nome do cálculo", text: $nameDraft)
+                            .font(.title2.bold())
+                        Button("Salvar nome", action: onSaveName)
+                            .disabled(!canSaveName)
+                    }
                     Text("Salvo em \(quote.savedAt.formatted(date: .long, time: .shortened))")
                         .font(.callout)
                         .foregroundStyle(.secondary)

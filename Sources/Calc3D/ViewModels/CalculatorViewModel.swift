@@ -64,6 +64,8 @@ final class CalculatorViewModel {
     /// Registro selecionado na tela de histórico.
     var selectedQuoteID: UUID?
     var quotePendingDeletionID: UUID?
+    var quoteNameDraftID: UUID?
+    var quoteNameDraft = ""
 
     /// Proposta selecionada na área de orçamentos.
     var selectedProposalID: UUID?
@@ -174,6 +176,37 @@ final class CalculatorViewModel {
         if selectedQuoteID == quote.id {
             selectedQuoteID = quotes.first?.id
         }
+    }
+
+    func updateQuoteNameDraft(_ name: String, for quoteID: UUID) {
+        quoteNameDraftID = quoteID
+        quoteNameDraft = name
+    }
+
+    func quoteNameHasUnsavedChanges(for quote: QuoteRecord) -> Bool {
+        guard quoteNameDraftID == quote.id else { return false }
+        let name = quoteNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !name.isEmpty && name != quote.job.name
+    }
+
+    func saveQuoteName(for quote: QuoteRecord) {
+        let name = quoteNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty,
+              let index = quotes.firstIndex(where: { $0.id == quote.id })
+        else { return }
+
+        var renamedJob = quote.job
+        renamedJob.name = name
+        quotes[index] = QuoteRecord(
+            id: quote.id,
+            savedAt: quote.savedAt,
+            job: renamedJob,
+            settings: quote.settings,
+            result: quote.result
+        )
+        quotesStore.save(quotes)
+        quoteNameDraftID = quote.id
+        quoteNameDraft = name
     }
 
     func saveProposal(_ proposal: ProposalRecord) {
