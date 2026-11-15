@@ -47,6 +47,9 @@ final class CalculatorViewModel {
     var selectedQuoteID: UUID?
     var quotePendingDeletionID: UUID?
 
+    /// Proposta selecionada na área de orçamentos.
+    var selectedProposalID: UUID?
+
     /// Parâmetros fixos, compartilhados entre todas as impressões.
     var settings: ShopSettings {
         didSet {
@@ -79,6 +82,7 @@ final class CalculatorViewModel {
     private(set) var copyFeedback: String?
     private(set) var quoteFeedback: String?
     private(set) var quotes: [QuoteRecord]
+    private(set) var proposals: [ProposalRecord]
     private(set) var importFeedback: String?
     private(set) var settingsFeedback: String?
     private(set) var isImportingModel = false
@@ -87,10 +91,16 @@ final class CalculatorViewModel {
 
     @ObservationIgnored private let store: ParametersStore
     @ObservationIgnored private let quotesStore: QuotesStore
+    @ObservationIgnored private let proposalsStore: ProposalsStore
 
-    init(store: ParametersStore = ParametersStore(), quotesStore: QuotesStore = QuotesStore()) {
+    init(
+        store: ParametersStore = ParametersStore(),
+        quotesStore: QuotesStore = QuotesStore(),
+        proposalsStore: ProposalsStore = ProposalsStore()
+    ) {
         self.store = store
         self.quotesStore = quotesStore
+        self.proposalsStore = proposalsStore
         let settings = store.loadSettings()
         let job = store.loadJob()
         self.settings = settings
@@ -98,6 +108,7 @@ final class CalculatorViewModel {
         self.job = job
         self.result = CostCalculator.calculate(settings: settings, job: job)
         self.quotes = quotesStore.load()
+        self.proposals = proposalsStore.load()
     }
 
     /// Começa uma nova impressão com os valores padrão, mantendo os parâmetros fixos.
@@ -133,6 +144,27 @@ final class CalculatorViewModel {
         quotesStore.save(quotes)
         if selectedQuoteID == quote.id {
             selectedQuoteID = quotes.first?.id
+        }
+    }
+
+    func saveProposal(_ proposal: ProposalRecord) {
+        var proposal = proposal
+        proposal.updatedAt = .now
+        if let index = proposals.firstIndex(where: { $0.id == proposal.id }) {
+            proposals[index] = proposal
+        } else {
+            proposals.insert(proposal, at: 0)
+        }
+        proposals.sort { $0.updatedAt > $1.updatedAt }
+        proposalsStore.save(proposals)
+        selectedProposalID = proposal.id
+    }
+
+    func deleteProposal(_ proposal: ProposalRecord) {
+        proposals.removeAll { $0.id == proposal.id }
+        proposalsStore.save(proposals)
+        if selectedProposalID == proposal.id {
+            selectedProposalID = proposals.first?.id
         }
     }
 
