@@ -24,7 +24,8 @@ make clean
 Package.swift
 Sources/
   Calc3DCore/                  # Regras de negócio puras, sem UI (testáveis)
-    PrintParameters.swift      #   parâmetros de entrada + valores padrão
+    ShopSettings.swift         #   parâmetros fixos + custos por hora derivados
+    PrintJob.swift             #   dados de cada impressão
     CostCalculator.swift       #   motor de cálculo (todas as fórmulas)
     CostResult.swift           #   resultado, categorias, erros de precificação
     QuoteSummary.swift         #   texto do orçamento + formatação em R$
@@ -32,13 +33,27 @@ Sources/
     App/Calc3DApp.swift        #   ponto de entrada, janela e menus
     ViewModels/                #   estado da tela (Observation)
     Persistence/               #   salva parâmetros no UserDefaults
-    Views/                     #   formulário, painel de resultados, componentes
+    Views/
+      ContentView.swift        #   barra lateral com as duas telas
+      PrintJobView.swift       #   tela de impressão: dados da peça + resultado
+      ShopSettingsView.swift   #   tela de parâmetros fixos
+      ResultsPanel.swift       #   preço, indicadores e composição do custo
 Tests/Calc3DCoreTests/         # testes (swift-testing)
 Resources/Info.plist           # metadados do bundle .app
 scripts/
   build-app.sh                 # build release + montagem e assinatura do .app
   make-icon.swift              # gera o ícone do app em código
 ```
+
+## Telas
+
+- **Impressão** (⌘1): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
+  preparação, pós-processamento, insumos e margem, com o resultado ao lado.
+- **Parâmetros fixos** (⌘2 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
+  valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
+  Mostra quanto custa uma hora de máquina.
+
+⌘N inicia uma nova impressão e ⇧⌘C copia o orçamento.
 
 ## Modelo de custo
 
