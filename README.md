@@ -49,9 +49,12 @@ scripts/
 
 - **Impressão** (⌘1): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
   preparação, pós-processamento, insumos e margem, com o resultado ao lado.
-- **Parâmetros fixos** (⌘2 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
+- **Orçamentos** (⌘2): histórico local dos registros salvos, com os parâmetros originais e a opção de usar uma impressão como base.
+- **Parâmetros fixos** (⌘3 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
   valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
-  Mostra quanto custa uma hora de máquina.
+  Mostra quanto custa uma hora de máquina e permite salvar alterações explicitamente.
+
+Na tela Impressão, importe arquivos STL ou 3MF do Bambu Studio. Arquivos fatiados podem preencher peso e tempo quando os metadados estiverem disponíveis; nos demais casos, preencha os valores do fatiador.
 
 ⌘N inicia uma nova impressão e ⇧⌘C copia o orçamento.
 

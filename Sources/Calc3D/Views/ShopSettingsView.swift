@@ -11,6 +11,22 @@ struct ShopSettingsView: View {
 
         Form {
             Section {
+                HStack {
+                    Label(
+                        model.settingsHaveUnsavedChanges ? "Alterações não salvas" : "Parâmetros salvos",
+                        systemImage: model.settingsHaveUnsavedChanges ? "exclamationmark.circle" : "checkmark.circle"
+                    )
+                    .foregroundColor(model.settingsHaveUnsavedChanges ? Color.orange : Color.secondary)
+                    Spacer()
+                    if let feedback = model.settingsFeedback {
+                        Text(feedback)
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+
+            Section {
                 HourlyCostsSummary(settings: model.settings)
             } header: {
                 Label("Quanto custa uma hora de impressão", systemImage: "gauge.with.dots.needle.33percent")
@@ -78,6 +94,15 @@ struct ShopSettingsView: View {
         .formStyle(.grouped)
         .navigationTitle("Parâmetros fixos")
         .toolbar {
+            ToolbarItem {
+                Button {
+                    model.saveSettings()
+                } label: {
+                    Label("Salvar parâmetros", systemImage: "square.and.arrow.down")
+                }
+                .disabled(!model.settingsHaveUnsavedChanges)
+                .help("Salva todos os parâmetros fixos alterados")
+            }
             ToolbarItem {
                 Button {
                     model.resetSettings()

@@ -49,10 +49,13 @@ final class CalculatorViewModel {
     var settings: ShopSettings {
         didSet {
             guard settings != oldValue else { return }
-            store.save(settings)
+            settingsFeedback = nil
             recalculate()
         }
     }
+
+    private(set) var lastSavedSettings: ShopSettings
+    var settingsHaveUnsavedChanges: Bool { settings != lastSavedSettings }
 
     /// Dados da impressão atual.
     var job: PrintJob {
@@ -75,6 +78,7 @@ final class CalculatorViewModel {
     private(set) var quoteFeedback: String?
     private(set) var quotes: [QuoteRecord]
     private(set) var importFeedback: String?
+    private(set) var settingsFeedback: String?
     private(set) var isImportingModel = false
     private(set) var importedWeightNeedsInput = false
     private(set) var importedTimeNeedsInput = false
@@ -88,6 +92,7 @@ final class CalculatorViewModel {
         let settings = store.loadSettings()
         let job = store.loadJob()
         self.settings = settings
+        self.lastSavedSettings = settings
         self.job = job
         self.result = CostCalculator.calculate(settings: settings, job: job)
         self.quotes = quotesStore.load()
@@ -104,6 +109,13 @@ final class CalculatorViewModel {
 
     func resetSettings() {
         settings = .defaults
+    }
+
+    func saveSettings() {
+        guard settingsHaveUnsavedChanges else { return }
+        store.save(settings)
+        lastSavedSettings = settings
+        settingsFeedback = "Parâmetros salvos ✔"
     }
 
     func saveQuote() {
