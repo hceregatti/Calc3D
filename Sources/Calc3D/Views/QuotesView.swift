@@ -22,6 +22,8 @@ struct QuotesView: View {
             if let quote = model.quotes.first(where: { $0.id == model.selectedQuoteID }) {
                 QuoteDetail(quote: quote) {
                     model.useQuoteAsBase(quote)
+                } onDelete: {
+                    model.quotePendingDeletionID = quote.id
                 }
             } else {
                 ContentUnavailableView(
@@ -33,6 +35,25 @@ struct QuotesView: View {
             }
         }
         .navigationTitle("Orçamentos")
+        .confirmationDialog(
+            "Excluir orçamento?",
+            isPresented: Binding(
+                get: { model.quotePendingDeletionID != nil },
+                set: { if !$0 { model.quotePendingDeletionID = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: model.quotePendingDeletionID
+        ) { quoteID in
+            Button("Excluir", role: .destructive) {
+                if let quote = model.quotes.first(where: { $0.id == quoteID }) {
+                    model.deleteQuote(quote)
+                }
+                model.quotePendingDeletionID = nil
+            }
+        } message: { quoteID in
+            let name = model.quotes.first(where: { $0.id == quoteID })?.job.name ?? ""
+            Text("\(name.isEmpty ? "Este orçamento" : "\"\(name)\"") será removido permanentemente.")
+        }
     }
 }
 
@@ -61,6 +82,7 @@ private struct QuoteRow: View {
 private struct QuoteDetail: View {
     let quote: QuoteRecord
     let useAsBase: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         ScrollView {
@@ -114,6 +136,11 @@ private struct QuoteDetail: View {
                     Label("Usar como base", systemImage: "arrow.uturn.backward")
                 }
                 .buttonStyle(.borderedProminent)
+
+                Button(role: .destructive, action: onDelete) {
+                    Label("Excluir orçamento", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
             }
             .padding(20)
             .frame(maxWidth: 640, alignment: .leading)

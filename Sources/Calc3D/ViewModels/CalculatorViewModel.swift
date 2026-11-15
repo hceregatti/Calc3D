@@ -45,6 +45,7 @@ final class CalculatorViewModel {
 
     /// Registro selecionado na tela de histórico.
     var selectedQuoteID: UUID?
+    var quotePendingDeletionID: UUID?
 
     /// Parâmetros fixos, compartilhados entre todas as impressões.
     var settings: ShopSettings {
@@ -125,6 +126,14 @@ final class CalculatorViewModel {
         quotesStore.save(quotes)
         selectedQuoteID = quote.id
         showQuoteFeedback("Orçamento salvo ✔")
+    }
+
+    func deleteQuote(_ quote: QuoteRecord) {
+        quotes.removeAll { $0.id == quote.id }
+        quotesStore.save(quotes)
+        if selectedQuoteID == quote.id {
+            selectedQuoteID = quotes.first?.id
+        }
     }
 
     /// Reutiliza os dados da peça, sem substituir os parâmetros fixos atuais.
