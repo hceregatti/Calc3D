@@ -11,17 +11,17 @@ struct ContentView: View {
             List(selection: $model.screen) {
                 ForEach(Screen.allCases) { screen in
                     NavigationLink(value: screen) {
-                        Label {
-                            VStack(alignment: .leading, spacing: 1) {
+                        HStack(alignment: .center, spacing: 12) {
+                            SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 28)
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(screen.title)
                                 Text(screen.subtitle)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                    .lineLimit(1)
                             }
-                        } icon: {
-                            SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 24)
                         }
-                        .padding(.vertical, 3)
+                        .padding(.vertical, 5)
                     }
                 }
             }

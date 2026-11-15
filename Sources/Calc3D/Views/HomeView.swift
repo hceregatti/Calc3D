@@ -243,7 +243,7 @@ private struct RecentRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 SymbolBadge(systemImage: systemImage, color: color, size: 26)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).lineLimit(1)

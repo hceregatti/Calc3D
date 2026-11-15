@@ -35,10 +35,9 @@ struct BadgeLabel: View {
     }
 
     var body: some View {
-        Label {
+        HStack(alignment: .center, spacing: 8) {
+            SymbolBadge(systemImage: systemImage, color: color, size: 20)
             Text(title)
-        } icon: {
-            SymbolBadge(systemImage: systemImage, color: color, size: 18)
         }
     }
 }
