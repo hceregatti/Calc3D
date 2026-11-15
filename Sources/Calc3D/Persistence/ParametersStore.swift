@@ -1,25 +1,30 @@
 import Calc3DCore
 import Foundation
 
-/// Salva e carrega os parâmetros do usuário no UserDefaults.
+/// Salva e carrega os parâmetros do usuário no UserDefaults, em JSON.
 struct ParametersStore {
     private let defaults: UserDefaults
-    private let key: String
 
-    init(defaults: UserDefaults = .standard, key: String = "calc3d.parameters.v1") {
+    static let settingsKey = "calc3d.settings.v1"
+    static let jobKey = "calc3d.job.v1"
+
+    init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.key = key
     }
 
-    func load() -> PrintParameters {
-        guard let data = defaults.data(forKey: key),
-              let params = try? JSONDecoder().decode(PrintParameters.self, from: data)
-        else { return .defaults }
-        return params
+    func loadSettings() -> ShopSettings { load(Self.settingsKey) ?? .defaults }
+    func loadJob() -> PrintJob { load(Self.jobKey) ?? .defaults }
+
+    func save(_ settings: ShopSettings) { save(settings, key: Self.settingsKey) }
+    func save(_ job: PrintJob) { save(job, key: Self.jobKey) }
+
+    private func load<T: Decodable>(_ key: String) -> T? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
     }
 
-    func save(_ params: PrintParameters) {
-        guard let data = try? JSONEncoder().encode(params) else { return }
+    private func save<T: Encodable>(_ value: T, key: String) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: key)
     }
 }

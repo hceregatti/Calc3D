@@ -2,15 +2,57 @@ import AppKit
 import Calc3DCore
 import Observation
 
+/// Telas disponíveis na barra lateral.
+enum Screen: String, CaseIterable, Identifiable {
+    case printJob
+    case settings
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .printJob: "Impressão"
+        case .settings: "Parâmetros fixos"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .printJob: "Dados da peça e resultado"
+        case .settings: "Máquina, energia, custos e taxas"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .printJob: "cube"
+        case .settings: "slider.horizontal.3"
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class CalculatorViewModel {
 
-    var parameters: PrintParameters {
+    /// Tela selecionada na barra lateral.
+    var screen: Screen? = .printJob
+
+    /// Parâmetros fixos, compartilhados entre todas as impressões.
+    var settings: ShopSettings {
         didSet {
-            guard parameters != oldValue else { return }
-            result = CostCalculator.calculate(parameters)
-            store.save(parameters)
+            guard settings != oldValue else { return }
+            store.save(settings)
+            recalculate()
+        }
+    }
+
+    /// Dados da impressão atual.
+    var job: PrintJob {
+        didSet {
+            guard job != oldValue else { return }
+            store.save(job)
+            recalculate()
         }
     }
 
@@ -21,21 +63,33 @@ final class CalculatorViewModel {
 
     init(store: ParametersStore = ParametersStore()) {
         self.store = store
-        let loaded = store.load()
-        self.parameters = loaded
-        self.result = CostCalculator.calculate(loaded)
+        let settings = store.loadSettings()
+        let job = store.loadJob()
+        self.settings = settings
+        self.job = job
+        self.result = CostCalculator.calculate(settings: settings, job: job)
     }
 
-    func reset() {
-        parameters = .defaults
+    /// Começa uma nova impressão com os valores padrão, mantendo os parâmetros fixos.
+    func newJob() {
+        job = .defaults
+        screen = .printJob
+    }
+
+    func resetSettings() {
+        settings = .defaults
     }
 
     func copySummary() {
-        let text = QuoteSummary.text(for: result, parameters: parameters)
+        let text = QuoteSummary.text(for: result, job: job)
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         showFeedback("Orçamento copiado ✔")
+    }
+
+    private func recalculate() {
+        result = CostCalculator.calculate(settings: settings, job: job)
     }
 
     private func showFeedback(_ message: String) {

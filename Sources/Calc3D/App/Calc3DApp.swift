@@ -16,18 +16,28 @@ struct Calc3DApp: App {
         Window("Calculadora de Impressão 3D", id: "main") {
             ContentView()
                 .environment(model)
-                .frame(minWidth: 960, minHeight: 640)
+                .frame(minWidth: 1040, minHeight: 640)
         }
-        .defaultSize(width: 1180, height: 820)
+        .defaultSize(width: 1260, height: 820)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Nova impressão") { model.newJob() }
+                    .keyboardShortcut("n")
+            }
+            CommandGroup(replacing: .appSettings) {
+                Button("Parâmetros fixos…") { model.screen = .settings }
+                    .keyboardShortcut(",")
+            }
             CommandGroup(after: .pasteboard) {
                 Divider()
                 Button("Copiar orçamento") { model.copySummary() }
                     .keyboardShortcut("c", modifiers: [.command, .shift])
             }
-            CommandGroup(after: .newItem) {
-                Button("Restaurar valores padrão") { model.reset() }
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
+            CommandMenu("Ir") {
+                ForEach(Array(Screen.allCases.enumerated()), id: \.element) { index, screen in
+                    Button(screen.title) { model.screen = screen }
+                        .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")))
+                }
             }
         }
     }

@@ -30,7 +30,7 @@ struct ResultsPanel: View {
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("Restaurar padrões") { model.reset() }
+                Button("Nova impressão") { model.newJob() }
             }
             if let feedback = model.copyFeedback {
                 Text(feedback)
