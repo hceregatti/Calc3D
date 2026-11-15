@@ -53,23 +53,6 @@ struct ProposalsView: View {
             }
         }
         .confirmationDialog(
-            "Descartar alterações?",
-            isPresented: Binding(
-                get: { model.isConfirmingProposalDiscard },
-                set: { if !$0 && model.isConfirmingProposalDiscard { model.cancelDiscardProposalDraft() } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Descartar e continuar", role: .destructive) {
-                model.confirmDiscardProposalDraft()
-            }
-            Button("Continuar editando", role: .cancel) {
-                model.cancelDiscardProposalDraft()
-            }
-        } message: {
-            Text("As alterações não salvas nesta proposta serão perdidas.")
-        }
-        .confirmationDialog(
             "Excluir proposta?",
             isPresented: Binding(
                 get: { model.proposalPendingDeletionID != nil },
