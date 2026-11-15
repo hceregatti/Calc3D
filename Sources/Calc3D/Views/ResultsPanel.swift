@@ -75,7 +75,7 @@ private struct PriceCard: View {
                 }
                 GridRow {
                     Kpi(title: "Custo da mesa", value: Currency.brl(result.plateCost))
-                    Kpi(title: "Lucro por hora de máquina",
+                    Kpi(title: "Lucro por hora",
                         value: result.profitPerMachineHour.map { Currency.brl($0) + "/h" } ?? "—")
                 }
             }
@@ -96,9 +96,11 @@ private struct Kpi: View {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
+        .frame(maxWidth: .infinity, height: 82, alignment: .leading)
         .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
     }
 }

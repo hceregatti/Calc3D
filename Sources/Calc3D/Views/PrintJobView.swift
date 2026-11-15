@@ -11,7 +11,7 @@ struct PrintJobView: View {
             ResultsPanel()
                 .frame(width: 380)
         }
-        .navigationTitle("Impressão")
+        .navigationTitle("")
     }
 }
 
@@ -37,7 +37,11 @@ private struct PrintJobForm: View {
                         .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Color.orange : Color.secondary)
                 }
             } header: {
-                Label("Identificação", systemImage: "tag")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Impressão")
+                        .font(.title2.bold())
+                    Label("Identificação", systemImage: "tag")
+                }
             }
 
             Section {
