@@ -27,11 +27,15 @@ struct ContentView: View {
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 280)
         } detail: {
-            switch model.screen ?? .printJob {
+            switch model.screen ?? .home {
+            case .home:
+                HomeView()
             case .printJob:
                 PrintJobView()
-            case .quotes:
-                QuotesView()
+            case .parts:
+                PartsView()
+            case .proposals:
+                ProposalsView()
             case .settings:
                 ShopSettingsView()
             }
@@ -51,7 +55,7 @@ struct ContentView: View {
                 model.cancelDiscardProposalDraft()
             }
         } message: {
-            Text("As alterações não salvas nesta proposta serão perdidas.")
+            Text("As alterações não salvas neste orçamento serão perdidas.")
         }
     }
 }

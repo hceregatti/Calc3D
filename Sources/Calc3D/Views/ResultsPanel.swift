@@ -26,7 +26,7 @@ struct ResultsPanel: View {
                 Button {
                     model.saveQuote()
                 } label: {
-                    Label("Salvar orçamento", systemImage: "bookmark")
+                    Label("Salvar peça", systemImage: "bookmark")
                 }
                 .buttonStyle(.borderedProminent)
 
@@ -40,28 +40,28 @@ struct ResultsPanel: View {
                 Button {
                     model.addCurrentCalculationToProposal(nil)
                 } label: {
-                    Label("Criar proposta nova", systemImage: "doc.badge.plus")
+                    Label("Novo orçamento", systemImage: "doc.badge.plus")
                 }
 
                 if !model.proposals.isEmpty {
-                    Section("Adicionar a uma proposta") {
+                    Section("Orçamentos existentes") {
                         ForEach(model.proposals) { proposal in
                             let title = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)
-                            Button(title.isEmpty ? "Proposta sem título" : title) {
+                            Button(title.isEmpty ? "Orçamento sem título" : title) {
                                 model.addCurrentCalculationToProposal(proposal.id)
                             }
                         }
                     }
                 }
             } label: {
-                Label("Adicionar à proposta", systemImage: "doc.badge.plus")
+                Label("Adicionar a orçamento", systemImage: "doc.badge.plus")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.bordered)
             .disabled(!(model.result.suggestedPrice.map { $0.isFinite && $0 >= 0 } ?? false))
-            .help("Adiciona o cálculo atual a uma proposta sem salvá-lo como cálculo simples")
+            .help("Adiciona o cálculo atual a um orçamento sem salvá-lo no histórico de peças")
 
-            Button("Nova impressão") { model.newJob() }
+            Button("Nova peça") { model.newJob() }
             if let feedback = model.quoteFeedback ?? model.copyFeedback {
                 Text(feedback)
                     .font(.callout)

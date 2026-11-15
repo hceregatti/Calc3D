@@ -21,8 +21,10 @@ struct Calc3DApp: App {
         .defaultSize(width: 1260, height: 820)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Nova impressão") { model.newJob() }
+                Button("Nova peça") { model.newJob() }
                     .keyboardShortcut("n")
+                Button("Novo orçamento") { model.startNewProposal() }
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandGroup(replacing: .appSettings) {
                 Button("Parâmetros fixos…") { model.screen = .settings }

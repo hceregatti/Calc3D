@@ -47,16 +47,21 @@ scripts/
 
 ## Telas
 
-- **Impressão** (⌘1): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
-  preparação, pós-processamento, insumos e margem, com o resultado ao lado.
-- **Orçamentos** (⌘2): histórico local dos registros salvos, com os parâmetros originais e a opção de usar uma impressão como base.
-- **Parâmetros fixos** (⌘3 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
+- **Início** (⌘1): atalhos (calcular peça, novo orçamento), números gerais e peças/orçamentos recentes.
+- **Calcular peça** (⌘2): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
+  preparação, pós-processamento, insumos e margem, com o resultado ao lado. "Salvar peça" guarda
+  o cálculo no histórico; "Adicionar a orçamento" inclui o cálculo atual direto em um orçamento.
+- **Peças** (⌘3): histórico de cálculos de peças, com os parâmetros originais. Selecione várias
+  (⌘-clique/⇧-clique) para gerar um orçamento ou adicioná-las a um orçamento existente.
+- **Orçamentos** (⌘4): orçamentos com várias peças do histórico e itens manuais, quantidades,
+  cliente e exportação em PDF.
+- **Parâmetros fixos** (⌘5 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
   valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
   Mostra quanto custa uma hora de máquina e permite salvar alterações explicitamente.
 
-Na tela Impressão, importe arquivos STL ou 3MF do Bambu Studio. Arquivos fatiados podem preencher peso e tempo quando os metadados estiverem disponíveis; nos demais casos, preencha os valores do fatiador.
+Na tela Calcular peça, importe arquivos STL ou 3MF do Bambu Studio. Arquivos fatiados podem preencher peso e tempo quando os metadados estiverem disponíveis; nos demais casos, preencha os valores do fatiador.
 
-⌘N inicia uma nova impressão e ⇧⌘C copia o orçamento.
+⌘N inicia uma nova peça, ⇧⌘N cria um novo orçamento e ⇧⌘C copia o resumo da peça.
 
 ## Modelo de custo
 

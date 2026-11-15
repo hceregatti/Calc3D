@@ -5,46 +5,41 @@ import UniformTypeIdentifiers
 
 /// Telas disponíveis na barra lateral.
 enum Screen: String, CaseIterable, Identifiable {
+    case home
     case printJob
-    case quotes
+    case parts
+    case proposals
     case settings
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .printJob: "Impressão"
-        case .quotes: "Orçamentos"
+        case .home: "Início"
+        case .printJob: "Calcular peça"
+        case .parts: "Peças"
+        case .proposals: "Orçamentos"
         case .settings: "Parâmetros fixos"
         }
     }
 
     var subtitle: String {
         switch self {
-        case .printJob: "Dados da peça e resultado"
-        case .quotes: "Histórico salvo"
+        case .home: "Visão geral e atalhos"
+        case .printJob: "Dados da impressão e preço"
+        case .parts: "Histórico de cálculos de peças"
+        case .proposals: "Orçamentos com várias peças"
         case .settings: "Máquina, energia, custos e taxas"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .printJob: "cube"
-        case .quotes: "doc.text"
+        case .home: "house"
+        case .printJob: "function"
+        case .parts: "cube.box"
+        case .proposals: "doc.text"
         case .settings: "slider.horizontal.3"
-        }
-    }
-}
-
-enum QuotesArea: String, CaseIterable, Identifiable {
-    case calculations
-    case proposals
-
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .calculations: "Cálculos salvos"
-        case .proposals: "Propostas"
         }
     }
 }
@@ -52,7 +47,7 @@ enum QuotesArea: String, CaseIterable, Identifiable {
 private enum ProposalDraftAction {
     case create
     case open(UUID)
-    case addCurrentCalculation(QuoteRecord, proposalID: UUID?)
+    case addCalculations([QuoteRecord], proposalID: UUID?)
 }
 
 @MainActor
@@ -60,20 +55,30 @@ private enum ProposalDraftAction {
 final class CalculatorViewModel {
 
     /// Tela selecionada na barra lateral.
-    var screen: Screen? = .printJob
+    var screen: Screen? = .home
 
-    /// Registro selecionado na tela de histórico.
-    var selectedQuoteID: UUID?
+    /// Peças selecionadas no histórico (permite seleção múltipla).
+    var selectedQuoteIDs: Set<UUID> = []
     var quotePendingDeletionID: UUID?
     var quoteNameDraftID: UUID?
     var quoteNameDraft = ""
 
-    /// Proposta selecionada na área de orçamentos.
+    /// Orçamento selecionado na tela de orçamentos.
     var selectedProposalID: UUID?
-    var quotesArea: QuotesArea = .calculations
     var proposalDraft: ProposalRecord?
     var proposalPendingDeletionID: UUID?
     var isConfirmingProposalDiscard = false
+
+    /// Seletor de peças do histórico no editor de orçamento.
+    var isPickingParts = false {
+        didSet {
+            guard isPickingParts != oldValue else { return }
+            partsPickerSelection = []
+            partsPickerSearch = ""
+        }
+    }
+    var partsPickerSelection: Set<UUID> = []
+    var partsPickerSearch = ""
     private var pendingProposalDraftAction: ProposalDraftAction?
 
     /// Parâmetros fixos, compartilhados entre todas as impressões.
@@ -167,16 +172,14 @@ final class CalculatorViewModel {
         let quote = QuoteRecord(job: job, settings: settings, result: result)
         quotes.insert(quote, at: 0)
         quotesStore.save(quotes)
-        selectedQuoteID = quote.id
-        showQuoteFeedback("Orçamento salvo ✔")
+        selectedQuoteIDs = [quote.id]
+        showQuoteFeedback("Peça salva no histórico ✔")
     }
 
     func deleteQuote(_ quote: QuoteRecord) {
         quotes.removeAll { $0.id == quote.id }
         quotesStore.save(quotes)
-        if selectedQuoteID == quote.id {
-            selectedQuoteID = quotes.first?.id
-        }
+        selectedQuoteIDs.remove(quote.id)
     }
 
     func updateQuoteNameDraft(_ name: String, for quoteID: UUID) {
@@ -252,8 +255,8 @@ final class CalculatorViewModel {
             createProposalDraft()
         case .open(let id):
             openProposalDraft(id)
-        case .addCurrentCalculation(let calculation, let proposalID):
-            appendCalculationToProposal(calculation, proposalID: proposalID)
+        case .addCalculations(let calculations, let proposalID):
+            appendCalculationsToProposal(calculations, proposalID: proposalID)
         }
     }
 
@@ -264,7 +267,7 @@ final class CalculatorViewModel {
     }
 
     func createProposalDraft() {
-        let proposal = ProposalRecord(title: "Nova proposta")
+        let proposal = ProposalRecord(title: "Novo orçamento")
         proposalDraft = proposal
         selectedProposalID = proposal.id
     }
@@ -281,48 +284,81 @@ final class CalculatorViewModel {
         }
     }
 
-    func addQuoteToDraft(_ quote: QuoteRecord) {
-        guard let price = quote.result.suggestedPrice, price.isFinite, price >= 0 else { return }
-        let name = quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        updateProposalDraft { proposal in
-            proposal.items.append(ProposalItem(
-                name: name.isEmpty ? "Produto sem nome" : name,
-                unitPrice: price,
-                sourceQuoteID: quote.id
-            ))
-        }
+    /// Adiciona peças do histórico ao orçamento em edição.
+    func addQuotesToDraft(_ quotes: [QuoteRecord]) {
+        let items = quotes.compactMap(proposalItem(for:))
+        guard !items.isEmpty else { return }
+        updateProposalDraft { $0.items.append(contentsOf: items) }
     }
 
-    func addCurrentCalculationToProposal(_ proposalID: UUID?) {
-        guard let price = result.suggestedPrice, price.isFinite, price >= 0 else { return }
-        let calculation = QuoteRecord(job: job, settings: settings, result: result)
+    /// Peças do histórico, na ordem da lista, que podem entrar em um orçamento.
+    func quotes(withIDs ids: Set<UUID>) -> [QuoteRecord] {
+        quotes.filter { ids.contains($0.id) }
+    }
+
+    static func canAddToProposal(_ quote: QuoteRecord) -> Bool {
+        quote.result.suggestedPrice.map { $0.isFinite && $0 >= 0 } ?? false
+    }
+
+    /// Cria um orçamento novo (proposalID nil) ou adiciona a um existente.
+    func addQuotesToProposal(_ quotes: [QuoteRecord], proposalID: UUID?) {
+        let calculations = quotes.filter(Self.canAddToProposal)
+        guard !calculations.isEmpty else { return }
         guard proposalHasUnsavedChanges else {
-            appendCalculationToProposal(calculation, proposalID: proposalID)
+            appendCalculationsToProposal(calculations, proposalID: proposalID)
             return
         }
-        pendingProposalDraftAction = .addCurrentCalculation(calculation, proposalID: proposalID)
+        pendingProposalDraftAction = .addCalculations(calculations, proposalID: proposalID)
         isConfirmingProposalDiscard = true
     }
 
-    private func appendCalculationToProposal(_ calculation: QuoteRecord, proposalID: UUID?) {
+    func addCurrentCalculationToProposal(_ proposalID: UUID?) {
+        // Cálculo avulso: não fica vinculado a um registro do histórico.
+        let calculation = QuoteRecord(job: job, settings: settings, result: result)
+        addQuotesToProposal([calculation], proposalID: proposalID)
+    }
+
+    private func proposalItem(for quote: QuoteRecord) -> ProposalItem? {
+        guard Self.canAddToProposal(quote), let price = quote.result.suggestedPrice else { return nil }
+        let name = quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ProposalItem(
+            name: name.isEmpty ? "Peça sem nome" : name,
+            unitPrice: price,
+            sourceQuoteID: quotes.contains { $0.id == quote.id } ? quote.id : nil
+        )
+    }
+
+    private func appendCalculationsToProposal(_ calculations: [QuoteRecord], proposalID: UUID?) {
         var proposal: ProposalRecord
         if let proposalID {
             guard let saved = proposals.first(where: { $0.id == proposalID }) else { return }
             proposal = saved
         } else {
-            proposal = ProposalRecord(title: "Nova proposta")
+            proposal = ProposalRecord(title: "Novo orçamento")
         }
 
-        let name = calculation.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let price = calculation.result.suggestedPrice, price.isFinite, price >= 0 else { return }
-        proposal.items.append(ProposalItem(
-            name: name.isEmpty ? "Produto sem nome" : name,
-            unitPrice: price
-        ))
+        let items = calculations.compactMap(proposalItem(for:))
+        guard !items.isEmpty else { return }
+        proposal.items.append(contentsOf: items)
         saveProposal(proposal)
         proposalDraft = proposals.first(where: { $0.id == proposal.id })
-        quotesArea = .proposals
-        screen = .quotes
+        screen = .proposals
+    }
+
+    /// Navega até um orçamento salvo, pedindo confirmação se houver edição pendente.
+    func showProposal(_ id: UUID) {
+        screen = .proposals
+        requestOpenProposal(id)
+    }
+
+    func startNewProposal() {
+        screen = .proposals
+        requestNewProposalDraft()
+    }
+
+    func showPart(_ id: UUID) {
+        selectedQuoteIDs = [id]
+        screen = .parts
     }
 
     func updateProposalItem(_ id: UUID, update: (inout ProposalItem) -> Void) {
@@ -339,7 +375,7 @@ final class CalculatorViewModel {
 
     func exportProposalPDF(_ proposal: ProposalRecord) {
         let panel = NSSavePanel()
-        panel.title = "Exportar proposta em PDF"
+        panel.title = "Exportar orçamento em PDF"
         panel.allowedContentTypes = [.pdf]
         panel.canCreateDirectories = true
         let baseName = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)

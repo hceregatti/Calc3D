@@ -1,7 +1,7 @@
 import Calc3DCore
 import SwiftUI
 
-/// Editor explícito de proposta com itens independentes do cálculo de impressão.
+/// Editor de orçamento com itens independentes do cálculo de impressão.
 struct ProposalEditorView: View {
     @Environment(CalculatorViewModel.self) private var model
 
@@ -14,8 +14,8 @@ struct ProposalEditorView: View {
 
         VStack(spacing: 0) {
             Form {
-                Section("Proposta") {
-                    TextField("Título da proposta", text: textBinding(\.title, in: model))
+                Section("Orçamento") {
+                    TextField("Título do orçamento", text: textBinding(\.title, in: model))
                     TextField("Cliente (opcional)", text: textBinding(\.customerName, in: model))
                     TextField("Contato (opcional)", text: textBinding(\.customerContact, in: model))
                     LabeledContent("Atualizada", value: proposal.updatedAt.formatted(date: .long, time: .shortened))
@@ -24,9 +24,9 @@ struct ProposalEditorView: View {
                 Section {
                     if proposal.items.isEmpty {
                         ContentUnavailableView(
-                            "Nenhum produto",
-                            systemImage: "shippingbox",
-                            description: Text("Adicione produtos manualmente ou a partir de um cálculo salvo.")
+                            "Nenhuma peça",
+                            systemImage: "cube.box",
+                            description: Text("Adicione peças do histórico ou itens manuais.")
                         )
                         .frame(minHeight: 120)
                     }
@@ -38,38 +38,23 @@ struct ProposalEditorView: View {
                     Button {
                         model.addManualItemToDraft()
                     } label: {
-                        Label("Adicionar produto manual", systemImage: "plus")
+                        Label("Adicionar item manual", systemImage: "plus")
                     }
 
-                    Menu {
-                        if model.quotes.isEmpty {
-                            Text("Nenhum cálculo salvo")
-                        }
-                        ForEach(model.quotes) { quote in
-                            let name = quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines)
-                            let title = name.isEmpty ? "Produto sem nome" : name
-                            Button {
-                                model.addQuoteToDraft(quote)
-                            } label: {
-                                Label(
-                                    "\(title) · \(quote.result.suggestedPrice.map(Currency.brl) ?? "Preço indisponível")",
-                                    systemImage: "plus"
-                                )
-                            }
-                            .disabled(quote.result.suggestedPrice == nil)
-                        }
+                    Button {
+                        model.isPickingParts = true
                     } label: {
-                        Label("Adicionar cálculo salvo", systemImage: "doc.text.magnifyingglass")
+                        Label("Adicionar peças do histórico…", systemImage: "cube.box")
                     }
                     .disabled(model.quotes.isEmpty)
                 } header: {
-                    Text("Produtos")
+                    Text("Peças e itens")
                 } footer: {
-                    Text("Os valores deste documento ficam independentes dos cálculos de impressão.")
+                    Text("Os valores ficam copiados no orçamento: alterar ou excluir a peça no histórico não muda este documento.")
                 }
 
                 Section {
-                    LabeledContent("Total da proposta", value: proposal.total.map(Currency.brl) ?? "Total excede o limite")
+                    LabeledContent("Total do orçamento", value: proposal.total.map(Currency.brl) ?? "Total excede o limite")
                         .font(.title3.bold())
                 }
             }
@@ -78,7 +63,7 @@ struct ProposalEditorView: View {
             HStack {
                 if isSaved {
                     Button(role: .destructive, action: onDelete) {
-                        Label("Excluir proposta", systemImage: "trash")
+                        Label("Excluir orçamento", systemImage: "trash")
                     }
                 }
                 Spacer()
@@ -88,11 +73,11 @@ struct ProposalEditorView: View {
                     Label("Exportar PDF", systemImage: "doc.richtext")
                 }
                 .disabled(proposal.items.isEmpty || proposal.total == nil || !isSaved || model.proposalHasUnsavedChanges)
-                .help("Salve a proposta antes de exportar o PDF")
+                .help("Salve o orçamento antes de exportar o PDF")
                 Button {
                     model.saveProposalDraft()
                 } label: {
-                    Label("Salvar proposta", systemImage: "square.and.arrow.down")
+                    Label("Salvar orçamento", systemImage: "square.and.arrow.down")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!model.proposalHasUnsavedChanges)
@@ -108,7 +93,12 @@ struct ProposalEditorView: View {
                     .padding(.bottom, 8)
             }
         }
-        .navigationTitle(proposal.title.isEmpty ? "Nova proposta" : proposal.title)
+        .navigationTitle(proposal.title.isEmpty ? "Novo orçamento" : proposal.title)
+        .sheet(isPresented: $model.isPickingParts) {
+            PartsPickerSheet { quotes in
+                model.addQuotesToDraft(quotes)
+            }
+        }
     }
 
     private func textBinding(
@@ -129,7 +119,7 @@ private struct ProposalItemEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                TextField("Produto", text: binding(\.name))
+                TextField("Peça ou item", text: binding(\.name))
                     .font(.headline)
                 Spacer()
                 Button(role: .destructive) {
@@ -138,7 +128,7 @@ private struct ProposalItemEditor: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.borderless)
-                .help("Remover produto da proposta")
+                .help("Remover do orçamento")
             }
 
             TextField("Descrição (opcional)", text: binding(\.details))
@@ -179,3 +169,85 @@ private struct ProposalItemEditor: View {
         )
     }
 }
+
+/// Seleção de várias peças do histórico para incluir no orçamento.
+private struct PartsPickerSheet: View {
+    @Environment(CalculatorViewModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    let onAdd: ([QuoteRecord]) -> Void
+
+    var body: some View {
+        @Bindable var model = model
+        let selection = model.partsPickerSelection
+        let visible = filteredQuotes
+        let chosen = model.quotes(withIDs: selection)
+
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Adicionar peças do histórico")
+                    .font(.title3.bold())
+                TextField("Buscar peça", text: $model.partsPickerSearch)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(16)
+
+            List(visible) { quote in
+                let enabled = CalculatorViewModel.canAddToProposal(quote)
+                Toggle(isOn: Binding(
+                    get: { selection.contains(quote.id) },
+                    set: { if $0 { model.partsPickerSelection.insert(quote.id) } else { model.partsPickerSelection.remove(quote.id) } }
+                )) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                 ? "Peça sem nome" : quote.job.name)
+                            Text(quote.savedAt.formatted(date: .abbreviated, time: .shortened))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Sem preço")
+                            .monospacedDigit()
+                    }
+                }
+                .toggleStyle(.checkbox)
+                .disabled(!enabled)
+                .padding(.vertical, 2)
+            }
+            .overlay {
+                if visible.isEmpty {
+                    ContentUnavailableView.search(text: model.partsPickerSearch)
+                }
+            }
+
+            Divider()
+            HStack {
+                Button(selection.isEmpty ? "Selecionar todas" : "Limpar seleção") {
+                    if selection.isEmpty {
+                        model.partsPickerSelection = Set(visible.filter(CalculatorViewModel.canAddToProposal).map(\.id))
+                    } else {
+                        model.partsPickerSelection = []
+                    }
+                }
+                Spacer()
+                Button("Cancelar", role: .cancel) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(chosen.count > 1 ? "Adicionar \(chosen.count) peças" : "Adicionar") {
+                    onAdd(chosen)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(chosen.isEmpty)
+            }
+            .padding(16)
+        }
+        .frame(width: 480, height: 520)
+    }
+
+    private var filteredQuotes: [QuoteRecord] {
+        let term = model.partsPickerSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return model.quotes }
+        return model.quotes.filter { $0.job.name.localizedCaseInsensitiveContains(term) }
+    }
+}
+

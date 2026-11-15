@@ -1,7 +1,7 @@
 import Calc3DCore
 import SwiftUI
 
-/// Lista e edição de propostas comerciais, separadas dos cálculos de impressão.
+/// Lista e edição de orçamentos, montados a partir do histórico de peças.
 struct ProposalsView: View {
     @Environment(CalculatorViewModel.self) private var model
 
@@ -11,7 +11,7 @@ struct ProposalsView: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 HStack {
-                    Text("Propostas")
+                    Text("Orçamentos")
                         .font(.headline)
                     Spacer()
                     Button {
@@ -19,7 +19,7 @@ struct ProposalsView: View {
                     } label: {
                         Label("Nova", systemImage: "plus")
                     }
-                    .help("Criar uma proposta comercial")
+                    .help("Criar um orçamento")
                 }
                 .padding(12)
 
@@ -45,15 +45,16 @@ struct ProposalsView: View {
                 }
             } else {
                 ContentUnavailableView(
-                    "Crie ou selecione uma proposta",
+                    "Crie ou selecione um orçamento",
                     systemImage: "doc.text",
-                    description: Text("Adicione produtos manualmente ou use cálculos já salvos.")
+                    description: Text("Monte orçamentos com várias peças do histórico ou itens manuais.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .navigationTitle("Orçamentos")
         .confirmationDialog(
-            "Excluir proposta?",
+            "Excluir orçamento?",
             isPresented: Binding(
                 get: { model.proposalPendingDeletionID != nil },
                 set: { if !$0 { model.proposalPendingDeletionID = nil } }
@@ -69,7 +70,7 @@ struct ProposalsView: View {
             }
         } message: { proposalID in
             let title = model.proposals.first(where: { $0.id == proposalID })?.title ?? ""
-            Text("\(title.isEmpty ? "Esta proposta" : "\"\(title)\"") será removida permanentemente.")
+            Text("\(title.isEmpty ? "Este orçamento" : "\"\(title)\"") será removido permanentemente.")
         }
     }
 }
@@ -80,11 +81,11 @@ private struct ProposalRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(proposal.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                 ? "Proposta sem título" : proposal.title)
+                 ? "Orçamento sem título" : proposal.title)
                 .font(.headline)
                 .lineLimit(1)
             HStack {
-                Text(proposal.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                Text("\(proposal.items.count) \(proposal.items.count == 1 ? "item" : "itens") · \(proposal.updatedAt.formatted(date: .abbreviated, time: .omitted))")
                 Spacer()
                 Text(proposal.total.map(Currency.brl) ?? "Total inválido")
                     .monospacedDigit()

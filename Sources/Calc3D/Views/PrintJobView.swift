@@ -11,7 +11,7 @@ struct PrintJobView: View {
             ResultsPanel()
                 .frame(width: 380)
         }
-        .navigationTitle("Impressão")
+        .navigationTitle("Calcular peça")
     }
 }
 
@@ -98,9 +98,9 @@ private struct PrintJobForm: View {
                 Button {
                     model.newJob()
                 } label: {
-                    Label("Nova impressão", systemImage: "plus")
+                    Label("Nova peça", systemImage: "plus")
                 }
-                .help("Limpa os dados da impressão (⌘N)")
+                .help("Começa o cálculo de uma nova peça (⌘N)")
             }
         }
     }

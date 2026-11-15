@@ -1,0 +1,255 @@
+import Calc3DCore
+import SwiftUI
+
+/// Tela inicial: atalhos, números gerais e itens recentes.
+struct HomeView: View {
+    @Environment(CalculatorViewModel.self) private var model
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                header
+                quickActions
+                stats
+                HStack(alignment: .top, spacing: 16) {
+                    recentParts
+                    recentProposals
+                }
+            }
+            .padding(28)
+            .frame(maxWidth: 1000, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .background(.background.secondary)
+        .navigationTitle("Início")
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Calculadora de Impressão 3D")
+                .font(.largeTitle.bold())
+            Text("Calcule peças, guarde no histórico e monte orçamentos com várias peças.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var quickActions: some View {
+        Grid(horizontalSpacing: 14, verticalSpacing: 14) {
+            GridRow {
+                ActionCard(
+                    title: "Calcular peça",
+                    subtitle: "Novo cálculo a partir do fatiador",
+                    systemImage: "function",
+                    prominent: true
+                ) { model.newJob() }
+                ActionCard(
+                    title: "Novo orçamento",
+                    subtitle: "Junte várias peças do histórico",
+                    systemImage: "doc.badge.plus"
+                ) { model.startNewProposal() }
+                ActionCard(
+                    title: "Peças",
+                    subtitle: "Histórico de cálculos salvos",
+                    systemImage: "cube.box"
+                ) { model.screen = .parts }
+                ActionCard(
+                    title: "Parâmetros",
+                    subtitle: "Filamento, máquina e taxas",
+                    systemImage: "slider.horizontal.3"
+                ) { model.screen = .settings }
+            }
+        }
+    }
+
+    private var stats: some View {
+        let proposalsTotal = model.proposals.compactMap(\.total).reduce(0, +)
+        return HStack(spacing: 14) {
+            StatTile(value: "\(model.quotes.count)", title: "Peças no histórico", systemImage: "cube.box")
+            StatTile(value: "\(model.proposals.count)", title: "Orçamentos", systemImage: "doc.text")
+            StatTile(value: Currency.brl(proposalsTotal), title: "Valor total em orçamentos", systemImage: "brazilianrealsign.circle")
+            StatTile(
+                value: model.result.suggestedPrice.map(Currency.brl) ?? "—",
+                title: model.job.name.isEmpty ? "Cálculo em andamento" : "Em andamento: \(model.job.name)",
+                systemImage: "pencil.and.ruler"
+            )
+        }
+    }
+
+    private var recentParts: some View {
+        RecentSection(
+            title: "Peças recentes",
+            emptyText: "Nenhuma peça salva ainda.",
+            isEmpty: model.quotes.isEmpty,
+            seeAll: { model.screen = .parts }
+        ) {
+            ForEach(model.quotes.prefix(5)) { quote in
+                RecentRow(
+                    title: quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? "Peça sem nome" : quote.job.name,
+                    detail: quote.savedAt.formatted(date: .abbreviated, time: .shortened),
+                    value: quote.result.suggestedPrice.map(Currency.brl) ?? "—",
+                    systemImage: "cube"
+                ) { model.showPart(quote.id) }
+            }
+        }
+    }
+
+    private var recentProposals: some View {
+        RecentSection(
+            title: "Orçamentos recentes",
+            emptyText: "Nenhum orçamento criado ainda.",
+            isEmpty: model.proposals.isEmpty,
+            seeAll: { model.screen = .proposals }
+        ) {
+            ForEach(model.proposals.prefix(5)) { proposal in
+                let title = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                RecentRow(
+                    title: title.isEmpty ? "Orçamento sem título" : title,
+                    detail: "\(proposal.items.count) \(proposal.items.count == 1 ? "item" : "itens")"
+                        + (proposal.customerName.isEmpty ? "" : " · \(proposal.customerName)"),
+                    value: proposal.total.map(Currency.brl) ?? "—",
+                    systemImage: "doc.text"
+                ) { model.showProposal(proposal.id) }
+            }
+        }
+    }
+}
+
+private struct ActionCard: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    var prominent = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.title)
+                    .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+                Spacer(minLength: 0)
+                Text(title)
+                    .font(.headline)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(prominent ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(.background))
+            }
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.separator))
+            .contentShape(.rect(cornerRadius: 14))
+        }
+        .buttonStyle(CardPressStyle())
+    }
+}
+
+private struct CardPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+private struct StatTile: View {
+    let value: String
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title2.bold())
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background, in: .rect(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
+    }
+}
+
+private struct RecentSection<Content: View>: View {
+    let title: String
+    let emptyText: String
+    let isEmpty: Bool
+    let seeAll: () -> Void
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title).font(.headline)
+                Spacer()
+                Button("Ver todos", action: seeAll)
+                    .buttonStyle(.link)
+                    .disabled(isEmpty)
+            }
+            if isEmpty {
+                Text(emptyText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 80)
+            } else {
+                VStack(spacing: 0) { content }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(.background, in: .rect(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
+    }
+}
+
+private struct RecentRow: View {
+    let title: String
+    let detail: String
+    let value: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.tint)
+                    .frame(width: 20)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title).lineLimit(1)
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Text(value)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 7)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
