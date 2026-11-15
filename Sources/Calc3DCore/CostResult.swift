@@ -1,7 +1,7 @@
 import Foundation
 
 /// Categorias que compõem o custo de uma peça.
-public enum CostCategory: String, CaseIterable, Identifiable, Sendable {
+public enum CostCategory: String, CaseIterable, Identifiable, Codable, Sendable {
     case filament
     case energy
     case depreciation
@@ -28,13 +28,13 @@ public enum CostCategory: String, CaseIterable, Identifiable, Sendable {
 }
 
 /// Valor de uma categoria de custo, já dividido por peça.
-public struct CostItem: Identifiable, Equatable, Sendable {
+public struct CostItem: Identifiable, Codable, Equatable, Sendable {
     public let category: CostCategory
     public let amount: Double
     public var id: CostCategory { category }
 }
 
-public enum PricingError: Error, Equatable, Sendable {
+public enum PricingError: Codable, Error, Equatable, Sendable {
     /// Margem + impostos + taxas >= 100%: não existe preço que cubra os custos.
     case percentagesTooHigh(total: Double)
 
@@ -47,7 +47,7 @@ public enum PricingError: Error, Equatable, Sendable {
 }
 
 /// Resultado completo de um cálculo.
-public struct CostResult: Equatable, Sendable {
+public struct CostResult: Equatable, Sendable, Codable {
     /// Custos por peça, na ordem de `CostCategory.allCases`.
     public let items: [CostItem]
     public let partsPerPlate: Int
@@ -80,5 +80,44 @@ public struct CostResult: Equatable, Sendable {
     /// Participação (0...1) de uma categoria no custo da peça.
     public func share(of category: CostCategory) -> Double {
         unitCost > 0 ? amount(for: category) / unitCost : 0
+    }
+}
+
+
+extension CostResult {
+    private enum CodingKeys: String, CodingKey {
+        case items, partsPerPlate, printHours, marginPercent, suggestedPrice, pricingError
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        items = try container.decode([CostItem].self, forKey: .items)
+        partsPerPlate = try container.decode(Int.self, forKey: .partsPerPlate)
+        printHours = try container.decode(Double.self, forKey: .printHours)
+        marginPercent = try container.decode(Double.self, forKey: .marginPercent)
+        if let price = try container.decodeIfPresent(Double.self, forKey: .suggestedPrice) {
+            pricing = .success(price)
+        } else if let error = try container.decodeIfPresent(PricingError.self, forKey: .pricingError) {
+            pricing = .failure(error)
+        } else {
+            throw DecodingError.keyNotFound(
+                CodingKeys.suggestedPrice,
+                DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Quote price result is missing")
+            )
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(items, forKey: .items)
+        try container.encode(partsPerPlate, forKey: .partsPerPlate)
+        try container.encode(printHours, forKey: .printHours)
+        try container.encode(marginPercent, forKey: .marginPercent)
+        switch pricing {
+        case .success(let price):
+            try container.encode(price, forKey: .suggestedPrice)
+        case .failure(let error):
+            try container.encode(error, forKey: .pricingError)
+        }
     }
 }

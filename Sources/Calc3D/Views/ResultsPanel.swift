@@ -24,15 +24,20 @@ struct ResultsPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Button {
-                    model.copySummary()
+                    model.saveQuote()
                 } label: {
-                    Label("Copiar orçamento", systemImage: "doc.on.doc")
+                    Label("Salvar orçamento", systemImage: "bookmark")
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("Nova impressão") { model.newJob() }
+                Button {
+                    model.copySummary()
+                } label: {
+                    Label("Copiar", systemImage: "doc.on.doc")
+                }
             }
-            if let feedback = model.copyFeedback {
+            Button("Nova impressão") { model.newJob() }
+            if let feedback = model.quoteFeedback ?? model.copyFeedback {
                 Text(feedback)
                     .font(.callout)
                     .foregroundStyle(.green)

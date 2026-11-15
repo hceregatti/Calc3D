@@ -30,6 +30,8 @@ struct ContentView: View {
             switch model.screen ?? .printJob {
             case .printJob:
                 PrintJobView()
+            case .quotes:
+                QuotesView()
             case .settings:
                 ShopSettingsView()
             }
