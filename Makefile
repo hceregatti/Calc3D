@@ -9,7 +9,7 @@ TEST_FLAGS := $(if $(wildcard $(CLT)/usr/lib/swift/host/plugins/testing), \
 	-Xlinker -F -Xlinker $(CLT)/Library/Developer/Frameworks \
 	-Xlinker -rpath -Xlinker $(CLT)/Library/Developer/Frameworks)
 
-.PHONY: build run test app open install clean
+.PHONY: build run test app open install clean web web-test web-build
 
 build:          ## Compila em modo debug
 	swift build
@@ -31,4 +31,13 @@ install: app    ## Copia o .app para /Applications
 	cp -R "$(APP)" /Applications/
 
 clean:
-	rm -rf .build build
+	rm -rf .build build web/dist
+
+web:            ## Versão web em modo desenvolvimento
+	cd web && npm install && npm run dev
+
+web-test:       ## Testes da versão web
+	cd web && npm install && npm test
+
+web-build:      ## Gera a versão web em web/dist
+	cd web && npm install && npm run build
