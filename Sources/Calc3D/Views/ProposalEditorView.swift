@@ -83,6 +83,13 @@ struct ProposalEditorView: View {
                 }
                 Spacer()
                 Button {
+                    model.exportProposalPDF(proposal)
+                } label: {
+                    Label("Exportar PDF", systemImage: "doc.richtext")
+                }
+                .disabled(proposal.items.isEmpty || !isSaved || model.proposalHasUnsavedChanges)
+                .help("Salve a proposta antes de exportar o PDF")
+                Button {
                     model.saveProposalDraft()
                 } label: {
                     Label("Salvar proposta", systemImage: "square.and.arrow.down")
@@ -91,6 +98,15 @@ struct ProposalEditorView: View {
                 .disabled(!model.proposalHasUnsavedChanges)
             }
             .padding(16)
+
+            if let feedback = model.proposalPDFFeedback {
+                Text(feedback)
+                    .font(.caption)
+                    .foregroundStyle(feedback.hasPrefix("PDF salvo") ? .green : .red)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+            }
         }
         .navigationTitle(proposal.title.isEmpty ? "Nova proposta" : proposal.title)
     }

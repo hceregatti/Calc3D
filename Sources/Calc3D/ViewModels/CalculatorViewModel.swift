@@ -109,6 +109,7 @@ final class CalculatorViewModel {
     private(set) var result: CostResult
     private(set) var copyFeedback: String?
     private(set) var quoteFeedback: String?
+    private(set) var proposalPDFFeedback: String?
     private(set) var quotes: [QuoteRecord]
     private(set) var proposals: [ProposalRecord]
     private(set) var importFeedback: String?
@@ -268,6 +269,23 @@ final class CalculatorViewModel {
 
     func deleteProposalItem(_ id: UUID) {
         updateProposalDraft { $0.items.removeAll { $0.id == id } }
+    }
+
+    func exportProposalPDF(_ proposal: ProposalRecord) {
+        let panel = NSSavePanel()
+        panel.title = "Exportar proposta em PDF"
+        panel.allowedContentTypes = [.pdf]
+        panel.canCreateDirectories = true
+        let baseName = proposal.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        panel.nameFieldStringValue = (baseName.isEmpty ? "Orcamento" : baseName) + ".pdf"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try ProposalPDFExporter.write(proposal, to: url)
+            proposalPDFFeedback = "PDF salvo: \(url.lastPathComponent)"
+        } catch {
+            proposalPDFFeedback = error.localizedDescription
+        }
     }
 
     func saveProposalDraft() {
