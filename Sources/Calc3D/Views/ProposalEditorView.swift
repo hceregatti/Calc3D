@@ -35,7 +35,7 @@ struct ProposalEditorView: View {
                             systemImage: "square.stack.3d.up.slash",
                             description: Text("Calcule uma nova peça ou adicione peças do histórico.")
                         )
-                        .frame(minHeight: 120)
+                        .frame(maxWidth: .infinity, minHeight: 120)
                     }
 
                     ForEach(proposal.items) { item in
