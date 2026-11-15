@@ -1,6 +1,7 @@
 import AppKit
 import Calc3DCore
 import Observation
+import UniformTypeIdentifiers
 
 /// Telas disponíveis na barra lateral.
 enum Screen: String, CaseIterable, Identifiable {
@@ -138,8 +139,10 @@ final class CalculatorViewModel {
     func importModel() {
         let panel = NSOpenPanel()
         panel.title = "Importar modelo 3D"
-        panel.allowedFileTypes = ["stl", "3mf"]
-        panel.allowsOtherFileTypes = false
+        let modelTypes: [UTType] = ["stl", "3mf"].compactMap { extensionName in
+            UTType(filenameExtension: extensionName)
+        }
+        panel.allowedContentTypes = modelTypes
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
