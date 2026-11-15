@@ -1,11 +1,19 @@
-// Gera o ícone do app (AppIcon.icns) desenhado em código.
+// Gera AppIcon.icns a partir da arte em Resources/AppIcon.png.
 // Uso: swift scripts/make-icon.swift <diretório de saída>
 import AppKit
 
 let outDir = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? "build")
+let sourceURL = URL(fileURLWithPath: CommandLine.arguments[0])
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .appendingPathComponent("Resources/AppIcon.png")
 let iconset = outDir.appendingPathComponent("AppIcon.iconset")
 try? FileManager.default.removeItem(at: iconset)
 try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
+
+guard let sourceImage = NSImage(contentsOf: sourceURL) else {
+    fatalError("Não foi possível carregar o ícone em \(sourceURL.path)")
+}
 
 func render(size: Int) -> Data {
     let s = CGFloat(size)
@@ -14,45 +22,10 @@ func render(size: Int) -> Data {
                                colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-
-    // Fundo arredondado com gradiente.
-    let inset = s * 0.09
-    let rect = NSRect(x: inset, y: inset, width: s - 2 * inset, height: s - 2 * inset)
-    let bg = NSBezierPath(roundedRect: rect, xRadius: s * 0.2, yRadius: s * 0.2)
-    NSGradient(colors: [NSColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1),
-                        NSColor(red: 0.42, green: 0.25, blue: 0.85, alpha: 1)])!
-        .draw(in: bg, angle: -90)
-
-    // Camadas de impressão (barras empilhadas).
-    NSColor.white.withAlphaComponent(0.95).setFill()
-    let layerH = s * 0.065
-    let widths: [CGFloat] = [0.50, 0.42, 0.34, 0.26]
-    for (i, w) in widths.enumerated() {
-        let y = s * 0.24 + CGFloat(i) * layerH * 1.45
-        let width = s * w
-        NSBezierPath(roundedRect: NSRect(x: (s - width) / 2, y: y, width: width, height: layerH),
-                     xRadius: layerH / 2, yRadius: layerH / 2).fill()
-    }
-
-    // Bico extrusor.
-    let nozzle = NSBezierPath()
-    nozzle.move(to: NSPoint(x: s * 0.42, y: s * 0.78))
-    nozzle.line(to: NSPoint(x: s * 0.58, y: s * 0.78))
-    nozzle.line(to: NSPoint(x: s * 0.52, y: s * 0.66))
-    nozzle.line(to: NSPoint(x: s * 0.48, y: s * 0.66))
-    nozzle.close()
-    NSColor(red: 1, green: 0.75, blue: 0.2, alpha: 1).setFill()
-    nozzle.fill()
-
-    // Símbolo R$.
-    let attrs: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: s * 0.13, weight: .heavy),
-        .foregroundColor: NSColor(red: 1, green: 0.75, blue: 0.2, alpha: 1),
-    ]
-    let text = NSAttributedString(string: "R$", attributes: attrs)
-    let ts = text.size()
-    text.draw(at: NSPoint(x: s * 0.73 - ts.width / 2, y: s * 0.62))
-
+    sourceImage.draw(in: NSRect(x: 0, y: 0, width: s, height: s),
+                     from: NSRect(origin: .zero, size: sourceImage.size),
+                     operation: .copy, fraction: 1,
+                     respectFlipped: false, hints: [.interpolation: NSImageInterpolation.high])
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])!
 }
