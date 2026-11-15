@@ -3,23 +3,38 @@ import SwiftUI
 
 /// Tela de cada impressão: dados da peça à esquerda e resultado à direita.
 struct PrintJobView: View {
+    @Environment(CalculatorViewModel.self) private var model
+
     var body: some View {
         HStack(spacing: 0) {
-            PrintJobForm()
+            PrintJobForm(calculator: model.calculator, onEditSettings: { model.screen = .settings })
                 .frame(minWidth: 420)
             Divider()
             ResultsPanel()
                 .frame(width: 380)
         }
         .navigationTitle("Calcular peça")
+        .toolbar {
+            ToolbarItem {
+                Button {
+                    model.newJob()
+                } label: {
+                    Label("Nova peça", systemImage: "plus")
+                }
+                .help("Começa o cálculo de uma nova peça (⌘N)")
+            }
+        }
     }
 }
 
-private struct PrintJobForm: View {
-    @Environment(CalculatorViewModel.self) private var model
+/// Formulário de cálculo de peça, compartilhado entre a tela principal e o orçamento.
+struct PrintJobForm: View {
+    let calculator: PartCalculator
+    /// Quando nil, o atalho para editar os parâmetros fixos fica oculto.
+    var onEditSettings: (() -> Void)?
 
     var body: some View {
-        @Bindable var model = model
+        @Bindable var model = calculator
         let j = $model.job
 
         Form {
@@ -87,22 +102,14 @@ private struct PrintJobForm: View {
                 HStack {
                     Label("Parâmetros fixos em uso", systemImage: "slider.horizontal.3")
                     Spacer()
-                    Button("Editar…") { model.screen = .settings }
-                        .buttonStyle(.link)
+                    if let onEditSettings {
+                        Button("Editar…", action: onEditSettings)
+                            .buttonStyle(.link)
+                    }
                 }
             }
         }
         .formStyle(.grouped)
-        .toolbar {
-            ToolbarItem {
-                Button {
-                    model.newJob()
-                } label: {
-                    Label("Nova peça", systemImage: "plus")
-                }
-                .help("Começa o cálculo de uma nova peça (⌘N)")
-            }
-        }
     }
 }
 
