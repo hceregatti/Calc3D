@@ -19,7 +19,7 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                             }
                         } icon: {
-                            Image(systemName: screen.systemImage)
+                            SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 24)
                         }
                         .padding(.vertical, 3)
                     }

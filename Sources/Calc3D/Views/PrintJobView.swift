@@ -19,7 +19,7 @@ struct PrintJobView: View {
                 Button {
                     model.newJob()
                 } label: {
-                    Label("Nova peça", systemImage: "plus")
+                    Label("Nova peça", systemImage: "plus.circle.fill")
                 }
                 .help("Começa o cálculo de uma nova peça (⌘N)")
             }
@@ -43,7 +43,7 @@ struct PrintJobForm: View {
                 Button {
                     model.importModel()
                 } label: {
-                    Label(model.isImportingModel ? "Lendo arquivo…" : "Importar STL ou 3MF", systemImage: "square.and.arrow.down")
+                    Label(model.isImportingModel ? "Lendo arquivo…" : "Importar STL ou 3MF", systemImage: "square.and.arrow.down.fill")
                 }
                 .disabled(model.isImportingModel)
                 if let feedback = model.importFeedback {
@@ -52,7 +52,7 @@ struct PrintJobForm: View {
                         .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Color.orange : Color.secondary)
                 }
             } header: {
-                Label("Identificação", systemImage: "tag")
+                BadgeLabel("Identificação", systemImage: "tag.fill", color: .blue)
             }
 
             Section {
@@ -74,7 +74,7 @@ struct PrintJobForm: View {
                     Text("O custo da mesa é dividido entre as peças")
                 }
             } header: {
-                Label("Fatiador", systemImage: "cube")
+                BadgeLabel("Fatiador", systemImage: "cube.fill", color: .orange)
             }
 
             Section {
@@ -85,7 +85,7 @@ struct PrintJobForm: View {
                 NumberField(title: "Insumos desta mesa", value: j.consumablesPerPlate, unit: "R$",
                             hint: "Cola, lixa, tinta, primer, ímãs, parafusos")
             } header: {
-                Label("Trabalho e acabamento", systemImage: "hand.raised")
+                BadgeLabel("Trabalho e acabamento", systemImage: "paintbrush.pointed.fill", color: .pink)
             }
 
             Section {
@@ -93,14 +93,14 @@ struct PrintJobForm: View {
                             hint: "Margem sobre o preço, não markup: 40% = custo ÷ 0,60",
                             range: 0...95)
             } header: {
-                Label("Preço", systemImage: "dollarsign.circle")
+                BadgeLabel("Preço", systemImage: "brazilianrealsign", color: .green)
             }
 
             Section {
                 FixedSettingsSummary(settings: model.settings)
             } header: {
                 HStack {
-                    Label("Parâmetros fixos em uso", systemImage: "slider.horizontal.3")
+                    BadgeLabel("Parâmetros fixos em uso", systemImage: "slider.horizontal.3", color: .gray)
                     Spacer()
                     if let onEditSettings {
                         Button("Editar…", action: onEditSettings)

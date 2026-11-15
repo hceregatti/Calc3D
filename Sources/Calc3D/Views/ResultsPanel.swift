@@ -26,21 +26,21 @@ struct ResultsPanel: View {
                 Button {
                     model.saveQuote()
                 } label: {
-                    Label("Salvar peça", systemImage: "bookmark")
+                    Label("Salvar peça", systemImage: "bookmark.fill")
                 }
                 .buttonStyle(.borderedProminent)
 
                 Button {
                     model.copySummary()
                 } label: {
-                    Label("Copiar", systemImage: "doc.on.doc")
+                    Label("Copiar", systemImage: "doc.on.doc.fill")
                 }
             }
             Menu {
                 Button {
                     model.addCurrentCalculationToProposal(nil)
                 } label: {
-                    Label("Novo orçamento", systemImage: "doc.badge.plus")
+                    Label("Novo orçamento", systemImage: "plus.rectangle.on.rectangle")
                 }
 
                 if !model.proposals.isEmpty {
@@ -54,7 +54,7 @@ struct ResultsPanel: View {
                     }
                 }
             } label: {
-                Label("Adicionar a orçamento", systemImage: "doc.badge.plus")
+                Label("Adicionar a orçamento", systemImage: "text.badge.plus")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.bordered)

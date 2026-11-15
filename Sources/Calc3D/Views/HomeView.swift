@@ -40,23 +40,27 @@ struct HomeView: View {
                 ActionCard(
                     title: "Calcular peça",
                     subtitle: "Novo cálculo a partir do fatiador",
-                    systemImage: "function",
+                    systemImage: Screen.printJob.systemImage,
+                    color: Screen.printJob.color,
                     prominent: true
                 ) { model.newJob() }
                 ActionCard(
                     title: "Novo orçamento",
                     subtitle: "Junte várias peças do histórico",
-                    systemImage: "doc.badge.plus"
+                    systemImage: "doc.badge.plus",
+                    color: Screen.proposals.color
                 ) { model.startNewProposal() }
                 ActionCard(
                     title: "Peças",
                     subtitle: "Histórico de cálculos salvos",
-                    systemImage: "cube.box"
+                    systemImage: Screen.parts.systemImage,
+                    color: Screen.parts.color
                 ) { model.screen = .parts }
                 ActionCard(
                     title: "Parâmetros",
                     subtitle: "Filamento, máquina e taxas",
-                    systemImage: "slider.horizontal.3"
+                    systemImage: Screen.settings.systemImage,
+                    color: Screen.settings.color
                 ) { model.screen = .settings }
             }
         }
@@ -65,13 +69,14 @@ struct HomeView: View {
     private var stats: some View {
         let proposalsTotal = model.proposals.compactMap(\.total).reduce(0, +)
         return HStack(spacing: 14) {
-            StatTile(value: "\(model.quotes.count)", title: "Peças no histórico", systemImage: "cube.box")
-            StatTile(value: "\(model.proposals.count)", title: "Orçamentos", systemImage: "doc.text")
-            StatTile(value: Currency.brl(proposalsTotal), title: "Valor total em orçamentos", systemImage: "brazilianrealsign.circle")
+            StatTile(value: "\(model.quotes.count)", title: "Peças no histórico", systemImage: Screen.parts.systemImage, color: Screen.parts.color)
+            StatTile(value: "\(model.proposals.count)", title: "Orçamentos", systemImage: Screen.proposals.systemImage, color: Screen.proposals.color)
+            StatTile(value: Currency.brl(proposalsTotal), title: "Valor total em orçamentos", systemImage: "brazilianrealsign", color: .teal)
             StatTile(
                 value: model.result.suggestedPrice.map(Currency.brl) ?? "—",
                 title: model.job.name.isEmpty ? "Cálculo em andamento" : "Em andamento: \(model.job.name)",
-                systemImage: "pencil.and.ruler"
+                systemImage: "pencil.and.ruler.fill",
+                color: Screen.printJob.color
             )
         }
     }
@@ -89,7 +94,8 @@ struct HomeView: View {
                         ? "Peça sem nome" : quote.job.name,
                     detail: quote.savedAt.formatted(date: .abbreviated, time: .shortened),
                     value: quote.result.suggestedPrice.map(Currency.brl) ?? "—",
-                    systemImage: "cube"
+                    systemImage: "cube.fill",
+                    color: Screen.parts.color
                 ) { model.showPart(quote.id) }
             }
         }
@@ -109,7 +115,8 @@ struct HomeView: View {
                     detail: "\(proposal.items.count) \(proposal.items.count == 1 ? "item" : "itens")"
                         + (proposal.customerName.isEmpty ? "" : " · \(proposal.customerName)"),
                     value: proposal.total.map(Currency.brl) ?? "—",
-                    systemImage: "doc.text"
+                    systemImage: "doc.text.fill",
+                    color: Screen.proposals.color
                 ) { model.showProposal(proposal.id) }
             }
         }
@@ -120,15 +127,22 @@ private struct ActionCard: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    let color: Color
     var prominent = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.title)
-                    .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+                if prominent {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(.white.opacity(0.2), in: .rect(cornerRadius: 10, style: .continuous))
+                } else {
+                    SymbolBadge(systemImage: systemImage, color: color, size: 36)
+                }
                 Spacer(minLength: 0)
                 Text(title)
                     .font(.headline)
@@ -143,7 +157,7 @@ private struct ActionCard: View {
             .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(.background))
+                    .fill(prominent ? AnyShapeStyle(color.gradient) : AnyShapeStyle(.background))
             }
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.separator))
             .contentShape(.rect(cornerRadius: 14))
@@ -165,11 +179,11 @@ private struct StatTile: View {
     let value: String
     let title: String
     let systemImage: String
+    let color: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: systemImage)
-                .foregroundStyle(.secondary)
+            SymbolBadge(systemImage: systemImage, color: color, size: 24)
             Text(value)
                 .font(.title2.bold())
                 .monospacedDigit()
@@ -224,14 +238,13 @@ private struct RecentRow: View {
     let detail: String
     let value: String
     let systemImage: String
+    let color: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(.tint)
-                    .frame(width: 20)
+                SymbolBadge(systemImage: systemImage, color: color, size: 26)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).lineLimit(1)
                     Text(detail)
@@ -243,7 +256,7 @@ private struct RecentRow: View {
                 Text(value)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }

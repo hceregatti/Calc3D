@@ -14,7 +14,7 @@ struct ShopSettingsView: View {
                 HStack {
                     Label(
                         model.settingsHaveUnsavedChanges ? "Alterações não salvas" : "Parâmetros salvos",
-                        systemImage: model.settingsHaveUnsavedChanges ? "exclamationmark.circle" : "checkmark.circle"
+                        systemImage: model.settingsHaveUnsavedChanges ? "exclamationmark.circle.fill" : "checkmark.circle.fill"
                     )
                     .foregroundColor(model.settingsHaveUnsavedChanges ? Color.orange : Color.secondary)
                     Spacer()
@@ -29,7 +29,7 @@ struct ShopSettingsView: View {
             Section {
                 HourlyCostsSummary(settings: model.settings)
             } header: {
-                Label("Quanto custa uma hora de impressão", systemImage: "gauge.with.dots.needle.33percent")
+                BadgeLabel("Quanto custa uma hora de impressão", systemImage: "gauge.with.dots.needle.67percent", color: .indigo)
             } footer: {
                 Text("Calculado a partir dos campos abaixo. As perdas por falha são somadas em cada impressão.")
                     .foregroundStyle(.secondary)
@@ -39,7 +39,7 @@ struct ShopSettingsView: View {
                 NumberField(title: "Preço do rolo", value: s.spoolPrice, unit: "R$")
                 NumberField(title: "Peso do rolo", value: s.spoolWeight, unit: "g")
             } header: {
-                Label("Filamento padrão", systemImage: "circle.dashed")
+                BadgeLabel("Filamento padrão", systemImage: "circle.circle.fill", color: .orange)
             }
 
             Section {
@@ -48,7 +48,7 @@ struct ShopSettingsView: View {
                 NumberField(title: "Tarifa de energia", value: s.energyTariff, unit: "R$/kWh",
                             hint: "Valor final da conta: impostos + bandeira")
             } header: {
-                Label("Energia", systemImage: "bolt")
+                BadgeLabel("Energia", systemImage: "bolt.fill", color: .yellow)
             }
 
             Section {
@@ -59,14 +59,14 @@ struct ShopSettingsView: View {
                             hint: "Bicos, mesa/PEI, correias, ventoinhas, lubrificação")
                 NumberField(title: "Horas impressas por ano", value: s.hoursPerYear, unit: "h")
             } header: {
-                Label("Máquina", systemImage: "printer")
+                BadgeLabel("Máquina", systemImage: "printer.fill", color: .blue)
             }
 
             Section {
                 NumberField(title: "Valor da sua hora", value: s.laborRate, unit: "R$/h")
                 NumberField(title: "Embalagem por peça", value: s.packagingPerPart, unit: "R$")
             } header: {
-                Label("Mão de obra e embalagem", systemImage: "person")
+                BadgeLabel("Mão de obra e embalagem", systemImage: "shippingbox.fill", color: .brown)
             }
 
             Section {
@@ -77,7 +77,7 @@ struct ShopSettingsView: View {
                             hint: "Típico: 5–15%. Registre suas falhas por um mês.",
                             range: 0...90)
             } header: {
-                Label("Custos fixos e falhas", systemImage: "building.2")
+                BadgeLabel("Custos fixos e falhas", systemImage: "building.2.fill", color: .red)
             }
 
             Section {
@@ -88,7 +88,7 @@ struct ShopSettingsView: View {
                 NumberField(title: "Taxa fixa por venda", value: s.fixedFeePerSale, unit: "R$",
                             hint: "Shopee/Mercado Livre cobram um valor fixo por item")
             } header: {
-                Label("Encargos de venda", systemImage: "percent")
+                BadgeLabel("Encargos de venda", systemImage: "percent", color: .green)
             }
         }
         .formStyle(.grouped)
@@ -98,7 +98,7 @@ struct ShopSettingsView: View {
                 Button {
                     model.saveSettings()
                 } label: {
-                    Label("Salvar parâmetros", systemImage: "square.and.arrow.down")
+                    Label("Salvar parâmetros", systemImage: "checkmark.circle.fill")
                 }
                 .disabled(!model.settingsHaveUnsavedChanges)
                 .help("Salva todos os parâmetros fixos alterados")
@@ -107,7 +107,7 @@ struct ShopSettingsView: View {
                 Button {
                     model.resetSettings()
                 } label: {
-                    Label("Restaurar padrões", systemImage: "arrow.counterclockwise")
+                    Label("Restaurar padrões", systemImage: "arrow.counterclockwise.circle.fill")
                 }
                 .help("Volta todos os parâmetros fixos aos valores padrão")
             }
@@ -115,9 +115,9 @@ struct ShopSettingsView: View {
                 Button {
                     model.screen = .printJob
                 } label: {
-                    Label("Ir para impressão", systemImage: "cube")
+                    Label("Calcular peça", systemImage: "cube.fill")
                 }
-                .help("Voltar para a tela de impressão (⌘1)")
+                .help("Ir para o cálculo de peça (⌘2)")
             }
         }
     }

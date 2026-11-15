@@ -28,7 +28,7 @@ struct PartsView: View {
                 .overlay {
                     if model.quotes.isEmpty {
                         ContentUnavailableView {
-                            Label("Nenhuma peça salva", systemImage: "cube.box")
+                            Label("Nenhuma peça salva", systemImage: "square.stack.3d.up.slash")
                         } description: {
                             Text("Calcule uma peça e clique em “Salvar peça” para guardá-la aqui.")
                         } actions: {
@@ -79,7 +79,7 @@ struct PartsView: View {
             } else if !model.quotes.isEmpty {
                 ContentUnavailableView(
                     "Selecione peças",
-                    systemImage: "cube.box",
+                    systemImage: "square.stack.3d.up",
                     description: Text("Selecione uma peça para ver os detalhes, ou várias para gerar um orçamento.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -93,7 +93,7 @@ struct PartsView: View {
                 Button {
                     model.newJob()
                 } label: {
-                    Label("Calcular peça", systemImage: "plus")
+                    Label("Calcular peça", systemImage: "plus.circle.fill")
                 }
                 .help("Calcular uma nova peça")
 
@@ -179,7 +179,7 @@ private struct MultiplePartsSummary: View {
                         .foregroundStyle(.secondary)
                 }
 
-                GroupBox("Dados da impressão") {
+                GroupBox {
                     ForEach(quotes) { quote in
                         HStack {
                             Text(quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -277,37 +277,43 @@ private struct QuoteDetail: View {
                 .padding(16)
                 .background(.background, in: .rect(cornerRadius: 12))
 
-                GroupBox("Composição do custo por peça") {
+                GroupBox {
                     LabeledContent("Peso da mesa", value: "\(quote.job.partWeight.formatted()) g")
                     LabeledContent("Tempo de impressão", value: "\(quote.result.printHours.formatted(.number.precision(.fractionLength(0...2)))) h")
                     LabeledContent("Peças por mesa", value: "\(quote.result.partsPerPlate)")
                     LabeledContent("Custo por peça", value: Currency.brl(quote.result.unitCost))
                     LabeledContent("Custo da mesa", value: Currency.brl(quote.result.plateCost))
+                } label: {
+                    BadgeLabel("Dados da impressão", systemImage: "cube.fill", color: .orange)
                 }
 
-                GroupBox("Parâmetros fixos salvos") {
+                GroupBox {
                     ForEach(quote.result.items) { item in
                         LabeledContent(item.category.title, value: Currency.brl(item.amount))
                     }
                     Divider()
                     LabeledContent("Total", value: Currency.brl(quote.result.unitCost)).bold()
+                } label: {
+                    BadgeLabel("Composição do custo por peça", systemImage: "chart.pie.fill", color: .indigo)
                 }
 
                 GroupBox {
                     LabeledContent("Filamento", value: Currency.brl(quote.settings.filamentPricePerGram * 1000) + "/kg")
                     LabeledContent("Hora de máquina", value: Currency.brl(quote.settings.machineCostPerHour) + "/h")
                     LabeledContent("Valor da hora", value: Currency.brl(quote.settings.laborRate) + "/h")
+                } label: {
+                    BadgeLabel("Parâmetros fixos salvos", systemImage: "gearshape.fill", color: .gray)
                 }
 
                 HStack {
                     AddToProposalMenu(quotes: [quote])
                         .fixedSize()
                     Button(action: useAsBase) {
-                        Label("Usar como base", systemImage: "arrow.uturn.backward")
+                        Label("Usar como base", systemImage: "arrow.uturn.backward.circle.fill")
                     }
                     Spacer()
                     Button(role: .destructive, action: onDelete) {
-                        Label("Excluir peça", systemImage: "trash")
+                        Label("Excluir peça", systemImage: "trash.fill")
                     }
                 }
             }

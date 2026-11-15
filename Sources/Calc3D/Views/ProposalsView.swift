@@ -17,7 +17,7 @@ struct ProposalsView: View {
                     Button {
                         model.requestNewProposalDraft()
                     } label: {
-                        Label("Nova", systemImage: "plus")
+                        Label("Novo", systemImage: "plus.circle.fill")
                     }
                     .help("Criar um orçamento")
                 }
@@ -46,7 +46,7 @@ struct ProposalsView: View {
             } else {
                 ContentUnavailableView(
                     "Crie ou selecione um orçamento",
-                    systemImage: "doc.text",
+                    systemImage: "doc.text.magnifyingglass",
                     description: Text("Monte orçamentos com várias peças do histórico ou itens manuais.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

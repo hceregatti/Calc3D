@@ -25,7 +25,7 @@ struct ProposalEditorView: View {
                     if proposal.items.isEmpty {
                         ContentUnavailableView(
                             "Nenhuma peça",
-                            systemImage: "cube.box",
+                            systemImage: "square.stack.3d.up.slash",
                             description: Text("Calcule uma nova peça ou adicione peças do histórico.")
                         )
                         .frame(minHeight: 120)
@@ -39,14 +39,14 @@ struct ProposalEditorView: View {
                         Button {
                             model.startPartDraft()
                         } label: {
-                            Label("Calcular nova peça…", systemImage: "plus")
+                            Label("Calcular nova peça…", systemImage: "plus.circle.fill")
                         }
                         .help("Abre o cálculo completo da peça e adiciona o resultado ao orçamento")
 
                         Button {
                             model.isPickingParts = true
                         } label: {
-                            Label("Adicionar do histórico…", systemImage: "cube.box")
+                            Label("Adicionar do histórico…", systemImage: "square.stack.3d.up.fill")
                         }
                         .disabled(model.quotes.isEmpty)
                     }
@@ -66,21 +66,21 @@ struct ProposalEditorView: View {
             HStack {
                 if isSaved {
                     Button(role: .destructive, action: onDelete) {
-                        Label("Excluir orçamento", systemImage: "trash")
+                        Label("Excluir orçamento", systemImage: "trash.fill")
                     }
                 }
                 Spacer()
                 Button {
                     model.exportProposalPDF(proposal)
                 } label: {
-                    Label("Exportar PDF", systemImage: "doc.richtext")
+                    Label("Exportar PDF", systemImage: "arrow.down.doc.fill")
                 }
                 .disabled(proposal.items.isEmpty || proposal.total == nil || !isSaved || model.proposalHasUnsavedChanges)
                 .help("Salve o orçamento antes de exportar o PDF")
                 Button {
                     model.saveProposalDraft()
                 } label: {
-                    Label("Salvar orçamento", systemImage: "square.and.arrow.down")
+                    Label("Salvar orçamento", systemImage: "checkmark.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!model.proposalHasUnsavedChanges)
@@ -136,7 +136,7 @@ private struct ProposalItemEditor: View {
                 Button(role: .destructive) {
                     model.deleteProposalItem(item.id)
                 } label: {
-                    Image(systemName: "trash")
+                    Image(systemName: "trash.fill")
                 }
                 .buttonStyle(.borderless)
                 .help("Remover do orçamento")
@@ -272,9 +272,7 @@ private struct PartCalculatorSheet: View {
 
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Image(systemName: "cube")
-                    .font(.title2)
-                    .foregroundStyle(.tint)
+                SymbolBadge(systemImage: "cube.fill", color: .orange, size: 28)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Calcular peça para o orçamento")
                         .font(.title3.bold())
@@ -314,7 +312,7 @@ private struct PartCalculatorSheet: View {
                 Button {
                     model.commitPartDraft()
                 } label: {
-                    Label("Adicionar ao orçamento", systemImage: "plus")
+                    Label("Adicionar ao orçamento", systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)

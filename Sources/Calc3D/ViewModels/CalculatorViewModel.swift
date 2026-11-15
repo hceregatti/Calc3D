@@ -1,6 +1,7 @@
 import AppKit
 import Calc3DCore
 import Observation
+import SwiftUI
 
 /// Telas disponíveis na barra lateral.
 enum Screen: String, CaseIterable, Identifiable {
@@ -34,11 +35,21 @@ enum Screen: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .home: "house"
-        case .printJob: "function"
-        case .parts: "cube.box"
-        case .proposals: "doc.text"
-        case .settings: "slider.horizontal.3"
+        case .home: "house.fill"
+        case .printJob: "cube.fill"
+        case .parts: "square.stack.3d.up.fill"
+        case .proposals: "doc.text.fill"
+        case .settings: "gearshape.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .home: .blue
+        case .printJob: .orange
+        case .parts: .purple
+        case .proposals: .green
+        case .settings: .gray
         }
     }
 }
