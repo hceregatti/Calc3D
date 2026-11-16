@@ -9,7 +9,7 @@ TEST_FLAGS := $(if $(wildcard $(CLT)/usr/lib/swift/host/plugins/testing), \
 	-Xlinker -F -Xlinker $(CLT)/Library/Developer/Frameworks \
 	-Xlinker -rpath -Xlinker $(CLT)/Library/Developer/Frameworks)
 
-.PHONY: build run test app open install clean web web-test web-build
+.PHONY: build run test app dmg open install clean web web-test web-build
 
 build:          ## Compila em modo debug
 	swift build
@@ -20,8 +20,11 @@ run:            ## Executa direto (debug)
 test:           ## Roda os testes do núcleo de cálculo
 	swift test $(TEST_FLAGS)
 
-app:            ## Gera o .app em release (arm64)
+app:            ## Gera o .app em release (universal: arm64 + x86_64)
 	./scripts/build-app.sh
+
+dmg: app        ## Gera o instalador .dmg em build/
+	./scripts/build-dmg.sh
 
 open: app       ## Gera e abre o .app
 	open "$(APP)"

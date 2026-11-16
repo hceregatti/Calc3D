@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Compila em release para Apple Silicon e monta "build/Calc3D.app".
+# Compila em release (universal: Apple Silicon + Intel) e monta "build/Calc3D.app".
+# Para compilar só uma arquitetura: ARCHS="arm64" ./scripts/build-app.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -9,9 +10,13 @@ EXECUTABLE="Calc3D"
 BUILD_DIR="build"
 APP="$BUILD_DIR/$APP_NAME.app"
 
-echo "▸ Compilando (release, arm64)…"
-swift build -c release --arch arm64
-BIN_DIR="$(swift build -c release --arch arm64 --show-bin-path)"
+ARCHS="${ARCHS:-arm64 x86_64}"
+ARCH_FLAGS=()
+for a in $ARCHS; do ARCH_FLAGS+=(--arch "$a"); done
+
+echo "▸ Compilando (release, $ARCHS)…"
+swift build -c release "${ARCH_FLAGS[@]}"
+BIN_DIR="$(swift build -c release "${ARCH_FLAGS[@]}" --show-bin-path)"
 
 echo "▸ Montando bundle…"
 rm -rf "$APP"

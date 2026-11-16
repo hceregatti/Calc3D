@@ -6,13 +6,26 @@ Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador 
 
 ## Requisitos
 
-- macOS 14 Sonoma ou superior, Mac com Apple Silicon (M1 a M4)
-- Swift 6 (Command Line Tools: `xcode-select --install`) ou Xcode
+- macOS 14 Sonoma ou superior (Apple Silicon ou Intel)
+- Para compilar: Swift 6 (Command Line Tools: `xcode-select --install`) ou Xcode
+
+## Instalação
+
+Baixe o `Calc3D-<versão>.dmg` em [Releases](https://github.com/hceregatti/Calc3D/releases), abra e arraste o **Calc3D** para **Aplicativos**.
+
+O app não é notarizado pela Apple, então na primeira abertura o macOS bloqueia. Libere em **Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim**, ou pelo Terminal:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Calc3D.app
+```
+
+Para publicar uma nova versão, atualize `CFBundleShortVersionString` em `Resources/Info.plist` e envie uma tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` e o anexa ao Release.
 
 ## Comandos
 
 ```bash
-make app       # compila em release e gera build/Calc3D.app
+make app       # compila em release (universal) e gera build/Calc3D.app
+make dmg       # gera o instalador build/Calc3D-<versão>.dmg
 make open      # gera e abre o app
 make install   # copia o app para /Applications
 make run       # executa em modo debug
@@ -44,6 +57,7 @@ Tests/Calc3DCoreTests/         # testes (swift-testing)
 Resources/Info.plist           # metadados do bundle .app
 scripts/
   build-app.sh                 # build release + montagem e assinatura do .app
+  build-dmg.sh                 # empacota o .app em um instalador .dmg
   make-icon.swift              # gera o ícone do app em código
 ```
 
