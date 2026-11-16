@@ -15,7 +15,7 @@ import { useMemo, useRef, useState } from 'react'
 import {
   CATEGORIES,
   PRICING_ERROR,
-  brl,
+  money,
   calculate,
   canPrice,
   derived,
@@ -30,6 +30,7 @@ import {
   type PrintJob,
   type ShopSettings,
 } from '../core/calculator'
+import { pricePerBulk } from '../core/format'
 import { importModelFile } from '../core/importer'
 import { displayName, uid } from '../core/models'
 import { Donut } from '../components/Donut'
@@ -132,7 +133,7 @@ export function PartForm({
       <Section title="Fatiador" icon={Box} color="#ff9f0a">
         <NumberField
           label="Peso da mesa"
-          unit="g"
+          kind="weight"
           value={job.partWeight}
           warn={missing.weight}
           hint={missing.weight ? 'Não encontrado no arquivo. Preencha o peso do fatiador.' : 'Valor do fatiador, somando todas as peças'}
@@ -164,7 +165,7 @@ export function PartForm({
       <Section title="Trabalho e acabamento" icon={Paintbrush} color="#ff375f">
         <NumberField label="Preparação" unit="min" value={job.setupMinutes} hint="Fatiar, preparar a mesa, retirar a peça" onChange={(setupMinutes) => setJob({ setupMinutes })} />
         <NumberField label="Pós-processamento" unit="min" value={job.postProcessingMinutes} hint="Remover suportes, lixar, pintar" onChange={(postProcessingMinutes) => setJob({ postProcessingMinutes })} />
-        <NumberField label="Insumos desta mesa" unit="R$" value={job.consumablesPerPlate} hint="Cola, lixa, tinta, primer, ímãs, parafusos" onChange={(consumablesPerPlate) => setJob({ consumablesPerPlate })} />
+        <NumberField label="Insumos desta mesa" kind="money" value={job.consumablesPerPlate} hint="Cola, lixa, tinta, primer, ímãs, parafusos" onChange={(consumablesPerPlate) => setJob({ consumablesPerPlate })} />
       </Section>
 
       <Section title="Preço" icon={BadgeDollarSign} color="#30d158">
@@ -178,12 +179,12 @@ export function PartForm({
         color="#8e8e93"
         action={onEditSettings && <button className="link" onClick={onEditSettings}>Editar…</button>}
       >
-        <Row label="Filamento">{brl(d.filamentPricePerGram * 1000)}/kg</Row>
-        <Row label="Hora de máquina">{brl(d.machineCostPerHour)}/h</Row>
-        <Row label="Valor da sua hora">{brl(settings.laborRate)}/h</Row>
+        <Row label="Filamento">{pricePerBulk(d.filamentPricePerGram, settings.weightUnit)}</Row>
+        <Row label="Hora de máquina">{money(d.machineCostPerHour)}/h</Row>
+        <Row label="Valor da sua hora">{money(settings.laborRate)}/h</Row>
         <Row label="Taxa de falha">{percent(settings.failureRatePercent / 100)}</Row>
         <Row label="Impostos + taxas">
-          {percent((settings.taxPercent + settings.marketplaceFeePercent) / 100)} + {brl(settings.fixedFeePerSale)}
+          {percent((settings.taxPercent + settings.marketplaceFeePercent) / 100)} + {money(settings.fixedFeePerSale)}
         </Row>
       </Section>
     </>
@@ -196,17 +197,17 @@ export function PriceCard({ result }: { result: CostResult }) {
   return (
     <div className="card">
       <span className="muted">Preço sugerido por peça</span>
-      <div className="price">{result.suggestedPrice === null ? '—' : brl(result.suggestedPrice)}</div>
+      <div className="price">{result.suggestedPrice === null ? '—' : money(result.suggestedPrice)}</div>
       {result.suggestedPrice === null && (
         <p className="error-text">
           <AlertTriangle size={14} /> {PRICING_ERROR}
         </p>
       )}
       <div className="kpis">
-        <Kpi title="Custo por peça" value={brl(unitCost(result))} />
-        <Kpi title="Lucro líquido/peça" value={profit === null ? '—' : brl(profit)} />
-        <Kpi title="Custo da mesa" value={brl(plateCost(result))} />
-        <Kpi title="Lucro por hora" value={perHour === null ? '—' : `${brl(perHour)}/h`} />
+        <Kpi title="Custo por peça" value={money(unitCost(result))} />
+        <Kpi title="Lucro líquido/peça" value={profit === null ? '—' : money(profit)} />
+        <Kpi title="Custo da mesa" value={money(plateCost(result))} />
+        <Kpi title="Lucro por hora" value={perHour === null ? '—' : `${money(perHour)}/h`} />
       </div>
     </div>
   )
@@ -233,14 +234,14 @@ export function BreakdownCard({ result }: { result: CostResult }) {
             <li key={item.category}>
               <span className="dot" style={{ background: c.color }} />
               <span className="grow">{c.title}</span>
-              <span className="num">{brl(item.amount)}</span>
+              <span className="num">{money(item.amount)}</span>
               <small className="num share">{percent(shareOf(result, item.category))}</small>
             </li>
           )
         })}
         <li className="total">
           <span className="grow">Custo total por peça</span>
-          <span className="num">{brl(unitCost(result))}</span>
+          <span className="num">{money(unitCost(result))}</span>
         </li>
       </ul>
     </div>

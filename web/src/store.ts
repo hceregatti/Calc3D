@@ -1,3 +1,4 @@
+import { applyDisplay, withValidDisplay } from './core/format'
 import { create } from 'zustand'
 import {
   calculate,
@@ -124,7 +125,8 @@ function itemFromQuote(quote: QuoteRecord, fromHistory: boolean): ProposalItem |
   })
 }
 
-const initialSettings = withDefaults(defaultSettings, load(KEYS.settings, null))
+const initialSettings = withValidDisplay(withDefaults(defaultSettings, load(KEYS.settings, null)))
+applyDisplay(initialSettings)
 const initialCompany = withDefaults(defaultCompany, load(KEYS.company, null))
 
 export const useApp = create<AppState>((set, get) => ({
@@ -168,14 +170,22 @@ export const useApp = create<AppState>((set, get) => ({
     get().go('printJob')
   },
 
-  setSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
+  setSettings: (patch) => {
+    const settings = { ...get().settings, ...patch }
+    applyDisplay(settings)
+    set({ settings })
+  },
   saveSettings: () => {
     const { settings } = get()
     save(KEYS.settings, settings)
     set({ savedSettings: settings })
     get().showToast('Parâmetros salvos ✔')
   },
-  resetSettings: () => set({ settings: { ...defaultSettings } }),
+  // Moeda e unidade são preferências: não voltam ao padrão.
+  resetSettings: () => {
+    const { currency, weightUnit } = get().settings
+    set({ settings: { ...defaultSettings, currency, weightUnit } })
+  },
 
   setCompany: (patch) => set({ company: { ...get().company, ...patch } }),
   saveCompany: () => {
@@ -332,7 +342,8 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   replaceAll: ({ settings, company, quotes, proposals }) => {
-    const s = withDefaults(defaultSettings, settings)
+    const s = withValidDisplay(withDefaults(defaultSettings, settings))
+    applyDisplay(s)
     const c = withDefaults(defaultCompany, company)
     const p = sortProposals(proposals.map(normalizeProposal))
     save(KEYS.settings, s)

@@ -1,3 +1,5 @@
+import { money, weight, type CurrencyCode, type WeightUnitId } from './format'
+
 /**
  * Motor de cálculo de custo e preço de impressão 3D (tradução do Calc3DCore em Swift).
  *
@@ -31,6 +33,10 @@ export interface ShopSettings {
   taxPercent: number
   marketplaceFeePercent: number
   fixedFeePerSale: number
+  /** Moeda usada para exibir valores (sem conversão). */
+  currency: CurrencyCode
+  /** Unidade usada para digitar e exibir pesos (os valores ficam em gramas). */
+  weightUnit: WeightUnitId
 }
 
 export const defaultSettings: ShopSettings = {
@@ -51,6 +57,8 @@ export const defaultSettings: ShopSettings = {
   taxPercent: 6,
   marketplaceFeePercent: 14,
   fixedFeePerSale: 4,
+  currency: 'BRL',
+  weightUnit: 'g',
 }
 
 /** Dados de uma impressão (normalmente do fatiador). Peso e tempo são da mesa inteira. */
@@ -197,8 +205,7 @@ export function calculate(s: ShopSettings, job: PrintJob): CostResult {
 
 // Formatação em pt-BR
 
-const currencyFormat = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-export const brl = (v: number) => currencyFormat.format(Number.isFinite(v) ? v : 0)
+export { money }
 export const number = (v: number, maxFraction = 2) =>
   v.toLocaleString('pt-BR', { maximumFractionDigits: maxFraction })
 export const percent = (fraction: number, digits = 1) =>
@@ -208,16 +215,16 @@ export const percent = (fraction: number, digits = 1) =>
 export function quoteSummary(r: CostResult, job: PrintJob): string {
   const name = job.name.trim()
   const title = name ? `Orçamento: ${name}` : 'Orçamento impressão 3D'
-  const lines = [`${title}: ${r.partsPerPlate} peça(s), ${number(r.printHours)} h, ${number(job.partWeight, 3)} g`]
+  const lines = [`${title}: ${r.partsPerPlate} peça(s), ${number(r.printHours)} h, ${weight(job.partWeight)}`]
   for (const item of r.items) {
     const category = CATEGORIES.find((c) => c.id === item.category)!
-    lines.push(`• ${category.title}: ${brl(item.amount)}`)
+    lines.push(`• ${category.title}: ${money(item.amount)}`)
   }
-  lines.push(`Custo por peça: ${brl(unitCost(r))}`)
+  lines.push(`Custo por peça: ${money(unitCost(r))}`)
   lines.push(
     r.suggestedPrice === null
       ? `Preço sugerido: indisponível (${PRICING_ERROR})`
-      : `Preço sugerido: ${brl(r.suggestedPrice)} (margem ${Math.trunc(r.marginPercent)}%)`,
+      : `Preço sugerido: ${money(r.suggestedPrice)} (margem ${Math.trunc(r.marginPercent)}%)`,
   )
   return lines.join('\n')
 }

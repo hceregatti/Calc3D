@@ -1,6 +1,6 @@
 import { Box, ChevronRight, DollarSign, FilePlus2, FileText, PencilRuler, type LucideIcon } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
-import { brl, calculate } from '../core/calculator'
+import { money, calculate } from '../core/calculator'
 import { displayName, fromCents, totalCents } from '../core/models'
 import { Badge, SCREEN_INFO } from '../components/ui'
 import { useApp } from '../store'
@@ -30,9 +30,9 @@ export function HomeScreen() {
       <div className="stat-grid">
         <Stat value={String(quotes.length)} title="Peças no histórico" icon={SCREEN_INFO.parts.icon} color={SCREEN_INFO.parts.color} />
         <Stat value={String(proposals.length)} title="Orçamentos" icon={FileText} color={SCREEN_INFO.proposals.color} />
-        <Stat value={brl(proposalsTotal)} title="Valor total em orçamentos" icon={DollarSign} color="#30b0c7" />
+        <Stat value={money(proposalsTotal)} title="Valor total em orçamentos" icon={DollarSign} color="#30b0c7" />
         <Stat
-          value={result.suggestedPrice === null ? '—' : brl(result.suggestedPrice)}
+          value={result.suggestedPrice === null ? '—' : money(result.suggestedPrice)}
           title={job.name ? `Em andamento: ${job.name}` : 'Cálculo em andamento'}
           icon={PencilRuler}
           color={SCREEN_INFO.printJob.color}
@@ -46,7 +46,7 @@ export function HomeScreen() {
               key={q.id}
               title={displayName(q.job.name, 'Peça sem nome')}
               detail={new Date(q.savedAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}
-              value={q.result.suggestedPrice === null ? '—' : brl(q.result.suggestedPrice)}
+              value={q.result.suggestedPrice === null ? '—' : money(q.result.suggestedPrice)}
               icon={Box}
               color={SCREEN_INFO.parts.color}
               onClick={() => {
@@ -62,7 +62,7 @@ export function HomeScreen() {
               key={p.id}
               title={displayName(p.title, 'Orçamento sem título')}
               detail={`${p.items.length} ${p.items.length === 1 ? 'item' : 'itens'}${p.customerName ? ` · ${p.customerName}` : ''}`}
-              value={brl(fromCents(totalCents(p)))}
+              value={money(fromCents(totalCents(p)))}
               icon={FileText}
               color={SCREEN_INFO.proposals.color}
               onClick={() => openProposal(p.id)}

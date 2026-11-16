@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { useApp, type Screen } from '../store'
+import { WEIGHT_UNITS, currencySymbol, formatNumber, fromGrams, liveMask, parseMasked, toGrams } from '../core/format'
 
 export const SCREEN_INFO: Record<Screen, { title: string; subtitle: string; icon: LucideIcon; color: string }> = {
   home: { title: 'Início', subtitle: 'Visão geral e atalhos', icon: Home, color: '#0a84ff' },
@@ -80,22 +81,21 @@ export function Row({ label, hint, children }: { label: ReactNode; hint?: ReactN
   )
 }
 
-const parseNumber = (text: string) => {
-  const cleaned = text.trim().replace(/\s/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')
-  return cleaned === '' ? NaN : Number(cleaned)
-}
-const formatNumber = (v: number, digits: number) =>
-  Number.isFinite(v) ? v.toLocaleString('pt-BR', { maximumFractionDigits: digits, useGrouping: false }) : ''
+export type NumberKind = 'decimal' | 'money' | 'weight'
 
-/** Campo numérico que aceita vírgula ou ponto e limita o valor ao intervalo. */
+/**
+ * Campo numérico com máscara brasileira ao digitar (7.000,00 · 31,17).
+ * `money` sempre mostra duas casas; `weight` recebe gramas e exibe na unidade dos parâmetros fixos.
+ */
 export function NumberInput({
   value,
   onChange,
   min = 0,
   max = 1_000_000,
   digits = 2,
-  width = 96,
+  width = 110,
   ariaLabel,
+  kind = 'decimal',
 }: {
   value: number
   onChange: (v: number) => void
@@ -104,12 +104,23 @@ export function NumberInput({
   digits?: number
   width?: number
   ariaLabel?: string
+  kind?: NumberKind
 }) {
-  const [text, setText] = useState(formatNumber(value, digits))
+  const unit = useApp((s) => s.settings.weightUnit)
+  const maxFraction = kind === 'money' ? 2 : kind === 'weight' ? WEIGHT_UNITS[unit].digits : digits
+  const plainInteger = kind === 'decimal' && digits === 0
+  const display = (v: number) => {
+    if (kind === 'money') return formatNumber(v, 2, 2)
+    if (kind === 'weight') return formatNumber(fromGrams(v, unit), 0, maxFraction)
+    const text = formatNumber(v, 0, digits)
+    return plainInteger ? text.replace(/\./g, '') : text
+  }
+  const [text, setText] = useState(display(value))
   const [focused, setFocused] = useState(false)
   useEffect(() => {
-    if (!focused) setText(formatNumber(value, digits))
-  }, [value, focused, digits])
+    if (!focused) setText(display(value))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, focused, digits, kind, unit])
   return (
     <input
       className="input number"
@@ -123,12 +134,17 @@ export function NumberInput({
       }}
       onBlur={() => {
         setFocused(false)
-        setText(formatNumber(value, digits))
+        setText(display(value))
       }}
+      onKeyDown={(e) => e.key === 'Enter' && setText(display(value))}
       onChange={(e) => {
-        setText(e.target.value)
-        const n = parseNumber(e.target.value)
-        if (Number.isFinite(n)) onChange(Math.min(Math.max(n, min), max))
+        let masked = liveMask(e.target.value, text, maxFraction)
+        if (plainInteger) masked = masked.replace(/\./g, '')
+        setText(masked)
+        const typed = parseMasked(masked)
+        if (!Number.isFinite(typed)) return
+        const stored = kind === 'weight' ? toGrams(typed, unit) : typed
+        onChange(Math.min(Math.max(stored, min), max))
       }}
     />
   )
@@ -143,20 +159,25 @@ export function NumberField({
   min,
   max,
   warn,
+  kind,
 }: {
   label: string
   value: number
   onChange: (v: number) => void
-  unit: string
+  unit?: string
   hint?: string
   min?: number
   max?: number
   warn?: boolean
+  kind?: NumberKind
 }) {
+  const weightUnit = useApp((s) => s.settings.weightUnit)
+  const currency = useApp((s) => s.settings.currency)
+  const shownUnit = kind === 'weight' ? weightUnit : kind === 'money' ? currencySymbol(currency) + (unit ?? '') : unit
   return (
     <Row label={label} hint={hint && <span className={warn ? 'warn' : undefined}>{hint}</span>}>
-      <NumberInput value={value} onChange={onChange} min={min} max={max} ariaLabel={label} />
-      <span className="unit">{unit}</span>
+      <NumberInput value={value} onChange={onChange} min={min} max={max} ariaLabel={label} kind={kind} />
+      <span className="unit">{shownUnit}</span>
     </Row>
   )
 }
@@ -168,6 +189,7 @@ export function TextField({
   placeholder,
   multiline,
   rows = 3,
+  mask,
 }: {
   label: string
   value: string
@@ -175,6 +197,8 @@ export function TextField({
   placeholder?: string
   multiline?: boolean
   rows?: number
+  /** Máscara aplicada a cada digitação (ex.: telefone, CPF/CNPJ). */
+  mask?: (text: string) => string
 }) {
   const id = useId()
   return (
@@ -183,7 +207,7 @@ export function TextField({
       {multiline ? (
         <textarea id={id} className="input" rows={rows} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       ) : (
-        <input id={id} className="input" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        <input id={id} className="input" value={value} placeholder={placeholder} onChange={(e) => onChange(mask ? mask(e.target.value) : e.target.value)} />
       )}
     </div>
   )

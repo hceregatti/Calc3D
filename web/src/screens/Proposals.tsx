@@ -1,6 +1,7 @@
 import { Box, CheckCircle2, FileText, Layers, PlusCircle, Printer, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { brl, calculate, canPrice, defaultJob, type PrintJob } from '../core/calculator'
+import { money, calculate, canPrice, defaultJob, type PrintJob } from '../core/calculator'
+import { cpfCnpjMask, currencySymbol, phoneMask } from '../core/format'
 import {
   MAX_QUANTITY,
   clampQuantity,
@@ -49,7 +50,7 @@ export function ProposalsScreen() {
                       {new Date(p.updatedAt).toLocaleDateString('pt-BR', { dateStyle: 'medium' })}
                     </small>
                   </div>
-                  <span className="num muted">{brl(fromCents(totalCents(p)))}</span>
+                  <span className="num muted">{money(fromCents(totalCents(p)))}</span>
                 </div>
               ))}
             </div>
@@ -88,8 +89,8 @@ function ProposalEditor({ proposal }: { proposal: Proposal }) {
       <Section title="Cliente">
         <div className="field-grid">
           <TextField label="Nome ou empresa" value={proposal.customerName} onChange={set('customerName')} />
-          <TextField label="CPF / CNPJ" value={proposal.customerDocument} onChange={set('customerDocument')} />
-          <TextField label="Telefone / e-mail" value={proposal.customerContact} onChange={set('customerContact')} />
+          <TextField label="CPF / CNPJ" value={proposal.customerDocument} mask={cpfCnpjMask} onChange={set('customerDocument')} />
+          <TextField label="Telefone / e-mail" value={proposal.customerContact} mask={phoneMask} onChange={set('customerContact')} />
           <TextField label="Endereço" value={proposal.customerAddress} onChange={set('customerAddress')} />
         </div>
       </Section>
@@ -120,17 +121,17 @@ function ProposalEditor({ proposal }: { proposal: Proposal }) {
       </Section>
 
       <Section>
-        <Row label="Subtotal dos itens">{brl(fromCents(itemsTotalCents(proposal)))}</Row>
+        <Row label="Subtotal dos itens">{money(fromCents(itemsTotalCents(proposal)))}</Row>
         <Row label="Frete">
-          <span className="unit">R$</span>
-          <NumberInput value={fromCents(proposal.shippingCents)} onChange={(v) => set('shippingCents')(toCents(v))} width={110} ariaLabel="Frete" />
+          <span className="unit">{currencySymbol()}</span>
+          <NumberInput kind="money" max={1_000_000_000} value={fromCents(proposal.shippingCents)} onChange={(v) => set('shippingCents')(toCents(v))} width={120} ariaLabel="Frete" />
         </Row>
         <Row label="Desconto">
-          <span className="unit">R$</span>
-          <NumberInput value={fromCents(proposal.discountCents)} onChange={(v) => set('discountCents')(toCents(v))} width={110} ariaLabel="Desconto" />
+          <span className="unit">{currencySymbol()}</span>
+          <NumberInput kind="money" max={1_000_000_000} value={fromCents(proposal.discountCents)} onChange={(v) => set('discountCents')(toCents(v))} width={120} ariaLabel="Desconto" />
         </Row>
         <Row label={<strong className="big">Total do orçamento</strong>}>
-          <strong className="big num">{brl(fromCents(totalCents(proposal)))}</strong>
+          <strong className="big num">{money(fromCents(totalCents(proposal)))}</strong>
         </Row>
       </Section>
 
@@ -208,12 +209,12 @@ function ItemEditor({ item }: { item: ProposalItem }) {
             <Stepper label="Quantidade" value={item.quantity} min={1} max={MAX_QUANTITY} onChange={(q) => updateItem(item.id, { quantity: clampQuantity(q) })} />
           </label>
           <label className="inline">
-            Unitário R$
-            <NumberInput value={fromCents(item.unitPriceCents)} width={110} ariaLabel="Preço unitário"
+            Unitário {currencySymbol()}
+            <NumberInput kind="money" max={1_000_000_000} value={fromCents(item.unitPriceCents)} width={120} ariaLabel="Preço unitário"
               onChange={(v) => updateItem(item.id, { unitPriceCents: toCents(v) })} />
           </label>
           <span className="grow" />
-          <strong className="num">{brl(fromCents(itemSubtotalCents(item)))}</strong>
+          <strong className="num">{money(fromCents(itemSubtotalCents(item)))}</strong>
         </div>
       </div>
     </div>
@@ -316,7 +317,7 @@ function PartsPicker({ onClose, onAdd }: { onClose: () => void; onAdd: (ids: str
                 <span className="ellipsis">{displayName(q.job.name, 'Peça sem nome')}</span>
                 <small className="muted">{new Date(q.savedAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</small>
               </span>
-              <span className="num">{q.result.suggestedPrice === null ? 'Sem preço' : brl(q.result.suggestedPrice)}</span>
+              <span className="num">{q.result.suggestedPrice === null ? 'Sem preço' : money(q.result.suggestedPrice)}</span>
             </label>
           )
         })}

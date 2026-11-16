@@ -1,7 +1,7 @@
 import { Image as ImageIcon, Printer } from 'lucide-react'
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { brl } from '../core/calculator'
+import { money } from '../core/calculator'
 import {
   formattedNumber,
   fromCents,
@@ -115,8 +115,8 @@ export function ProposalDocument({ proposal, company }: { proposal: Proposal; co
                 {item.details.trim() && <div className="doc-item-details">{item.details.trim()}</div>}
               </td>
               <td>{item.quantity}</td>
-              <td>{brl(fromCents(item.unitPriceCents))}</td>
-              <td className="strong">{brl(fromCents(itemSubtotalCents(item)))}</td>
+              <td>{money(fromCents(item.unitPriceCents))}</td>
+              <td className="strong">{money(fromCents(itemSubtotalCents(item)))}</td>
             </tr>
           ))}
         </tbody>
@@ -125,14 +125,14 @@ export function ProposalDocument({ proposal, company }: { proposal: Proposal; co
       <div className="doc-totals">
         {hasAdjustments && (
           <dl>
-            <div><dt>Subtotal</dt><dd>{brl(fromCents(itemsTotalCents(proposal)))}</dd></div>
-            {proposal.shippingCents > 0 && <div><dt>Frete</dt><dd>{brl(fromCents(proposal.shippingCents))}</dd></div>}
-            {proposal.discountCents > 0 && <div><dt>Desconto</dt><dd>− {brl(fromCents(proposal.discountCents))}</dd></div>}
+            <div><dt>Subtotal</dt><dd>{money(fromCents(itemsTotalCents(proposal)))}</dd></div>
+            {proposal.shippingCents > 0 && <div><dt>Frete</dt><dd>{money(fromCents(proposal.shippingCents))}</dd></div>}
+            {proposal.discountCents > 0 && <div><dt>Desconto</dt><dd>− {money(fromCents(proposal.discountCents))}</dd></div>}
           </dl>
         )}
         <div className="doc-total-box">
           <span>TOTAL</span>
-          <strong>{brl(fromCents(totalCents(proposal)))}</strong>
+          <strong>{money(fromCents(totalCents(proposal)))}</strong>
         </div>
       </div>
 

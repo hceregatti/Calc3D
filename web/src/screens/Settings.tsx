@@ -8,6 +8,7 @@ import {
   Download,
   Eye,
   FileCog,
+  Globe,
   Gauge,
   Image as ImageIcon,
   Palette,
@@ -20,7 +21,8 @@ import {
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { exportBackup, importBackup } from '../backup'
-import { brl, derived } from '../core/calculator'
+import { money, derived } from '../core/calculator'
+import { CURRENCIES, WEIGHT_UNITS, cpfCnpjMask, phoneMask, type CurrencyCode, type WeightUnitId } from '../core/format'
 import { defaultCompany, newItem, newProposal, toCents } from '../core/models'
 import { ImageSlot } from '../components/ImageSlot'
 import { NumberField, NumberInput, PageHeader, Row, Section, Stepper, TextField } from '../components/ui'
@@ -40,7 +42,8 @@ export function ShopSettingsScreen() {
   const { settings: s, savedSettings, setSettings, saveSettings, resetSettings } = useApp()
   const unsaved = JSON.stringify(s) !== JSON.stringify(savedSettings)
   const d = derived(s)
-  const field = (key: keyof typeof s) => ({ value: s[key], onChange: (v: number) => setSettings({ [key]: v }) })
+  type NumericKey = { [K in keyof typeof s]: (typeof s)[K] extends number ? K : never }[keyof typeof s]
+  const field = (key: NumericKey) => ({ value: s[key], onChange: (v: number) => setSettings({ [key]: v }) })
 
   return (
     <div className="page narrow">
@@ -54,40 +57,60 @@ export function ShopSettingsScreen() {
         </button>
       </PageHeader>
 
+      <Section title="Moeda e unidades" icon={Globe} color="#30b0c7"
+        footer="Muda só a exibição e a digitação: valores não são convertidos entre moedas. Pesos ficam guardados em gramas e são convertidos para a unidade escolhida.">
+        <Row label="Moeda">
+          <select className="input" style={{ width: 220 }} aria-label="Moeda" value={s.currency}
+            onChange={(e) => setSettings({ currency: e.target.value as CurrencyCode })}>
+            {(Object.keys(CURRENCIES) as CurrencyCode[]).map((code) => (
+              <option key={code} value={code}>{CURRENCIES[code].title}</option>
+            ))}
+          </select>
+        </Row>
+        <Row label="Unidade de peso">
+          <select className="input" style={{ width: 220 }} aria-label="Unidade de peso" value={s.weightUnit}
+            onChange={(e) => setSettings({ weightUnit: e.target.value as WeightUnitId })}>
+            {(Object.keys(WEIGHT_UNITS) as WeightUnitId[]).map((id) => (
+              <option key={id} value={id}>{WEIGHT_UNITS[id].title}</option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
       <Section title="Quanto custa uma hora de impressão" icon={Gauge} color="#5e5ce6"
         footer="Calculado a partir dos campos abaixo. As perdas por falha são somadas em cada impressão.">
-        <Row label={<><span className="dot" style={{ background: '#ff9f0a' }} /> Energia</>}>{brl(d.energyCostPerHour)}/h</Row>
-        <Row label={<><span className="dot" style={{ background: '#bf5af2' }} /> Depreciação</>}>{brl(d.depreciationPerHour)}/h</Row>
-        <Row label={<><span className="dot" style={{ background: '#8e8e93' }} /> Manutenção</>}>{brl(d.maintenancePerHour)}/h</Row>
-        <Row label={<><span className="dot" style={{ background: '#30b0c7' }} /> Custos fixos</>}>{brl(d.overheadPerHour)}/h</Row>
-        <Row label={<strong>Total por hora de máquina</strong>}><strong>{brl(d.machineCostPerHour)}/h</strong></Row>
+        <Row label={<><span className="dot" style={{ background: '#ff9f0a' }} /> Energia</>}>{money(d.energyCostPerHour)}/h</Row>
+        <Row label={<><span className="dot" style={{ background: '#bf5af2' }} /> Depreciação</>}>{money(d.depreciationPerHour)}/h</Row>
+        <Row label={<><span className="dot" style={{ background: '#8e8e93' }} /> Manutenção</>}>{money(d.maintenancePerHour)}/h</Row>
+        <Row label={<><span className="dot" style={{ background: '#30b0c7' }} /> Custos fixos</>}>{money(d.overheadPerHour)}/h</Row>
+        <Row label={<strong>Total por hora de máquina</strong>}><strong>{money(d.machineCostPerHour)}/h</strong></Row>
       </Section>
 
       <Section title="Filamento padrão" icon={CircleDot} color="#ff9f0a">
-        <NumberField label="Preço do rolo" unit="R$" {...field('spoolPrice')} />
-        <NumberField label="Peso do rolo" unit="g" {...field('spoolWeight')} />
+        <NumberField label="Preço do rolo" kind="money" {...field('spoolPrice')} />
+        <NumberField label="Peso do rolo" kind="weight" {...field('spoolWeight')} />
       </Section>
 
       <Section title="Energia" icon={Zap} color="#ffd60a">
         <NumberField label="Consumo médio" unit="W" hint="PLA ~100–150 W; ABS/ASA ~200–300 W. Meça com uma tomada medidora." {...field('powerWatts')} />
-        <NumberField label="Tarifa de energia" unit="R$/kWh" hint="Valor final da conta: impostos + bandeira" {...field('energyTariff')} />
+        <NumberField label="Tarifa de energia" kind="money" unit="/kWh" hint="Valor final da conta: impostos + bandeira" {...field('energyTariff')} />
       </Section>
 
       <Section title="Máquina" icon={Printer} color="#0a84ff">
-        <NumberField label="Preço da impressora" unit="R$" {...field('printerPrice')} />
-        <NumberField label="Valor de revenda" unit="R$" {...field('resaleValue')} />
+        <NumberField label="Preço da impressora" kind="money" {...field('printerPrice')} />
+        <NumberField label="Valor de revenda" kind="money" {...field('resaleValue')} />
         <NumberField label="Vida útil" unit="h" {...field('lifetimeHours')} />
-        <NumberField label="Manutenção por ano" unit="R$" hint="Bicos, mesa/PEI, correias, ventoinhas, lubrificação" {...field('maintenancePerYear')} />
+        <NumberField label="Manutenção por ano" kind="money" hint="Bicos, mesa/PEI, correias, ventoinhas, lubrificação" {...field('maintenancePerYear')} />
         <NumberField label="Horas impressas por ano" unit="h" {...field('hoursPerYear')} />
       </Section>
 
       <Section title="Mão de obra e embalagem" icon={Box} color="#a2845e">
-        <NumberField label="Valor da sua hora" unit="R$/h" {...field('laborRate')} />
-        <NumberField label="Embalagem por peça" unit="R$" {...field('packagingPerPart')} />
+        <NumberField label="Valor da sua hora" kind="money" unit="/h" {...field('laborRate')} />
+        <NumberField label="Embalagem por peça" kind="money" {...field('packagingPerPart')} />
       </Section>
 
       <Section title="Custos fixos e falhas" icon={Building2} color="#ff453a">
-        <NumberField label="Custos fixos mensais" unit="R$" hint="Aluguel, software, internet, contador, DAS" {...field('fixedCostsPerMonth')} />
+        <NumberField label="Custos fixos mensais" kind="money" hint="Aluguel, software, internet, contador, DAS" {...field('fixedCostsPerMonth')} />
         <NumberField label="Horas impressas por mês" unit="h" {...field('hoursPerMonth')} />
         <NumberField label="Taxa de falha" unit="%" max={90} hint="Típico: 5–15%. Registre suas falhas por um mês." {...field('failureRatePercent')} />
       </Section>
@@ -95,7 +118,7 @@ export function ShopSettingsScreen() {
       <Section title="Encargos de venda" icon={Percent} color="#30d158">
         <NumberField label="Impostos" unit="%" max={100} hint="Ex.: Simples Nacional ~6%" {...field('taxPercent')} />
         <NumberField label="Taxa marketplace/cartão" unit="%" max={100} {...field('marketplaceFeePercent')} />
-        <NumberField label="Taxa fixa por venda" unit="R$" hint="Shopee/Mercado Livre cobram um valor fixo por item" {...field('fixedFeePerSale')} />
+        <NumberField label="Taxa fixa por venda" kind="money" hint="Shopee/Mercado Livre cobram um valor fixo por item" {...field('fixedFeePerSale')} />
       </Section>
 
       <BackupSection />
@@ -178,15 +201,15 @@ export function CompanyScreen() {
       <Section title="Empresa" icon={Building2} color="#5e5ce6">
         <div className="field-grid">
           <TextField label="Nome da empresa" placeholder="Ex.: Studio 3D Print" {...text('companyName')} />
-          <TextField label="CNPJ / CPF" placeholder="00.000.000/0001-00" {...text('document')} />
+          <TextField label="CNPJ / CPF" placeholder="00.000.000/0001-00" mask={cpfCnpjMask} {...text('document')} />
           <TextField label="Responsável (assinatura)" placeholder="Seu nome" {...text('responsibleName')} />
         </div>
       </Section>
 
       <Section title="Contato e endereço" icon={Phone} color="#30d158">
         <div className="field-grid">
-          <TextField label="Telefone" placeholder="(11) 3000-0000" {...text('phone')} />
-          <TextField label="WhatsApp" placeholder="(11) 90000-0000" {...text('whatsapp')} />
+          <TextField label="Telefone" placeholder="(11) 3000-0000" mask={phoneMask} {...text('phone')} />
+          <TextField label="WhatsApp" placeholder="(11) 90000-0000" mask={phoneMask} {...text('whatsapp')} />
           <TextField label="E-mail" placeholder="contato@empresa.com.br" {...text('email')} />
           <TextField label="Site" placeholder="www.empresa.com.br" {...text('website')} />
           <TextField label="Instagram" placeholder="@empresa" {...text('instagram')} />

@@ -1,4 +1,4 @@
-import { CATEGORIES, brl, unitCost, type CostResult } from '../core/calculator'
+import { CATEGORIES, money, unitCost, type CostResult } from '../core/calculator'
 
 /** Rosca com a composição do custo por peça. */
 export function Donut({ result, size = 170 }: { result: CostResult; size?: number }) {
@@ -24,7 +24,7 @@ export function Donut({ result, size = 170 }: { result: CostResult; size?: numbe
           strokeDasharray={`${Math.max(length - gap, 0.5)} ${circumference}`}
           strokeDashoffset={-offset}
         >
-          <title>{`${CATEGORIES.find((c) => c.id === item.category)!.title}: ${brl(item.amount)}`}</title>
+          <title>{`${CATEGORIES.find((c) => c.id === item.category)!.title}: ${money(item.amount)}`}</title>
         </circle>
       )
       offset += length
@@ -37,7 +37,7 @@ export function Donut({ result, size = 170 }: { result: CostResult; size?: numbe
         {segments}
       </svg>
       <div className="donut-center">
-        <strong>{brl(total)}</strong>
+        <strong>{money(total)}</strong>
         <small>por peça</small>
       </div>
     </div>

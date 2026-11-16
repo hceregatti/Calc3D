@@ -1,6 +1,7 @@
 import { Box, FilePlus2, Layers, Plus, RotateCcw, Settings, Trash2, PieChart } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CATEGORIES, PRICING_ERROR, brl, canPrice, derived, number, plateCost, unitCost } from '../core/calculator'
+import { CATEGORIES, PRICING_ERROR, money, canPrice, derived, number, plateCost, unitCost } from '../core/calculator'
+import { pricePerBulk, weight } from '../core/format'
 import { displayName, type QuoteRecord } from '../core/models'
 import { Empty, PageHeader, Row, Section } from '../components/ui'
 import { useApp } from '../store'
@@ -53,7 +54,7 @@ export function PartsScreen() {
                         {new Date(q.savedAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}
                       </small>
                     </div>
-                    <span className="num muted">{q.result.suggestedPrice === null ? 'Sem preço' : brl(q.result.suggestedPrice)}</span>
+                    <span className="num muted">{q.result.suggestedPrice === null ? 'Sem preço' : money(q.result.suggestedPrice)}</span>
                   </div>
                 ))}
               </div>
@@ -126,29 +127,29 @@ function QuoteDetail({ quote }: { quote: QuoteRecord }) {
 
       <div className="card">
         <span className="muted">Preço sugerido por peça</span>
-        <div className="price">{r.suggestedPrice === null ? 'Indisponível' : brl(r.suggestedPrice)}</div>
+        <div className="price">{r.suggestedPrice === null ? 'Indisponível' : money(r.suggestedPrice)}</div>
         {r.suggestedPrice === null && <p className="error-text">{PRICING_ERROR}</p>}
       </div>
 
       <Section title="Dados da impressão" icon={Box} color="#ff9f0a">
-        <Row label="Peso da mesa">{number(quote.job.partWeight)} g</Row>
+        <Row label="Peso da mesa">{weight(quote.job.partWeight)}</Row>
         <Row label="Tempo de impressão">{number(r.printHours)} h</Row>
         <Row label="Peças por mesa">{r.partsPerPlate}</Row>
-        <Row label="Custo por peça">{brl(unitCost(r))}</Row>
-        <Row label="Custo da mesa">{brl(plateCost(r))}</Row>
+        <Row label="Custo por peça">{money(unitCost(r))}</Row>
+        <Row label="Custo da mesa">{money(plateCost(r))}</Row>
       </Section>
 
       <Section title="Composição do custo por peça" icon={PieChart} color="#5e5ce6">
         {r.items.map((i) => (
-          <Row key={i.category} label={CATEGORIES.find((c) => c.id === i.category)!.title}>{brl(i.amount)}</Row>
+          <Row key={i.category} label={CATEGORIES.find((c) => c.id === i.category)!.title}>{money(i.amount)}</Row>
         ))}
-        <Row label={<strong>Total</strong>}><strong>{brl(unitCost(r))}</strong></Row>
+        <Row label={<strong>Total</strong>}><strong>{money(unitCost(r))}</strong></Row>
       </Section>
 
       <Section title="Parâmetros fixos salvos" icon={Settings} color="#8e8e93">
-        <Row label="Filamento">{brl(d.filamentPricePerGram * 1000)}/kg</Row>
-        <Row label="Hora de máquina">{brl(d.machineCostPerHour)}/h</Row>
-        <Row label="Valor da hora">{brl(quote.settings.laborRate)}/h</Row>
+        <Row label="Filamento">{pricePerBulk(d.filamentPricePerGram)}</Row>
+        <Row label="Hora de máquina">{money(d.machineCostPerHour)}/h</Row>
+        <Row label="Valor da hora">{money(quote.settings.laborRate)}/h</Row>
       </Section>
 
       <div className="btn-row">
@@ -183,11 +184,11 @@ function MultipleSummary({ quotes }: { quotes: QuoteRecord[] }) {
         {quotes.map((q) => (
           <Row key={q.id} label={displayName(q.job.name, 'Peça sem nome')}>
             <span className={canPrice(q.result) ? '' : 'warn'}>
-              {q.result.suggestedPrice === null ? 'Sem preço — será ignorada' : brl(q.result.suggestedPrice)}
+              {q.result.suggestedPrice === null ? 'Sem preço — será ignorada' : money(q.result.suggestedPrice)}
             </span>
           </Row>
         ))}
-        <Row label={<strong>Total (1 un. de cada)</strong>}><strong>{brl(total)}</strong></Row>
+        <Row label={<strong>Total (1 un. de cada)</strong>}><strong>{money(total)}</strong></Row>
       </Section>
       <div className="btn-row">
         <button className="btn primary" disabled={!priced.length} onClick={() => addQuotesToProposal(quotes, null)}>
