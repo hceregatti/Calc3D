@@ -46,9 +46,43 @@ public struct ShopSettings: Codable, Equatable, Sendable {
     /// Tarifa fixa cobrada por venda (R$).
     public var fixedFeePerSale: Double = 4
 
+    // MARK: Exibição
+    /// Moeda usada para exibir os valores (sem conversão).
+    public var currency: CurrencyOption = .brl
+    /// Unidade usada para digitar e exibir pesos (os valores ficam em gramas).
+    public var weightUnit: WeightUnit = .gram
+
     public init() {}
 
     public static let defaults = ShopSettings()
+
+    /// Decodifica campo a campo para que novas propriedades não invalidem dados salvos.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func value<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T {
+            (try? c.decodeIfPresent(T.self, forKey: key)) ?? fallback
+        }
+        let d = Self.defaults
+        spoolPrice = value(.spoolPrice, d.spoolPrice)
+        spoolWeight = value(.spoolWeight, d.spoolWeight)
+        powerWatts = value(.powerWatts, d.powerWatts)
+        energyTariff = value(.energyTariff, d.energyTariff)
+        printerPrice = value(.printerPrice, d.printerPrice)
+        resaleValue = value(.resaleValue, d.resaleValue)
+        lifetimeHours = value(.lifetimeHours, d.lifetimeHours)
+        maintenancePerYear = value(.maintenancePerYear, d.maintenancePerYear)
+        hoursPerYear = value(.hoursPerYear, d.hoursPerYear)
+        laborRate = value(.laborRate, d.laborRate)
+        packagingPerPart = value(.packagingPerPart, d.packagingPerPart)
+        fixedCostsPerMonth = value(.fixedCostsPerMonth, d.fixedCostsPerMonth)
+        hoursPerMonth = value(.hoursPerMonth, d.hoursPerMonth)
+        failureRatePercent = value(.failureRatePercent, d.failureRatePercent)
+        taxPercent = value(.taxPercent, d.taxPercent)
+        marketplaceFeePercent = value(.marketplaceFeePercent, d.marketplaceFeePercent)
+        fixedFeePerSale = value(.fixedFeePerSale, d.fixedFeePerSale)
+        currency = value(.currency, d.currency)
+        weightUnit = value(.weightUnit, d.weightUnit)
+    }
 
     // MARK: Custos derivados
 
