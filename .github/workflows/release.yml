@@ -6,6 +6,10 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag do Release a (re)publicar, ex.: v1.0.0'
+        required: true
 
 permissions:
   contents: write
@@ -21,10 +25,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          DMG="$(ls build/*.dmg)"
+          TAG="${{ inputs.tag || github.ref_name }}"
+          DMG="$(ls build/Calc3D-*.dmg)"
+          # Cópia com nome fixo: releases/latest/download/Calc3D.dmg sempre aponta para a última versão.
+          cp "$DMG" build/Calc3D.dmg
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$DMG" --clobber
+            gh release upload "$TAG" "$DMG" build/Calc3D.dmg --clobber
           else
-            gh release create "$TAG" "$DMG" --title "Calc3D $TAG" --generate-notes
+            gh release create "$TAG" "$DMG" build/Calc3D.dmg --title "Calc3D $TAG" --generate-notes
           fi

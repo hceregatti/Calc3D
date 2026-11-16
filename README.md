@@ -11,7 +11,7 @@ Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador 
 
 ## Instalação
 
-**[⬇ Baixar Calc3D 1.0.0 (.dmg)](https://github.com/hceregatti/Calc3D/releases/download/v1.0.0/Calc3D-1.0.0.dmg)** · [todas as versões](https://github.com/hceregatti/Calc3D/releases/latest)
+**[⬇ Baixar a última versão do Calc3D (.dmg)](https://github.com/hceregatti/Calc3D/releases/latest/download/Calc3D.dmg)** · [notas e versões anteriores](https://github.com/hceregatti/Calc3D/releases)
 
 Abra o `.dmg` e arraste o **Calc3D** para **Aplicativos**.
 
