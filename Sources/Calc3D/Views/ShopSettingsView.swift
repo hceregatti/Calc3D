@@ -16,12 +16,12 @@ struct ShopSettingsView: View {
                         model.settingsHaveUnsavedChanges ? "Alterações não salvas" : "Parâmetros salvos",
                         systemImage: model.settingsHaveUnsavedChanges ? "exclamationmark.circle.fill" : "checkmark.circle.fill"
                     )
-                    .foregroundColor(model.settingsHaveUnsavedChanges ? Color.orange : Color.secondary)
+                    .foregroundColor(model.settingsHaveUnsavedChanges ? Theme.warn : Theme.muted)
                     Spacer()
                     if let feedback = model.settingsFeedback {
                         Text(feedback)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Theme.success)
                     }
                 }
             }
@@ -91,7 +91,7 @@ struct ShopSettingsView: View {
                 BadgeLabel("Encargos de venda", systemImage: "percent", color: .green)
             }
         }
-        .formStyle(.grouped)
+        .themedForm()
         .navigationTitle("Parâmetros fixos")
         .toolbar {
             ToolbarItem {

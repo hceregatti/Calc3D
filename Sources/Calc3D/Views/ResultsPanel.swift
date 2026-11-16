@@ -17,7 +17,7 @@ struct ResultsPanel: View {
             }
             .padding(20)
         }
-        .background(.background.secondary)
+        .background(Theme.bg)
     }
 
     private var actions: some View {
@@ -28,7 +28,7 @@ struct ResultsPanel: View {
                 } label: {
                     Label("Salvar peça", systemImage: "bookmark.fill")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.primary)
 
                 Button {
                     model.copySummary()
@@ -65,7 +65,7 @@ struct ResultsPanel: View {
             if let feedback = model.quoteFeedback ?? model.copyFeedback {
                 Text(feedback)
                     .font(.callout)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.success)
                     .transition(.opacity)
             }
         }
@@ -83,13 +83,14 @@ struct PriceCard: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text(result.suggestedPrice.map(Currency.brl) ?? "—")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(.tint)
+                    .font(.system(size: 44, weight: .semibold))
+                    .tracking(-1.5)
+                    .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                 if case .failure(let error) = result.pricing {
                     Label(error.message, systemImage: "exclamationmark.triangle.fill")
                         .font(.callout)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Theme.danger)
                 }
             }
 
@@ -127,7 +128,7 @@ private struct Kpi: View {
         .padding(10)
         .frame(height: 82)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 8))
+        .background(Theme.bg, in: .rect(cornerRadius: Theme.radiusMd, style: .continuous))
     }
 }
 
@@ -163,9 +164,10 @@ struct BreakdownCard: View {
             VStack(spacing: 0) {
                 ForEach(result.items) { item in
                     HStack {
-                        Circle()
+                        RoundedRectangle(cornerRadius: 3)
                             .fill(item.category.color)
-                            .frame(width: 9, height: 9)
+                            .strokeBorder(.black.opacity(0.08))
+                            .frame(width: 10, height: 10)
                         Text(item.category.title)
                         Spacer()
                         Text(Currency.brl(item.amount))
@@ -193,11 +195,3 @@ struct BreakdownCard: View {
     }
 }
 
-extension View {
-    func card() -> some View {
-        padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background, in: .rect(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
-    }
-}

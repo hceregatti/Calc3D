@@ -51,7 +51,7 @@ struct PartsView: View {
                             model.selectedQuoteIDs = Set(model.quotes.map(\.id))
                         }
                     }
-                    .buttonStyle(.link)
+                    .buttonStyle(.subtleLink)
                     .font(.caption)
                     .disabled(model.quotes.isEmpty)
                 }
@@ -187,7 +187,7 @@ private struct MultiplePartsSummary: View {
                             Spacer()
                             Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Sem preço — será ignorada")
                                 .monospacedDigit()
-                                .foregroundStyle(CalculatorViewModel.canAddToProposal(quote) ? Color.primary : Color.orange)
+                                .foregroundStyle(CalculatorViewModel.canAddToProposal(quote) ? Theme.ink : Theme.warn)
                         }
                         .padding(.vertical, 2)
                         Divider()
@@ -203,7 +203,7 @@ private struct MultiplePartsSummary: View {
                     } label: {
                         Label("Gerar orçamento com \(priced.count) peças", systemImage: "doc.badge.plus")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.primary)
                     .disabled(priced.isEmpty)
 
                     AddToProposalMenu(quotes: quotes)
@@ -214,7 +214,7 @@ private struct MultiplePartsSummary: View {
             .frame(maxWidth: 640, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.background.secondary)
+        .background(Theme.bg)
     }
 }
 
@@ -267,15 +267,15 @@ private struct QuoteDetail: View {
                     Text("Preço sugerido por peça").font(.subheadline).foregroundStyle(.secondary)
                     Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Indisponível")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(Theme.ink)
                     if case .failure(let error) = quote.result.pricing {
                         Label(error.message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Theme.danger)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
-                .background(.background, in: .rect(cornerRadius: 12))
+                .surface()
 
                 GroupBox {
                     LabeledContent("Peso da mesa", value: "\(quote.job.partWeight.formatted()) g")
@@ -321,6 +321,6 @@ private struct QuoteDetail: View {
             .frame(maxWidth: 640, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.background.secondary)
+        .background(Theme.bg)
     }
 }

@@ -8,39 +8,30 @@ struct ContentView: View {
         @Bindable var model = model
 
         NavigationSplitView {
-            List(selection: $model.screen) {
+            List {
                 ForEach(Screen.allCases.filter { !Screen.footerScreens.contains($0) }) { screen in
-                    NavigationLink(value: screen) {
-                        SidebarRow(screen: screen)
+                    SidebarButton(screen: screen, isSelected: model.screen == screen) {
+                        model.screen = screen
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 // Configurações ficam no rodapé da barra lateral.
                 VStack(spacing: 2) {
                     Divider()
+                        .overlay(Theme.border)
                         .padding(.bottom, 6)
                     ForEach(Screen.footerScreens) { screen in
-                        Button {
+                        SidebarButton(screen: screen, isSelected: model.screen == screen) {
                             model.screen = screen
-                        } label: {
-                            SidebarRow(screen: screen, isSelected: model.screen == screen)
-                                .padding(.horizontal, 8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background {
-                                    if model.screen == screen {
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                            .fill(Color.accentColor)
-                                    }
-                                }
-                                .contentShape(.rect)
                         }
-                        .buttonStyle(.plain)
                         .padding(.horizontal, 10)
                     }
                 }
                 .padding(.bottom, 8)
             }
+            .background(Theme.bg)
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 280)
         } detail: {
             switch model.screen ?? .home {
@@ -58,6 +49,8 @@ struct ContentView: View {
                 CompanySettingsView()
             }
         }
+        .tint(Theme.ink)
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
         .confirmationDialog(
             "Descartar alterações?",
             isPresented: Binding(
@@ -83,24 +76,38 @@ extension Screen {
     static let footerScreens: [Screen] = [.company, .settings]
 }
 
-/// Linha da barra lateral: ícone centralizado com título e subtítulo.
-private struct SidebarRow: View {
+/// Item da barra lateral com o destaque neutro do design system
+/// (fundo cinza claro e texto em negrito em vez do azul do sistema).
+private struct SidebarButton: View {
     let screen: Screen
-    /// Usado na linha do rodapé, que desenha o próprio destaque de seleção.
-    var isSelected = false
+    let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(screen.title)
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-                Text(screen.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
-                    .lineLimit(1)
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 28,
+                            fill: isSelected ? Theme.surface : Theme.fill)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(screen.title)
+                        .fontWeight(isSelected ? .semibold : .regular)
+                        .foregroundStyle(isSelected ? Theme.ink : Theme.ink2)
+                    Text(screen.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                }
             }
+            .padding(.vertical, 5)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: Theme.radiusMd, style: .continuous)
+                    .fill(isSelected ? Theme.active : .clear)
+            }
+            .contentShape(.rect)
         }
-        .padding(.vertical, 5)
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

@@ -15,12 +15,12 @@ struct CompanySettingsView: View {
                         model.companyHasUnsavedChanges ? "Alterações não salvas" : "Dados salvos",
                         systemImage: model.companyHasUnsavedChanges ? "exclamationmark.circle.fill" : "checkmark.circle.fill"
                     )
-                    .foregroundColor(model.companyHasUnsavedChanges ? Color.orange : Color.secondary)
+                    .foregroundColor(model.companyHasUnsavedChanges ? Theme.warn : Theme.muted)
                     Spacer()
                     if let feedback = model.companyFeedback {
                         Text(feedback)
                             .font(.caption)
-                            .foregroundStyle(feedback.hasSuffix("✔") ? .green : .red)
+                            .foregroundStyle(feedback.hasSuffix("✔") ? Theme.success : Theme.danger)
                     }
                 }
             } footer: {
@@ -113,7 +113,7 @@ struct CompanySettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped)
+        .themedForm()
         .navigationTitle("Personalizar orçamento")
         .onChange(of: model.companyProfile.nextProposalNumber) { _, value in
             if value < 1 { model.companyProfile.nextProposalNumber = 1 }

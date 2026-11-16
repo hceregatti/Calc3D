@@ -44,7 +44,7 @@ struct ImageSlot: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(isTargeted ? Color.accentColor : Color.secondary.opacity(0.25),
+                    .strokeBorder(isTargeted ? Theme.ink2 : Theme.border,
                                   lineWidth: isTargeted ? 2 : 0.5)
             }
             .contentShape(.rect)

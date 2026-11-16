@@ -95,7 +95,7 @@ struct ProposalEditorView: View {
                     Text("Novos orçamentos começam com os padrões de \"Personalizar orçamento\". Campos vazios não aparecem no PDF.")
                 }
             }
-            .formStyle(.grouped)
+            .themedForm()
 
             HStack {
                 if isSaved {
@@ -116,7 +116,7 @@ struct ProposalEditorView: View {
                 } label: {
                     Label("Salvar orçamento", systemImage: "checkmark.circle.fill")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.primary)
                 .disabled(!model.proposalHasUnsavedChanges)
             }
             .padding(16)
@@ -124,7 +124,7 @@ struct ProposalEditorView: View {
             if let feedback = model.proposalPDFFeedback {
                 Text(feedback)
                     .font(.caption)
-                    .foregroundStyle(feedback.hasPrefix("PDF salvo") ? .green : .red)
+                    .foregroundStyle(feedback.hasPrefix("PDF salvo") ? Theme.success : Theme.danger)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
@@ -370,7 +370,7 @@ private struct PartCalculatorSheet: View {
                     .padding(16)
                 }
                 .frame(width: 360)
-                .background(.background.secondary)
+                .background(Theme.bg)
             }
 
             Divider()
@@ -386,7 +386,7 @@ private struct PartCalculatorSheet: View {
                 } label: {
                     Label("Adicionar ao orçamento", systemImage: "plus.circle.fill")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.primary)
                 .keyboardShortcut(.defaultAction)
                 .disabled(!calculator.canPrice)
             }

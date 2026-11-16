@@ -49,7 +49,7 @@ struct PrintJobForm: View {
                 if let feedback = model.importFeedback {
                     Text(feedback)
                         .font(.caption)
-                        .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Color.orange : Color.secondary)
+                        .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Theme.warn : Theme.muted)
                 }
             } header: {
                 BadgeLabel("Identificação", systemImage: "tag.fill", color: .blue)
@@ -104,12 +104,12 @@ struct PrintJobForm: View {
                     Spacer()
                     if let onEditSettings {
                         Button("Editar…", action: onEditSettings)
-                            .buttonStyle(.link)
+                            .buttonStyle(.subtleLink)
                     }
                 }
             }
         }
-        .formStyle(.grouped)
+        .themedForm()
     }
 }
 

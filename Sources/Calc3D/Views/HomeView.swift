@@ -20,7 +20,7 @@ struct HomeView: View {
             .frame(maxWidth: 1000, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .background(.background.secondary)
+        .background(Theme.bg)
         .navigationTitle("Início")
     }
 
@@ -137,9 +137,9 @@ private struct ActionCard: View {
                 if prominent {
                     Image(systemName: systemImage)
                         .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.surface)
                         .frame(width: 36, height: 36)
-                        .background(.white.opacity(0.2), in: .rect(cornerRadius: 10, style: .continuous))
+                        .background(Theme.surface.opacity(0.12), in: .rect(cornerRadius: Theme.radiusMd, style: .continuous))
                 } else {
                     SymbolBadge(systemImage: systemImage, color: color, size: 36)
                 }
@@ -148,19 +148,20 @@ private struct ActionCard: View {
                     .font(.headline)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(prominent ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(prominent ? AnyShapeStyle(Theme.surface.opacity(0.75)) : AnyShapeStyle(.secondary))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .foregroundStyle(prominent ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.ink))
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(prominent ? AnyShapeStyle(color.gradient) : AnyShapeStyle(.background))
+                RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous)
+                    .fill(prominent ? Theme.ink : Theme.surface)
             }
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.separator))
-            .contentShape(.rect(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous)
+                .strokeBorder(prominent ? Theme.ink : Theme.border))
+            .contentShape(.rect(cornerRadius: Theme.radiusLg))
         }
         .buttonStyle(CardPressStyle())
     }
@@ -196,8 +197,7 @@ private struct StatTile: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: .rect(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
+        .surface()
     }
 }
 
@@ -214,7 +214,7 @@ private struct RecentSection<Content: View>: View {
                 Text(title).font(.headline)
                 Spacer()
                 Button("Ver todos", action: seeAll)
-                    .buttonStyle(.link)
+                    .buttonStyle(.subtleLink)
                     .disabled(isEmpty)
             }
             if isEmpty {
@@ -228,8 +228,7 @@ private struct RecentSection<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.background, in: .rect(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.separator))
+        .surface()
     }
 }
 

@@ -1,23 +1,24 @@
 import SwiftUI
 
-/// Ícone moderno: SF Symbol preenchido sobre um quadrado arredondado com gradiente,
-/// no estilo dos Ajustes do Sistema do macOS.
+/// Ícone em selo: SF Symbol sobre um quadrado arredondado neutro (design system).
 struct SymbolBadge: View {
     let systemImage: String
+    /// Cor de identificação da tela/seção. O design system neutro não a usa no selo;
+    /// fica aqui para manter as chamadas e facilitar voltar a um visual colorido.
     let color: Color
     var size: CGFloat = 22
+    var fill: Color = Theme.fill
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-            .fill(color.gradient)
+            .fill(fill)
             .overlay {
                 Image(systemName: systemImage)
                     .symbolRenderingMode(.monochrome)
                     .font(.system(size: size * 0.55, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.ink2)
             }
             .frame(width: size, height: size)
-            .shadow(color: color.opacity(0.25), radius: size * 0.08, y: size * 0.04)
             .accessibilityHidden(true)
     }
 }
