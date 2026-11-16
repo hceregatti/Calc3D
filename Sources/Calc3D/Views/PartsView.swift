@@ -185,14 +185,14 @@ private struct MultiplePartsSummary: View {
                             Text(quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                  ? "Peça sem nome" : quote.job.name)
                             Spacer()
-                            Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Sem preço — será ignorada")
+                            Text(quote.result.suggestedPrice.map(Currency.format) ?? "Sem preço — será ignorada")
                                 .monospacedDigit()
                                 .foregroundStyle(CalculatorViewModel.canAddToProposal(quote) ? Theme.ink : Theme.warn)
                         }
                         .padding(.vertical, 2)
                         Divider()
                     }
-                    LabeledContent("Total (1 un. de cada)", value: Currency.brl(total))
+                    LabeledContent("Total (1 un. de cada)", value: Currency.format(total))
                         .bold()
                         .padding(.top, 4)
                 }
@@ -230,7 +230,7 @@ private struct QuoteRow: View {
             HStack {
                 Text(quote.savedAt.formatted(date: .abbreviated, time: .shortened))
                 Spacer()
-                Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Preço indisponível")
+                Text(quote.result.suggestedPrice.map(Currency.format) ?? "Preço indisponível")
                     .monospacedDigit()
             }
             .font(.caption)
@@ -265,7 +265,7 @@ private struct QuoteDetail: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Preço sugerido por peça").font(.subheadline).foregroundStyle(.secondary)
-                    Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Indisponível")
+                    Text(quote.result.suggestedPrice.map(Currency.format) ?? "Indisponível")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.ink)
                     if case .failure(let error) = quote.result.pricing {
@@ -278,29 +278,29 @@ private struct QuoteDetail: View {
                 .surface()
 
                 GroupBox {
-                    LabeledContent("Peso da mesa", value: "\(quote.job.partWeight.formatted()) g")
-                    LabeledContent("Tempo de impressão", value: "\(quote.result.printHours.formatted(.number.precision(.fractionLength(0...2)))) h")
+                    LabeledContent("Peso da mesa", value: Weight.format(grams: quote.job.partWeight))
+                    LabeledContent("Tempo de impressão", value: "\(NumberMask.format(quote.result.printHours)) h")
                     LabeledContent("Peças por mesa", value: "\(quote.result.partsPerPlate)")
-                    LabeledContent("Custo por peça", value: Currency.brl(quote.result.unitCost))
-                    LabeledContent("Custo da mesa", value: Currency.brl(quote.result.plateCost))
+                    LabeledContent("Custo por peça", value: Currency.format(quote.result.unitCost))
+                    LabeledContent("Custo da mesa", value: Currency.format(quote.result.plateCost))
                 } label: {
                     BadgeLabel("Dados da impressão", systemImage: "cube.fill", color: .orange)
                 }
 
                 GroupBox {
                     ForEach(quote.result.items) { item in
-                        LabeledContent(item.category.title, value: Currency.brl(item.amount))
+                        LabeledContent(item.category.title, value: Currency.format(item.amount))
                     }
                     Divider()
-                    LabeledContent("Total", value: Currency.brl(quote.result.unitCost)).bold()
+                    LabeledContent("Total", value: Currency.format(quote.result.unitCost)).bold()
                 } label: {
                     BadgeLabel("Composição do custo por peça", systemImage: "chart.pie.fill", color: .indigo)
                 }
 
                 GroupBox {
-                    LabeledContent("Filamento", value: Currency.brl(quote.settings.filamentPricePerGram * 1000) + "/kg")
-                    LabeledContent("Hora de máquina", value: Currency.brl(quote.settings.machineCostPerHour) + "/h")
-                    LabeledContent("Valor da hora", value: Currency.brl(quote.settings.laborRate) + "/h")
+                    LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: quote.settings.filamentPricePerGram))
+                    LabeledContent("Hora de máquina", value: Currency.format(quote.settings.machineCostPerHour) + "/h")
+                    LabeledContent("Valor da hora", value: Currency.format(quote.settings.laborRate) + "/h")
                 } label: {
                     BadgeLabel("Parâmetros fixos salvos", systemImage: "gearshape.fill", color: .gray)
                 }

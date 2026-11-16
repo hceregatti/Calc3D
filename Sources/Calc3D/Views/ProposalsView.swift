@@ -87,7 +87,7 @@ private struct ProposalRow: View {
             HStack {
                 Text("\(proposal.items.count) \(proposal.items.count == 1 ? "item" : "itens") · \(proposal.updatedAt.formatted(date: .abbreviated, time: .omitted))")
                 Spacer()
-                Text(proposal.total.map(Currency.brl) ?? "Total inválido")
+                Text(proposal.total.map(Currency.format) ?? "Total inválido")
                     .monospacedDigit()
             }
             .font(.caption)

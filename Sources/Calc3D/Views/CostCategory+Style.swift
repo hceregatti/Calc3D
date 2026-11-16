@@ -16,3 +16,15 @@ extension CostCategory {
         }
     }
 }
+
+extension CurrencyOption {
+    /// Símbolo SF Symbols da moeda.
+    var systemImage: String {
+        switch self {
+        case .brl: "brazilianrealsign"
+        case .usd: "dollarsign"
+        case .eur: "eurosign"
+        case .gbp: "sterlingsign"
+        }
+    }
+}

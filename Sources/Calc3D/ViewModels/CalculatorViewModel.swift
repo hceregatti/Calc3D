@@ -100,6 +100,7 @@ final class CalculatorViewModel {
     var settings: ShopSettings {
         didSet {
             guard settings != oldValue else { return }
+            DisplayPreferences.apply(settings)
             settingsFeedback = nil
             calculator.settings = settings
             partDraft?.settings = settings
@@ -163,6 +164,7 @@ final class CalculatorViewModel {
         self.lastSavedCompanyProfile = company
         let settings = store.loadSettings()
         let job = store.loadJob()
+        DisplayPreferences.apply(settings)
         self.settings = settings
         self.lastSavedSettings = settings
         self.calculator = PartCalculator(job: job, settings: settings)
@@ -178,8 +180,12 @@ final class CalculatorViewModel {
         screen = .printJob
     }
 
+    /// Restaura os valores padrão, mantendo moeda e unidade de medida escolhidas.
     func resetSettings() {
-        settings = .defaults
+        var defaults = ShopSettings.defaults
+        defaults.currency = settings.currency
+        defaults.weightUnit = settings.weightUnit
+        settings = defaults
     }
 
     func saveSettings() {

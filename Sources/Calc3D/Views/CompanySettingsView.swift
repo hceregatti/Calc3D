@@ -1,3 +1,4 @@
+import Calc3DCore
 import SwiftUI
 
 /// Personalização do orçamento: logo, dados da empresa, contatos, aparência e padrões.
@@ -59,15 +60,15 @@ struct CompanySettingsView: View {
 
             Section {
                 TextField("Nome da empresa", text: p.companyName, prompt: Text("Ex.: Studio 3D Print"))
-                TextField("CNPJ / CPF", text: p.document, prompt: Text("00.000.000/0001-00"))
+                MaskedTextField(title: "CNPJ / CPF", text: p.document, prompt: "00.000.000/0001-00", mask: TextMask.cpfCnpj)
                 TextField("Responsável (assinatura)", text: p.responsibleName, prompt: Text("Seu nome"))
             } header: {
                 BadgeLabel("Empresa", systemImage: "building.2.fill", color: .indigo)
             }
 
             Section {
-                TextField("Telefone", text: p.phone, prompt: Text("(11) 3000-0000"))
-                TextField("WhatsApp", text: p.whatsapp, prompt: Text("(11) 90000-0000"))
+                MaskedTextField(title: "Telefone", text: p.phone, prompt: "(11) 3000-0000", mask: TextMask.phone)
+                MaskedTextField(title: "WhatsApp", text: p.whatsapp, prompt: "(11) 90000-0000", mask: TextMask.phone)
                 TextField("E-mail", text: p.email, prompt: Text("contato@empresa.com.br"))
                 TextField("Site", text: p.website, prompt: Text("www.empresa.com.br"))
                 TextField("Instagram", text: p.instagram, prompt: Text("@empresa"))

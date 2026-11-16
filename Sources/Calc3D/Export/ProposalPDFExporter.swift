@@ -267,8 +267,8 @@ private final class PDFLayout {
         }
         let numbersY = top - 12
         drawTextRight("\(item.quantity)", right: qtyRight, y: numbersY, font: font(10), color: primaryInk)
-        drawTextRight(Currency.brl(item.unitPrice), right: unitRight, y: numbersY, font: font(10), color: primaryInk)
-        drawTextRight(Currency.brl(subtotal), right: subtotalRight, y: numbersY, font: font(10, .semibold), color: primaryInk)
+        drawTextRight(Currency.format(item.unitPrice), right: unitRight, y: numbersY, font: font(10), color: primaryInk)
+        drawTextRight(Currency.format(subtotal), right: subtotalRight, y: numbersY, font: font(10, .semibold), color: primaryInk)
 
         cursorY = top
         drawParagraph(item.name.trimmed.isEmpty ? "Item sem nome" : item.name, x: textX, width: textWidth,
@@ -325,9 +325,9 @@ private final class PDFLayout {
         var rows: [(String, String)] = []
         let hasAdjustments = proposal.discount > 0 || proposal.shipping > 0
         if hasAdjustments, let itemsTotal = proposal.itemsTotal {
-            rows.append(("Subtotal", Currency.brl(itemsTotal)))
-            if proposal.shipping > 0 { rows.append(("Frete", Currency.brl(proposal.shipping))) }
-            if proposal.discount > 0 { rows.append(("Desconto", "− " + Currency.brl(proposal.discount))) }
+            rows.append(("Subtotal", Currency.format(itemsTotal)))
+            if proposal.shipping > 0 { rows.append(("Frete", Currency.format(proposal.shipping))) }
+            if proposal.discount > 0 { rows.append(("Desconto", "− " + Currency.format(proposal.discount))) }
         }
         ensureSpace(CGFloat(rows.count) * 16 + 50)
         cursorY -= 10
@@ -342,7 +342,7 @@ private final class PDFLayout {
         fill(box, color: accent, radius: 6)
         let white = CGColor(gray: 1, alpha: 1)
         drawText("TOTAL", x: box.minX + 12, y: box.minY + 11, font: font(11, .bold), color: white)
-        drawTextRight(Currency.brl(total), right: box.maxX - 12, y: box.minY + 10, font: font(15, .bold), color: white)
+        drawTextRight(Currency.format(total), right: box.maxX - 12, y: box.minY + 10, font: font(15, .bold), color: white)
         cursorY = box.minY - 24
     }
 

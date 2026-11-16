@@ -71,9 +71,9 @@ struct HomeView: View {
         return HStack(spacing: 14) {
             StatTile(value: "\(model.quotes.count)", title: "Peças no histórico", systemImage: Screen.parts.systemImage, color: Screen.parts.color)
             StatTile(value: "\(model.proposals.count)", title: "Orçamentos", systemImage: Screen.proposals.systemImage, color: Screen.proposals.color)
-            StatTile(value: Currency.brl(proposalsTotal), title: "Valor total em orçamentos", systemImage: "brazilianrealsign", color: .teal)
+            StatTile(value: Currency.format(proposalsTotal), title: "Valor total em orçamentos", systemImage: model.settings.currency.systemImage, color: .teal)
             StatTile(
-                value: model.result.suggestedPrice.map(Currency.brl) ?? "—",
+                value: model.result.suggestedPrice.map(Currency.format) ?? "—",
                 title: model.job.name.isEmpty ? "Cálculo em andamento" : "Em andamento: \(model.job.name)",
                 systemImage: "pencil.and.ruler.fill",
                 color: Screen.printJob.color
@@ -93,7 +93,7 @@ struct HomeView: View {
                     title: quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         ? "Peça sem nome" : quote.job.name,
                     detail: quote.savedAt.formatted(date: .abbreviated, time: .shortened),
-                    value: quote.result.suggestedPrice.map(Currency.brl) ?? "—",
+                    value: quote.result.suggestedPrice.map(Currency.format) ?? "—",
                     systemImage: "cube.fill",
                     color: Screen.parts.color
                 ) { model.showPart(quote.id) }
@@ -114,7 +114,7 @@ struct HomeView: View {
                     title: title.isEmpty ? "Orçamento sem título" : title,
                     detail: "\(proposal.items.count) \(proposal.items.count == 1 ? "item" : "itens")"
                         + (proposal.customerName.isEmpty ? "" : " · \(proposal.customerName)"),
-                    value: proposal.total.map(Currency.brl) ?? "—",
+                    value: proposal.total.map(Currency.format) ?? "—",
                     systemImage: "doc.text.fill",
                     color: Screen.proposals.color
                 ) { model.showProposal(proposal.id) }

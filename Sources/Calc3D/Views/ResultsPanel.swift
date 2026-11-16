@@ -82,7 +82,7 @@ struct PriceCard: View {
                 Text("Preço sugerido por peça")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text(result.suggestedPrice.map(Currency.brl) ?? "—")
+                Text(result.suggestedPrice.map(Currency.format) ?? "—")
                     .font(.system(size: 44, weight: .semibold))
                     .tracking(-1.5)
                     .foregroundStyle(Theme.ink)
@@ -96,13 +96,13 @@ struct PriceCard: View {
 
             Grid(horizontalSpacing: 10, verticalSpacing: 10) {
                 GridRow {
-                    Kpi(title: "Custo por peça", value: Currency.brl(result.unitCost))
-                    Kpi(title: "Lucro líquido/peça", value: result.profitPerPart.map(Currency.brl) ?? "—")
+                    Kpi(title: "Custo por peça", value: Currency.format(result.unitCost))
+                    Kpi(title: "Lucro líquido/peça", value: result.profitPerPart.map(Currency.format) ?? "—")
                 }
                 GridRow {
-                    Kpi(title: "Custo da mesa", value: Currency.brl(result.plateCost))
+                    Kpi(title: "Custo da mesa", value: Currency.format(result.plateCost))
                     Kpi(title: "Lucro por hora",
-                        value: result.profitPerMachineHour.map { Currency.brl($0) + "/h" } ?? "—")
+                        value: result.profitPerMachineHour.map { Currency.format($0) + "/h" } ?? "—")
                 }
             }
         }
@@ -152,7 +152,7 @@ struct BreakdownCard: View {
             .frame(height: 170)
             .overlay {
                 VStack(spacing: 0) {
-                    Text(Currency.brl(result.unitCost))
+                    Text(Currency.format(result.unitCost))
                         .font(.title3.bold())
                         .monospacedDigit()
                     Text("por peça")
@@ -170,7 +170,7 @@ struct BreakdownCard: View {
                             .frame(width: 10, height: 10)
                         Text(item.category.title)
                         Spacer()
-                        Text(Currency.brl(item.amount))
+                        Text(Currency.format(item.amount))
                             .monospacedDigit()
                         Text(result.share(of: item.category)
                             .formatted(.percent.precision(.fractionLength(1)).locale(Currency.locale)))
@@ -185,7 +185,7 @@ struct BreakdownCard: View {
                 HStack {
                     Text("Custo total por peça").bold()
                     Spacer()
-                    Text(Currency.brl(result.unitCost)).bold().monospacedDigit()
+                    Text(Currency.format(result.unitCost)).bold().monospacedDigit()
                 }
                 .padding(.top, 8)
             }

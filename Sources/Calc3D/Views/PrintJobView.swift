@@ -57,7 +57,8 @@ struct PrintJobForm: View {
 
             Section {
                 NumberField(title: "Peso da mesa", value: j.partWeight, unit: "g",
-                            hint: model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças")
+                            hint: model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças",
+                            style: .weight)
                 NumberField(title: "Desperdício", value: j.wastePercent, unit: "%",
                             hint: "Purga, skirt/brim e troca de cor (AMS/MMU pode passar de 20%)",
                             range: 0...300)
@@ -82,8 +83,8 @@ struct PrintJobForm: View {
                             hint: "Fatiar, preparar a mesa, retirar a peça")
                 NumberField(title: "Pós-processamento", value: j.postProcessingMinutes, unit: "min",
                             hint: "Remover suportes, lixar, pintar")
-                NumberField(title: "Insumos desta mesa", value: j.consumablesPerPlate, unit: "R$",
-                            hint: "Cola, lixa, tinta, primer, ímãs, parafusos")
+                NumberField(title: "Insumos desta mesa", value: j.consumablesPerPlate, unit: Currency.symbol,
+                            hint: "Cola, lixa, tinta, primer, ímãs, parafusos", style: .money)
             } header: {
                 BadgeLabel("Trabalho e acabamento", systemImage: "paintbrush.pointed.fill", color: .pink)
             }
@@ -93,7 +94,7 @@ struct PrintJobForm: View {
                             hint: "Margem sobre o preço, não markup: 40% = custo ÷ 0,60",
                             range: 0...95)
             } header: {
-                BadgeLabel("Preço", systemImage: "brazilianrealsign", color: .green)
+                BadgeLabel("Preço", systemImage: model.settings.currency.systemImage, color: .green)
             }
 
             Section {
@@ -118,13 +119,13 @@ private struct FixedSettingsSummary: View {
     let settings: ShopSettings
 
     var body: some View {
-        LabeledContent("Filamento", value: Currency.brl(settings.filamentPricePerGram * 1000) + "/kg")
-        LabeledContent("Hora de máquina", value: Currency.brl(settings.machineCostPerHour) + "/h")
-        LabeledContent("Valor da sua hora", value: Currency.brl(settings.laborRate) + "/h")
+        LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: settings.filamentPricePerGram, unit: settings.weightUnit))
+        LabeledContent("Hora de máquina", value: Currency.format(settings.machineCostPerHour) + "/h")
+        LabeledContent("Valor da sua hora", value: Currency.format(settings.laborRate) + "/h")
         LabeledContent("Taxa de falha", value: percent(settings.failureRatePercent))
         LabeledContent("Impostos + taxas", value:
             percent(settings.taxPercent + settings.marketplaceFeePercent)
-            + " + " + Currency.brl(settings.fixedFeePerSale))
+            + " + " + Currency.format(settings.fixedFeePerSale))
     }
 
     private func percent(_ v: Double) -> String {

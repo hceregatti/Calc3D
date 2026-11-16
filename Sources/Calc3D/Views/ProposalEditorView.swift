@@ -22,8 +22,8 @@ struct ProposalEditorView: View {
 
                 Section("Cliente") {
                     TextField("Nome ou empresa", text: textBinding(\.customerName, in: model))
-                    TextField("CPF / CNPJ", text: textBinding(\.customerDocument, in: model))
-                    TextField("Telefone / e-mail", text: textBinding(\.customerContact, in: model))
+                    MaskedTextField(title: "CPF / CNPJ", text: textBinding(\.customerDocument, in: model), mask: TextMask.cpfCnpj)
+                    MaskedTextField(title: "Telefone / e-mail", text: textBinding(\.customerContact, in: model), mask: TextMask.phone)
                     TextField("Endereço", text: textBinding(\.customerAddress, in: model), axis: .vertical)
                         .lineLimit(1...3)
                 }
@@ -64,14 +64,14 @@ struct ProposalEditorView: View {
                 }
 
                 Section {
-                    LabeledContent("Subtotal dos itens", value: proposal.itemsTotal.map(Currency.brl) ?? "Total excede o limite")
+                    LabeledContent("Subtotal dos itens", value: proposal.itemsTotal.map(Currency.format) ?? "Total excede o limite")
                     LabeledContent("Frete") {
                         moneyField("Frete", value: moneyBinding(\.shipping, in: model))
                     }
                     LabeledContent("Desconto") {
                         moneyField("Desconto", value: moneyBinding(\.discount, in: model))
                     }
-                    LabeledContent("Total do orçamento", value: proposal.total.map(Currency.brl) ?? "Total excede o limite")
+                    LabeledContent("Total do orçamento", value: proposal.total.map(Currency.format) ?? "Total excede o limite")
                         .font(.title3.bold())
                 }
 
@@ -158,11 +158,8 @@ struct ProposalEditorView: View {
 
     private func moneyField(_ title: String, value: Binding<Double>) -> some View {
         HStack(spacing: 6) {
-            Text("R$").foregroundStyle(.secondary)
-            TextField(title, value: value, format: .number.precision(.fractionLength(2)))
-                .labelsHidden()
-                .multilineTextAlignment(.trailing)
-                .textFieldStyle(.roundedBorder)
+            Text(model.settings.currency.symbol).foregroundStyle(.secondary)
+            MaskedNumberInput(title: title, value: value, style: .money, range: 0...1_000_000_000)
                 .frame(width: 110)
         }
     }
@@ -224,14 +221,13 @@ private struct ProposalItemEditor: View {
                         .monospacedDigit()
                 }
                 Spacer()
-                TextField("Preço unitário", value: priceBinding, format: .number.precision(.fractionLength(2)))
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 110)
-                Text("R$")
+                Text(model.settings.currency.symbol)
                     .foregroundStyle(.secondary)
+                MaskedNumberInput(title: "Preço unitário", value: priceBinding, style: .money, range: 0...1_000_000_000)
+                    .frame(width: 110)
             }
 
-            LabeledContent("Subtotal", value: item.subtotal.map(Currency.brl) ?? "Valor excede o limite")
+            LabeledContent("Subtotal", value: item.subtotal.map(Currency.format) ?? "Valor excede o limite")
                 .font(.callout.bold())
         }
     }
@@ -289,7 +285,7 @@ private struct PartsPickerSheet: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text(quote.result.suggestedPrice.map(Currency.brl) ?? "Sem preço")
+                        Text(quote.result.suggestedPrice.map(Currency.format) ?? "Sem preço")
                             .monospacedDigit()
                     }
                 }
