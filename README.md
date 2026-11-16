@@ -11,7 +11,9 @@ Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador 
 
 ## Instalação
 
-Baixe o `Calc3D-<versão>.dmg` em [Releases](https://github.com/hceregatti/Calc3D/releases), abra e arraste o **Calc3D** para **Aplicativos**.
+**[⬇ Baixar Calc3D 1.0.0 (.dmg)](https://github.com/hceregatti/Calc3D/releases/download/v1.0.0/Calc3D-1.0.0.dmg)** · [todas as versões](https://github.com/hceregatti/Calc3D/releases/latest)
+
+Abra o `.dmg` e arraste o **Calc3D** para **Aplicativos**.
 
 O app não é notarizado pela Apple, então na primeira abertura o macOS bloqueia. Libere em **Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim**, ou pelo Terminal:
 
