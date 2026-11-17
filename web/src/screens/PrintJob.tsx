@@ -32,6 +32,7 @@ import {
 } from '../core/calculator'
 import { pricePerBulk } from '../core/format'
 import { importModelFile } from '../core/importer'
+import { filamentDisplayName } from '../core/filament'
 import { displayName, uid } from '../core/models'
 import { Donut } from '../components/Donut'
 import { NumberField, PageHeader, Row, Section, Stepper, TextField } from '../components/ui'
@@ -131,6 +132,7 @@ export function PartForm({
       </Section>
 
       <Section title="Fatiador" icon={Box} color="#ff9f0a">
+        <FilamentPicker job={job} setJob={setJob} weightUnit={settings.weightUnit} />
         <NumberField
           label="Peso da mesa"
           kind="weight"
@@ -179,7 +181,7 @@ export function PartForm({
         color="#8e8e93"
         action={onEditSettings && <button className="link" onClick={onEditSettings}>Editar…</button>}
       >
-        <Row label="Filamento">{pricePerBulk(d.filamentPricePerGram, settings.weightUnit)}</Row>
+        <Row label="Filamento">{pricePerBulk(job.filamentPricePerGram ?? d.filamentPricePerGram, settings.weightUnit)}</Row>
         <Row label="Hora de máquina">{money(d.machineCostPerHour)}/h</Row>
         <Row label="Valor da sua hora">{money(settings.laborRate)}/h</Row>
         <Row label="Taxa de falha">{percent(settings.failureRatePercent / 100)}</Row>
@@ -300,5 +302,27 @@ function ResultActions({ job, result }: { job: PrintJob; result: CostResult }) {
       </div>
       <button className="btn ghost" onClick={newJob}>Nova peça</button>
     </div>
+  )
+}
+
+/** Escolha do filamento da biblioteca; sem escolha vale o rolo padrão dos parâmetros fixos. */
+function FilamentPicker({ job, setJob, weightUnit }: { job: PrintJob; setJob: (patch: Partial<PrintJob>) => void; weightUnit: ShopSettings['weightUnit'] }) {
+  const filaments = useApp((s) => s.filaments)
+  const filamentJobPatch = useApp((s) => s.filamentJobPatch)
+  const removed = job.filamentId !== null && !filaments.some((f) => f.id === job.filamentId)
+  return (
+    <Row
+      label="Filamento"
+      hint={job.filamentPricePerGram !== null ? `Preço: ${pricePerBulk(job.filamentPricePerGram, weightUnit)}` : 'Cadastre rolos na aba Filamentos'}
+    >
+      <select className="input" style={{ width: 260 }} aria-label="Filamento" value={job.filamentId ?? ''}
+        onChange={(e) => setJob(filamentJobPatch(e.target.value || null))}>
+        <option value="">Padrão dos parâmetros fixos</option>
+        {removed && <option value={job.filamentId!}>{job.filamentName || 'Filamento removido'} (removido)</option>}
+        {filaments.map((f) => (
+          <option key={f.id} value={f.id}>{filamentDisplayName(f)}</option>
+        ))}
+      </select>
+    </Row>
   )
 }

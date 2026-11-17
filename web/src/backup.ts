@@ -3,7 +3,7 @@ import { useApp } from './store'
 
 /** Os dados ficam só neste navegador; o backup permite levar tudo para outro aparelho. */
 export async function exportBackup() {
-  const { savedSettings, savedCompany, quotes, proposals } = useApp.getState()
+  const { savedSettings, savedCompany, quotes, proposals, filaments } = useApp.getState()
   const images: Record<string, string> = {}
   for (const id of await allImageIds()) {
     const blob = await getImageBlob(id)
@@ -17,6 +17,7 @@ export async function exportBackup() {
     company: savedCompany,
     quotes,
     proposals,
+    filaments,
     images,
   }
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
@@ -47,5 +48,6 @@ export async function importBackup(file: File) {
     company: payload.company,
     quotes: payload.quotes,
     proposals: payload.proposals,
+    filaments: Array.isArray(payload.filaments) ? payload.filaments : [],
   })
 }

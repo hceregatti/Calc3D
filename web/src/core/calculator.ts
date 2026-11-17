@@ -73,6 +73,12 @@ export interface PrintJob {
   postProcessingMinutes: number
   consumablesPerPlate: number
   marginPercent: number
+  /** Filamento da biblioteca usado na peça; null usa o rolo padrão dos parâmetros fixos. */
+  filamentId: string | null
+  /** Nome do filamento na hora da escolha (exibido mesmo se ele for excluído). */
+  filamentName: string
+  /** Preço por grama do filamento escolhido; substitui o do rolo padrão. */
+  filamentPricePerGram: number | null
 }
 
 export const defaultJob: PrintJob = {
@@ -86,6 +92,9 @@ export const defaultJob: PrintJob = {
   postProcessingMinutes: 20,
   consumablesPerPlate: 2,
   marginPercent: 40,
+  filamentId: null,
+  filamentName: '',
+  filamentPricePerGram: null,
 }
 
 export const MAX_FAILURE_RATE = 0.9
@@ -170,7 +179,7 @@ export function calculate(s: ShopSettings, job: PrintJob): CostResult {
   const parts = Number.isFinite(job.partsPerPlate) ? Math.max(Math.floor(job.partsPerPlate), 1) : 1
   const f = d.failureRate
 
-  const filament = nonNegative(job.partWeight) * (1 + nonNegative(job.wastePercent) / 100) * d.filamentPricePerGram
+  const filament = nonNegative(job.partWeight) * (1 + nonNegative(job.wastePercent) / 100) * (job.filamentPricePerGram === null ? d.filamentPricePerGram : nonNegative(job.filamentPricePerGram))
   const energy = d.energyCostPerHour * hours
   const depreciation = d.depreciationPerHour * hours
   const maintenance = d.maintenancePerHour * hours

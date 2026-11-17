@@ -20,10 +20,11 @@ import {
   type ProposalItem,
   type QuoteRecord,
 } from './core/models'
+import { filamentDisplayName, filamentPricePerGram, newFilament, normalizeFilament, type Filament } from './core/filament'
 import { pruneImages } from './images'
 
-export type Screen = 'home' | 'printJob' | 'parts' | 'proposals' | 'company' | 'settings'
-export const SCREENS: Screen[] = ['home', 'printJob', 'parts', 'proposals', 'company', 'settings']
+export type Screen = 'home' | 'printJob' | 'parts' | 'filaments' | 'proposals' | 'company' | 'settings'
+export const SCREENS: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals', 'company', 'settings']
 
 const KEYS = {
   settings: 'calc3d.web.settings.v1',
@@ -31,6 +32,7 @@ const KEYS = {
   company: 'calc3d.web.company.v1',
   quotes: 'calc3d.web.quotes.v1',
   proposals: 'calc3d.web.proposals.v1',
+  filaments: 'calc3d.web.filaments.v1',
 }
 
 function load<T>(key: string, fallback: T): T {
@@ -66,6 +68,8 @@ interface AppState {
   savedCompany: CompanyProfile
   job: PrintJob
   quotes: QuoteRecord[]
+  filaments: Filament[]
+  selectedFilamentId: string | null
   proposals: Proposal[]
   proposalDraft: Proposal | null
   selectedQuoteIds: string[]
@@ -94,6 +98,14 @@ interface AppState {
   useQuoteAsBase: (quote: QuoteRecord) => void
   setSelectedQuoteIds: (ids: string[]) => void
 
+  addFilament: () => void
+  updateFilament: (id: string, patch: Partial<Filament>) => void
+  duplicateFilament: (id: string) => void
+  deleteFilament: (id: string) => void
+  selectFilament: (id: string | null) => void
+  /** Aplica (ou remove, com null) um filamento da biblioteca à peça informada. */
+  filamentJobPatch: (id: string | null) => Partial<PrintJob>
+
   proposalHasUnsavedChanges: () => boolean
   guardDiscard: (action: () => void) => void
   startNewProposal: () => void
@@ -105,7 +117,7 @@ interface AppState {
   addQuotesToDraft: (quotes: QuoteRecord[]) => void
   addQuotesToProposal: (quotes: QuoteRecord[], proposalId: string | null) => void
 
-  replaceAll: (data: { settings: ShopSettings; company: CompanyProfile; quotes: QuoteRecord[]; proposals: Proposal[] }) => void
+  replaceAll: (data: { settings: ShopSettings; company: CompanyProfile; quotes: QuoteRecord[]; proposals: Proposal[]; filaments?: Filament[] }) => void
   cleanupImages: () => void
 }
 
@@ -137,6 +149,8 @@ export const useApp = create<AppState>((set, get) => ({
   savedCompany: initialCompany,
   job: withDefaults(defaultJob, load(KEYS.job, null)),
   quotes: load<QuoteRecord[]>(KEYS.quotes, []),
+  filaments: load<Filament[]>(KEYS.filaments, []).map(normalizeFilament),
+  selectedFilamentId: null,
   proposals: sortProposals(load<Proposal[]>(KEYS.proposals, []).map(normalizeProposal)),
   proposalDraft: null,
   selectedQuoteIds: [],
@@ -203,6 +217,45 @@ export const useApp = create<AppState>((set, get) => ({
       defaultNotes: defaultCompany.defaultNotes,
       footerText: defaultCompany.footerText,
     }),
+
+  addFilament: () => {
+    const filament = newFilament()
+    const filaments = [filament, ...get().filaments]
+    set({ filaments, selectedFilamentId: filament.id })
+    save(KEYS.filaments, filaments)
+  },
+
+  updateFilament: (id, patch) => {
+    const filaments = get().filaments.map((f) => (f.id === id ? { ...f, ...patch } : f))
+    set({ filaments })
+    save(KEYS.filaments, filaments)
+    // Mantém o cálculo em andamento alinhado ao preço do filamento editado.
+    if (get().job.filamentId === id) get().setJob(get().filamentJobPatch(id))
+  },
+
+  duplicateFilament: (id) => {
+    const source = get().filaments.find((f) => f.id === id)
+    if (!source) return
+    const copy = { ...source, id: uid(), createdAt: new Date().toISOString(), remainingWeight: source.netWeight }
+    const filaments = [copy, ...get().filaments]
+    set({ filaments, selectedFilamentId: copy.id })
+    save(KEYS.filaments, filaments)
+  },
+
+  deleteFilament: (id) => {
+    const filaments = get().filaments.filter((f) => f.id !== id)
+    set({ filaments, selectedFilamentId: get().selectedFilamentId === id ? null : get().selectedFilamentId })
+    save(KEYS.filaments, filaments)
+  },
+
+  selectFilament: (id) => set({ selectedFilamentId: id }),
+
+  filamentJobPatch: (id) => {
+    const f = get().filaments.find((x) => x.id === id)
+    return f
+      ? { filamentId: f.id, filamentName: filamentDisplayName(f), filamentPricePerGram: filamentPricePerGram(f) }
+      : { filamentId: null, filamentName: '', filamentPricePerGram: null }
+  },
 
   saveQuote: (job) => {
     const { settings } = get()
@@ -341,7 +394,7 @@ export const useApp = create<AppState>((set, get) => ({
     })
   },
 
-  replaceAll: ({ settings, company, quotes, proposals }) => {
+  replaceAll: ({ settings, company, quotes, proposals, filaments: rawFilaments }) => {
     const s = withValidDisplay(withDefaults(defaultSettings, settings))
     applyDisplay(s)
     const c = withDefaults(defaultCompany, company)
@@ -349,8 +402,12 @@ export const useApp = create<AppState>((set, get) => ({
     save(KEYS.settings, s)
     save(KEYS.company, c)
     save(KEYS.quotes, quotes)
+    const fl = (rawFilaments ?? []).map(normalizeFilament)
     save(KEYS.proposals, p)
+    save(KEYS.filaments, fl)
     set({
+      filaments: fl,
+      selectedFilamentId: null,
       settings: s,
       savedSettings: s,
       company: c,

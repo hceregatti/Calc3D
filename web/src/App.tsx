@@ -1,12 +1,13 @@
 import { Badge, ConfirmDialog, SCREEN_INFO, Toast } from './components/ui'
 import { CompanyScreen, ShopSettingsScreen } from './screens/Settings'
+import { FilamentsScreen } from './screens/Filaments'
 import { HomeScreen } from './screens/Home'
 import { PartsScreen } from './screens/Parts'
 import { PrintJobScreen } from './screens/PrintJob'
 import { ProposalsScreen } from './screens/Proposals'
 import { useApp, type Screen } from './store'
 
-const MAIN: Screen[] = ['home', 'printJob', 'parts', 'proposals']
+const MAIN: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals']
 const FOOTER: Screen[] = ['company', 'settings']
 
 export function App() {
@@ -40,6 +41,7 @@ export function App() {
         {screen === 'home' && <HomeScreen />}
         {screen === 'printJob' && <PrintJobScreen />}
         {screen === 'parts' && <PartsScreen />}
+        {screen === 'filaments' && <FilamentsScreen />}
         {screen === 'proposals' && <ProposalsScreen />}
         {screen === 'company' && <CompanyScreen />}
         {screen === 'settings' && <ShopSettingsScreen />}

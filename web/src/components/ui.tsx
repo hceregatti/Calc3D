@@ -1,6 +1,7 @@
 import {
   Cog,
   Box,
+  Cylinder,
   FileText,
   Home,
   Layers,
@@ -15,6 +16,7 @@ export const SCREEN_INFO: Record<Screen, { title: string; subtitle: string; icon
   home: { title: 'Início', subtitle: 'Visão geral e atalhos', icon: Home, color: '#0a84ff' },
   printJob: { title: 'Calcular peça', subtitle: 'Dados da impressão e preço', icon: Box, color: '#ff9f0a' },
   parts: { title: 'Peças', subtitle: 'Histórico de cálculos de peças', icon: Layers, color: '#bf5af2' },
+  filaments: { title: 'Filamentos', subtitle: 'Biblioteca de rolos e preços', icon: Cylinder, color: '#5e5ce6' },
   proposals: { title: 'Orçamentos', subtitle: 'Orçamentos com várias peças', icon: FileText, color: '#30d158' },
   company: { title: 'Personalizar orçamento', subtitle: 'Logo, empresa e condições', icon: Paintbrush, color: '#30b0c7' },
   settings: { title: 'Parâmetros fixos', subtitle: 'Máquina, energia, custos e taxas', icon: Cog, color: '#8e8e93' },

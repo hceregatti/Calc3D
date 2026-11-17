@@ -147,7 +147,7 @@ function QuoteDetail({ quote }: { quote: QuoteRecord }) {
       </Section>
 
       <Section title="Parâmetros fixos salvos" icon={Settings} color="#8e8e93">
-        <Row label="Filamento">{pricePerBulk(d.filamentPricePerGram)}</Row>
+        <Row label="Filamento">{pricePerBulk(quote.job.filamentPricePerGram ?? d.filamentPricePerGram)}</Row>
         <Row label="Hora de máquina">{money(d.machineCostPerHour)}/h</Row>
         <Row label="Valor da hora">{money(quote.settings.laborRate)}/h</Row>
       </Section>
