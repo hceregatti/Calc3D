@@ -298,7 +298,7 @@ private struct QuoteDetail: View {
                 }
 
                 GroupBox {
-                    LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: quote.settings.filamentPricePerGram))
+                    LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: quote.job.filamentPricePerGram ?? quote.settings.filamentPricePerGram))
                     LabeledContent("Hora de máquina", value: Currency.format(quote.settings.machineCostPerHour) + "/h")
                     LabeledContent("Valor da hora", value: Currency.format(quote.settings.laborRate) + "/h")
                 } label: {

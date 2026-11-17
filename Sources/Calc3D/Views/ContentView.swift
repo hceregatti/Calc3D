@@ -42,6 +42,8 @@ struct ContentView: View {
                 PrintJobView()
             case .parts:
                 PartsView()
+            case .filaments:
+                FilamentsView()
             case .proposals:
                 ProposalsView()
             case .settings:

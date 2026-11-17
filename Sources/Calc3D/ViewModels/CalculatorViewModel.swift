@@ -8,6 +8,7 @@ enum Screen: String, CaseIterable, Identifiable {
     case home
     case printJob
     case parts
+    case filaments
     case proposals
     case settings
     case company
@@ -19,6 +20,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .home: "Início"
         case .printJob: "Calcular peça"
         case .parts: "Peças"
+        case .filaments: "Filamentos"
         case .proposals: "Orçamentos"
         case .settings: "Parâmetros fixos"
         case .company: "Personalizar orçamento"
@@ -30,6 +32,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .home: "Visão geral e atalhos"
         case .printJob: "Dados da impressão e preço"
         case .parts: "Histórico de cálculos de peças"
+        case .filaments: "Biblioteca de rolos e preços"
         case .proposals: "Orçamentos com várias peças"
         case .settings: "Máquina, energia, custos e taxas"
         case .company: "Logo, empresa e condições"
@@ -41,6 +44,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .home: "house.fill"
         case .printJob: "cube.fill"
         case .parts: "square.stack.3d.up.fill"
+        case .filaments: "cylinder.split.1x2.fill"
         case .proposals: "doc.text.fill"
         case .settings: "gearshape.fill"
         case .company: "paintbrush.fill"
@@ -52,6 +56,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .home: .blue
         case .printJob: .orange
         case .parts: .purple
+        case .filaments: .indigo
         case .proposals: .green
         case .settings: .gray
         case .company: .teal
@@ -142,22 +147,36 @@ final class CalculatorViewModel {
     private(set) var proposalPDFFeedback: String?
     private(set) var quotes: [QuoteRecord]
     private(set) var proposals: [ProposalRecord]
+    /// Biblioteca de filamentos (salva automaticamente a cada alteração).
+    var filaments: [Filament] {
+        didSet {
+            guard filaments != oldValue else { return }
+            filamentsStore.save(filaments)
+            syncJobFilament()
+        }
+    }
+    var selectedFilamentID: UUID?
+    var filamentPendingDeletionID: UUID?
     private(set) var settingsFeedback: String?
 
     @ObservationIgnored private let store: ParametersStore
     @ObservationIgnored private let quotesStore: QuotesStore
     @ObservationIgnored private let proposalsStore: ProposalsStore
+    @ObservationIgnored private let filamentsStore: FilamentsStore
     @ObservationIgnored let imageStore: ImageStore
 
     init(
         store: ParametersStore = ParametersStore(),
         quotesStore: QuotesStore = QuotesStore(),
         proposalsStore: ProposalsStore = ProposalsStore(),
+        filamentsStore: FilamentsStore = FilamentsStore(),
         imageStore: ImageStore = ImageStore()
     ) {
         self.store = store
         self.quotesStore = quotesStore
         self.proposalsStore = proposalsStore
+        self.filamentsStore = filamentsStore
+        self.filaments = filamentsStore.load()
         self.imageStore = imageStore
         let company = store.loadCompany()
         self.companyProfile = company

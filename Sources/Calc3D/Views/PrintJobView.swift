@@ -29,6 +29,7 @@ struct PrintJobView: View {
 
 /// Formulário de cálculo de peça, compartilhado entre a tela principal e o orçamento.
 struct PrintJobForm: View {
+    @Environment(CalculatorViewModel.self) private var appModel
     let calculator: PartCalculator
     /// Quando nil, o atalho para editar os parâmetros fixos fica oculto.
     var onEditSettings: (() -> Void)?
@@ -56,6 +57,7 @@ struct PrintJobForm: View {
             }
 
             Section {
+                filamentPicker
                 NumberField(title: "Peso da mesa", value: j.partWeight, unit: "g",
                             hint: model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças",
                             style: .weight)
@@ -98,7 +100,7 @@ struct PrintJobForm: View {
             }
 
             Section {
-                FixedSettingsSummary(settings: model.settings)
+                FixedSettingsSummary(settings: model.settings, job: model.job)
             } header: {
                 HStack {
                     BadgeLabel("Parâmetros fixos em uso", systemImage: "slider.horizontal.3", color: .gray)
@@ -112,14 +114,41 @@ struct PrintJobForm: View {
         }
         .themedForm()
     }
+
+    /// Escolha do filamento da biblioteca; sem escolha vale o rolo padrão dos parâmetros fixos.
+    private var filamentPicker: some View {
+        let job = calculator.job
+        let missing = job.filamentID.flatMap { id in appModel.filament(withID: id) == nil ? id : nil }
+        return LabeledContent {
+            Picker("Filamento", selection: Binding<UUID?>(
+                get: { job.filamentID },
+                set: { appModel.useFilament(appModel.filament(withID: $0), in: calculator) }
+            )) {
+                Text("Padrão dos parâmetros fixos").tag(UUID?.none)
+                if let missing {
+                    Text("\(job.filamentName ?? "Filamento removido") (removido)").tag(UUID?.some(missing))
+                }
+                ForEach(appModel.filaments) { f in
+                    Text(f.displayName).tag(UUID?.some(f.id))
+                }
+            }
+            .labelsHidden()
+            .frame(maxWidth: 260)
+        } label: {
+            Text("Filamento")
+            Text(job.filamentPricePerGram.map { "Preço: " + Weight.pricePerBulkUnit(perGram: $0, unit: appModel.settings.weightUnit) }
+                 ?? "Biblioteca em “Filamentos”")
+        }
+    }
 }
 
 /// Resumo dos parâmetros fixos aplicados, para conferência rápida.
 private struct FixedSettingsSummary: View {
     let settings: ShopSettings
+    let job: PrintJob
 
     var body: some View {
-        LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: settings.filamentPricePerGram, unit: settings.weightUnit))
+        LabeledContent("Filamento", value: Weight.pricePerBulkUnit(perGram: job.filamentPricePerGram ?? settings.filamentPricePerGram, unit: settings.weightUnit))
         LabeledContent("Hora de máquina", value: Currency.format(settings.machineCostPerHour) + "/h")
         LabeledContent("Valor da sua hora", value: Currency.format(settings.laborRate) + "/h")
         LabeledContent("Taxa de falha", value: percent(settings.failureRatePercent))
