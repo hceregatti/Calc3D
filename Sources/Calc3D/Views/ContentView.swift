@@ -3,6 +3,7 @@ import SwiftUI
 /// Janela principal: barra lateral com as telas e o conteúdo selecionado.
 struct ContentView: View {
     @Environment(CalculatorViewModel.self) private var model
+    @Environment(UpdateChecker.self) private var updater
 
     var body: some View {
         @Bindable var model = model
@@ -50,6 +51,12 @@ struct ContentView: View {
             }
         }
         .tint(Theme.ink)
+        .sheet(isPresented: Binding(
+            get: { updater.isPresented },
+            set: { if !$0 { updater.dismiss() } }
+        )) {
+            UpdateSheet()
+        }
         .toolbarBackground(Theme.bg, for: .windowToolbar)
         .confirmationDialog(
             "Descartar alterações?",
