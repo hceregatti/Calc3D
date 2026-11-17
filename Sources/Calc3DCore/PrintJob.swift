@@ -23,6 +23,13 @@ public struct PrintJob: Codable, Equatable, Sendable {
     /// Margem de lucro sobre o preço de venda (%), não markup.
     public var marginPercent: Double = 40
 
+    /// Filamento da biblioteca usado nesta peça; nil usa o filamento padrão dos parâmetros fixos.
+    public var filamentID: UUID?
+    /// Nome do filamento no momento da escolha (para exibir mesmo se for excluído da biblioteca).
+    public var filamentName: String?
+    /// Preço por grama do filamento escolhido (R$/g); substitui o do rolo padrão.
+    public var filamentPricePerGram: Double?
+
     public init() {}
 
     public static let defaults = PrintJob()

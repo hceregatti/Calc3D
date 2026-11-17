@@ -21,8 +21,9 @@ public enum CostCalculator {
         let parts = max(job.partsPerPlate, 1)
         let f = s.failureRate
 
+        let pricePerGram = job.filamentPricePerGram.map(Sanitize.nonNegative) ?? s.filamentPricePerGram
         let filament = Sanitize.nonNegative(job.partWeight)
-            * (1 + Sanitize.nonNegative(job.wastePercent) / 100) * s.filamentPricePerGram
+            * (1 + Sanitize.nonNegative(job.wastePercent) / 100) * pricePerGram
         let energy = s.energyCostPerHour * hours
         let depreciation = s.depreciationPerHour * hours
         let maintenance = s.maintenancePerHour * hours
