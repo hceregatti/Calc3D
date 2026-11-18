@@ -139,7 +139,7 @@ private struct FilamentEditor: View {
                 LabeledContent("Preço por \(model.settings.weightUnit == .gram ? "grama" : "unidade de peso")",
                                value: Weight.pricePerBulkUnit(perGram: filament.pricePerGram, unit: model.settings.weightUnit))
                 ProgressView(value: filament.remainingFraction)
-                    .tint(Theme.ink2)
+                    .tint(color(hex: filament.colorHex))
             } header: {
                 BadgeLabel("Rolo e preço", systemImage: "scalemass.fill", color: .green)
             }
