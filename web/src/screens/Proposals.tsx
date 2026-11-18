@@ -1,4 +1,4 @@
-import { Box, CheckCircle2, FileText, Layers, PlusCircle, Printer, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowDownCircle, Box, CheckCircle2, Cylinder, FileText, Layers, PlusCircle, Printer, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { money, calculate, canPrice, defaultJob, type PrintJob } from '../core/calculator'
 import { cpfCnpjMask, currencySymbol, phoneMask } from '../core/format'
@@ -16,6 +16,8 @@ import {
   type Proposal,
   type ProposalItem,
 } from '../core/models'
+import { filamentDisplayName, requirements, shortage, usageChanged } from '../core/filament'
+import { weight } from '../core/format'
 import { ImageSlot } from '../components/ImageSlot'
 import { Badge, Empty, Modal, NumberInput, PageHeader, Row, Section, Stepper, TextField } from '../components/ui'
 import { ProposalPreview } from '../pdf/ProposalDocument'
@@ -113,12 +115,14 @@ function ProposalEditor({ proposal }: { proposal: Proposal }) {
             <Layers size={16} /> Adicionar do histórico…
           </button>
           <button className="btn ghost" onClick={() => updateDraft((p) => void p.items.push({
-            id: uid(), name: '', details: '', quantity: 1, unitPriceCents: 0, sourceQuoteId: null, imageId: null,
+            id: uid(), name: '', details: '', quantity: 1, unitPriceCents: 0, sourceQuoteId: null, imageId: null, filamentId: null, filamentName: '', gramsPerUnit: null,
           }))}>
             <Plus size={16} /> Item manual
           </button>
         </div>
       </Section>
+
+      <FilamentUsage proposal={proposal} />
 
       <Section>
         <Row label="Subtotal dos itens">{money(fromCents(itemsTotalCents(proposal)))}</Row>
@@ -324,5 +328,65 @@ function PartsPicker({ onClose, onAdd }: { onClose: () => void; onAdd: (ids: str
         {!visible.length && <p className="muted center pad">Nenhuma peça encontrada.</p>}
       </div>
     </Modal>
+  )
+}
+
+/** Consumo de filamento do orçamento, com aviso de falta e baixa no estoque. */
+function FilamentUsage({ proposal }: { proposal: Proposal }) {
+  const filaments = useApp((s) => s.filaments)
+  const deductStock = useApp((s) => s.deductStock)
+  const revertStock = useApp((s) => s.revertStock)
+  const reqs = requirements(proposal.items.map((i) => ({ filamentId: i.filamentId, filamentName: i.filamentName, gramsPerUnit: i.gramsPerUnit, quantity: i.quantity })))
+  const done = proposal.stockDeductions.length > 0
+  if (!reqs.length && !done) return null
+  const changed = done && usageChanged(proposal.stockDeductions, reqs)
+  const canDeduct = reqs.some((r) => filaments.some((f) => f.id === r.filamentId))
+
+  return (
+    <Section
+      title="Consumo de filamento"
+      icon={Cylinder}
+      color="#5e5ce6"
+      footer="Peso da mesa com desperdício, dividido pelas peças da mesa, vezes a quantidade. Itens sem filamento da biblioteca não entram."
+    >
+      {reqs.map((r) => {
+        const f = filaments.find((x) => x.id === r.filamentId)
+        const missing = shortage(r.grams, f?.remainingWeight ?? 0)
+        return (
+          <Row
+            key={r.filamentId}
+            label={f ? filamentDisplayName(f) : r.filamentName}
+            hint={
+              done ? undefined : !f ? (
+                <span className="warn">Filamento removido da biblioteca</span>
+              ) : missing > 0 ? (
+                <span className="warn">Faltam {weight(missing)}</span>
+              ) : (
+                `Disponível: ${weight(f.remainingWeight)}`
+              )
+            }
+          >
+            {weight(r.grams)}
+          </Row>
+        )
+      })}
+      {done ? (
+        <>
+          <p className="feedback">
+            <CheckCircle2 size={14} /> Baixa feita em {new Date(proposal.stockDeductions[0].date).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}
+          </p>
+          {changed && <p className="feedback warn">As peças mudaram depois da baixa. Estorne a baixa e dê baixa de novo para atualizar o estoque.</p>}
+          <div className="btn-row">
+            <button className="btn" onClick={revertStock}>Estornar baixa</button>
+          </div>
+        </>
+      ) : (
+        <div className="btn-row">
+          <button className="btn" disabled={!canDeduct} onClick={deductStock} title="Desconta o filamento do peso restante dos rolos e salva o orçamento">
+            <ArrowDownCircle size={16} /> Dar baixa no estoque
+          </button>
+        </div>
+      )}
+    </Section>
   )
 }

@@ -1,4 +1,5 @@
 import type { CostResult, PrintJob, ShopSettings } from './calculator'
+import type { StockDeduction } from './filament'
 
 export const uid = () => crypto.randomUUID()
 
@@ -35,6 +36,10 @@ export interface ProposalItem {
   sourceQuoteId: string | null
   /** Foto do produto; sem foto, usa a imagem padrão. */
   imageId: string | null
+  /** Filamento da biblioteca e consumo por unidade (g), copiados na inclusão. */
+  filamentId: string | null
+  filamentName: string
+  gramsPerUnit: number | null
 }
 
 export interface Proposal {
@@ -55,6 +60,8 @@ export interface Proposal {
   paymentTerms: string
   deliveryTime: string
   notes: string
+  /** Baixas feitas no estoque de filamento por este orçamento (vazio = ainda não baixado). */
+  stockDeductions: StockDeduction[]
 }
 
 /** Dados da empresa e padrões usados para personalizar os orçamentos. */
@@ -119,6 +126,7 @@ export function newProposal(company: CompanyProfile, title = 'Novo orçamento'):
     paymentTerms: company.defaultPaymentTerms,
     deliveryTime: company.defaultDeliveryTime,
     notes: company.defaultNotes,
+    stockDeductions: [],
   }
 }
 
@@ -131,6 +139,9 @@ export function newItem(fields: Partial<ProposalItem> & { name: string; unitPric
     unitPriceCents: toCents(fields.unitPrice),
     sourceQuoteId: fields.sourceQuoteId ?? null,
     imageId: fields.imageId ?? null,
+    filamentId: fields.filamentId ?? null,
+    filamentName: fields.filamentName ?? '',
+    gramsPerUnit: fields.gramsPerUnit ?? null,
   }
 }
 
@@ -171,6 +182,14 @@ export function normalizeProposal(raw: Proposal): Proposal {
     paymentTerms: raw.paymentTerms ?? '',
     deliveryTime: raw.deliveryTime ?? '',
     notes: raw.notes ?? '',
-    items: (raw.items ?? []).map((i) => ({ ...i, imageId: i.imageId ?? null, sourceQuoteId: i.sourceQuoteId ?? null })),
+    stockDeductions: Array.isArray(raw.stockDeductions) ? raw.stockDeductions : [],
+    items: (raw.items ?? []).map((i) => ({
+      ...i,
+      imageId: i.imageId ?? null,
+      sourceQuoteId: i.sourceQuoteId ?? null,
+      filamentId: i.filamentId ?? null,
+      filamentName: i.filamentName ?? '',
+      gramsPerUnit: i.gramsPerUnit ?? null,
+    })),
   }
 }

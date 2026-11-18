@@ -26,3 +26,40 @@ describe('biblioteca de filamentos', () => {
     expect(doubled).toBeCloseTo(base * 2, 9)
   })
 })
+
+import { deduct, gramsPerUnit, isRunningLow, requirements, revert, shortage, usageChanged } from './filament'
+
+describe('consumo e baixa de estoque', () => {
+  it('gramas por unidade com desperdício e peças por mesa', () => {
+    expect(gramsPerUnit(defaultJob)).toBeNull()
+    expect(gramsPerUnit({ ...defaultJob, filamentId: 'a', partWeight: 200, wastePercent: 10, partsPerPlate: 2 })).toBeCloseTo(110, 9)
+  })
+
+  it('soma por rolo, ignorando itens sem filamento', () => {
+    const reqs = requirements([
+      { filamentId: 'a', filamentName: 'A', gramsPerUnit: 50, quantity: 3 },
+      { filamentId: 'a', filamentName: 'A', gramsPerUnit: 10, quantity: 1 },
+      { filamentId: 'b', filamentName: 'B', gramsPerUnit: 5, quantity: 2 },
+      { filamentId: null, filamentName: '', gramsPerUnit: null, quantity: 9 },
+    ])
+    expect(reqs.map((r) => r.grams)).toEqual([160, 10])
+  })
+
+  it('baixa limitada a zero, estorno exato e detecção de edição', () => {
+    const f = { ...newFilament(), remainingWeight: 100 }
+    const need = [{ filamentId: f.id, filamentName: 'X', grams: 150 }]
+    const { filaments, deductions } = deduct(need, [f])
+    expect(filaments[0].remainingWeight).toBe(0)
+    expect(deductions[0]).toMatchObject({ grams: 100, requestedGrams: 150 })
+    expect(revert(deductions, filaments)[0].remainingWeight).toBe(100)
+    expect(usageChanged(deductions, need)).toBe(false)
+    expect(usageChanged(deductions, [{ ...need[0], grams: 120 }])).toBe(true)
+  })
+
+  it('falta e acabando', () => {
+    expect(shortage(300, 180)).toBe(120)
+    expect(shortage(100, 180)).toBe(0)
+    expect(isRunningLow({ ...newFilament(), remainingWeight: 100 })).toBe(true)
+    expect(isRunningLow({ ...newFilament(), remainingWeight: 400 })).toBe(false)
+  })
+})

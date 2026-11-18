@@ -1,10 +1,11 @@
-import { Cylinder, Copy, ExternalLink, Plus, Search, Tag, Trash2, Thermometer, Scale, ShoppingCart, StickyNote } from 'lucide-react'
+import { BarChart3, Cylinder, Copy, ExternalLink, Plus, Search, Tag, Trash2, Thermometer, Scale, ShoppingCart, StickyNote } from 'lucide-react'
 import { pricePerBulk, weight } from '../core/format'
 import {
   MATERIALS,
   TYPICAL_PROFILE,
   filamentDisplayName,
   filamentPricePerGram,
+  isRunningLow,
   purchaseLink,
   remainingFraction,
   searchUrl,
@@ -40,6 +41,7 @@ export function FilamentsScreen() {
                     <strong className="ellipsis">{filamentDisplayName(f) || 'Novo filamento'}</strong>
                     <small className="muted ellipsis">
                       {weight(f.remainingWeight)} restantes · {pricePerBulk(filamentPricePerGram(f))}
+                      {isRunningLow(f) && <strong className="warn"> · Acabando</strong>}
                     </small>
                   </div>
                 </div>
@@ -123,6 +125,8 @@ function FilamentEditor({ filament: f }: { filament: Filament }) {
         </div>
       </Section>
 
+      <ConsumptionHistory filamentId={f.id} />
+
       <Section title="Observações" icon={StickyNote} color="#8e8e93">
         <TextField label="Observações" multiline rows={4} value={f.notes} onChange={(notes) => set({ notes })} />
       </Section>
@@ -141,5 +145,23 @@ function FilamentEditor({ filament: f }: { filament: Filament }) {
         </button>
       </div>
     </div>
+  )
+}
+
+/** Baixas já feitas por orçamentos neste rolo, das mais recentes para as mais antigas. */
+function ConsumptionHistory({ filamentId }: { filamentId: string }) {
+  const proposals = useApp((s) => s.proposals)
+  const entries = proposals
+    .flatMap((p) => p.stockDeductions.filter((d) => d.filamentId === filamentId).map((d) => ({ p, d })))
+    .sort((a, b) => b.d.date.localeCompare(a.d.date))
+  if (!entries.length) return null
+  return (
+    <Section title="Consumo" icon={BarChart3} color="#ff375f" footer="Baixas feitas por orçamentos neste rolo.">
+      {entries.map(({ p, d }) => (
+        <Row key={`${p.id}-${d.date}`} label={p.title.trim() || 'Orçamento sem título'} hint={new Date(d.date).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}>
+          −{weight(d.grams)}
+        </Row>
+      ))}
+    </Section>
   )
 }

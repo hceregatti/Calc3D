@@ -1,3 +1,4 @@
+import type { PrintJob } from './calculator'
 import { uid, withDefaults } from './models'
 
 export const MATERIALS = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon (PA)', 'PC', 'PVA', 'Outro'] as const
@@ -107,3 +108,88 @@ export function searchUrl(f: Filament): string {
   const q = terms.map((t) => t.trim()).filter(Boolean).join(' ')
   return `https://www.google.com/search?${new URLSearchParams({ q, tbm: 'shop' })}`
 }
+
+// MARK: - Consumo e baixa de estoque
+
+/** Uma baixa registrada no estoque de um rolo, guardada no orçamento que a gerou. */
+export interface StockDeduction {
+  filamentId: string
+  filamentName: string
+  /** Quanto o orçamento precisava. */
+  requestedGrams: number
+  /** Quanto realmente saiu do rolo (limitado ao que restava); é o que o estorno devolve. */
+  grams: number
+  date: string
+}
+
+export interface UsageLine {
+  filamentId: string | null
+  filamentName: string
+  gramsPerUnit: number | null
+  quantity: number
+}
+
+export interface Requirement {
+  filamentId: string
+  filamentName: string
+  grams: number
+}
+
+/** Gramas por unidade vendida: peso da mesa com desperdício ÷ peças da mesa. Null sem filamento da biblioteca. */
+export function gramsPerUnit(job: PrintJob): number | null {
+  if (!job.filamentId) return null
+  const parts = Number.isFinite(job.partsPerPlate) ? Math.max(Math.floor(job.partsPerPlate), 1) : 1
+  return (nonNegative(job.partWeight) * (1 + nonNegative(job.wastePercent) / 100)) / parts
+}
+
+/** Soma o consumo por rolo; itens sem filamento são ignorados. */
+export function requirements(lines: UsageLine[]): Requirement[] {
+  const byId = new Map<string, Requirement>()
+  for (const l of lines) {
+    if (!l.filamentId || l.gramsPerUnit === null) continue
+    const entry = byId.get(l.filamentId) ?? { filamentId: l.filamentId, filamentName: l.filamentName, grams: 0 }
+    entry.grams += nonNegative(l.gramsPerUnit) * Math.max(l.quantity, 0)
+    byId.set(l.filamentId, entry)
+  }
+  return [...byId.values()].sort((a, b) => a.filamentName.localeCompare(b.filamentName, 'pt-BR'))
+}
+
+/** Quanto falta (g) para atender o consumo; 0 se o rolo dá conta. */
+export const shortage = (required: number, available: number) => Math.max(required - nonNegative(available), 0)
+
+/** Desconta o consumo dos rolos (nunca abaixo de zero). Rolos removidos da biblioteca são ignorados. */
+export function deduct(reqs: Requirement[], filaments: Filament[], date = new Date().toISOString()) {
+  const deductions: StockDeduction[] = []
+  const next = filaments.map((f) => ({ ...f }))
+  for (const need of reqs) {
+    const f = next.find((x) => x.id === need.filamentId)
+    if (!f) continue
+    const available = nonNegative(f.remainingWeight)
+    const taken = Math.min(need.grams, available)
+    f.remainingWeight = available - taken
+    deductions.push({ filamentId: f.id, filamentName: filamentDisplayName(f), requestedGrams: need.grams, grams: taken, date })
+  }
+  return { filaments: next, deductions }
+}
+
+/** Devolve aos rolos exatamente o que as baixas retiraram. */
+export function revert(deductions: StockDeduction[], filaments: Filament[]): Filament[] {
+  const next = filaments.map((f) => ({ ...f }))
+  for (const d of deductions) {
+    const f = next.find((x) => x.id === d.filamentId)
+    if (f) f.remainingWeight = Math.min(nonNegative(f.remainingWeight) + d.grams, Math.max(f.netWeight, f.remainingWeight))
+  }
+  return next
+}
+
+/** True quando o consumo atual difere do que foi baixado (orçamento editado depois da baixa). */
+export function usageChanged(deductions: StockDeduction[], reqs: Requirement[]): boolean {
+  const before = new Map<string, number>()
+  for (const d of deductions) before.set(d.filamentId, (before.get(d.filamentId) ?? 0) + d.requestedGrams)
+  const now = new Map(reqs.map((r) => [r.filamentId, r.grams]))
+  if (before.size !== now.size) return true
+  return [...now].some(([id, g]) => !before.has(id) || Math.abs(g - before.get(id)!) > 0.0001)
+}
+
+/** Rolo com pouco material (15% ou menos). */
+export const isRunningLow = (f: Filament) => remainingFraction(f) <= 0.15

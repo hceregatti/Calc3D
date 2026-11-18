@@ -20,7 +20,7 @@ import {
   type ProposalItem,
   type QuoteRecord,
 } from './core/models'
-import { filamentDisplayName, filamentPricePerGram, newFilament, normalizeFilament, type Filament } from './core/filament'
+import { deduct, filamentDisplayName, filamentPricePerGram, gramsPerUnit, newFilament, normalizeFilament, requirements, revert, type Filament } from './core/filament'
 import { pruneImages } from './images'
 
 export type Screen = 'home' | 'printJob' | 'parts' | 'filaments' | 'proposals' | 'company' | 'settings'
@@ -113,6 +113,10 @@ interface AppState {
   updateDraft: (update: (p: Proposal) => void) => void
   updateItem: (id: string, patch: Partial<ProposalItem>) => void
   saveDraft: () => void
+  /** Desconta o consumo do orçamento em edição dos rolos e salva o orçamento. */
+  deductStock: () => void
+  /** Devolve aos rolos o que o orçamento em edição tinha baixado. */
+  revertStock: () => void
   deleteProposal: (id: string) => void
   addQuotesToDraft: (quotes: QuoteRecord[]) => void
   addQuotesToProposal: (quotes: QuoteRecord[], proposalId: string | null) => void
@@ -134,6 +138,9 @@ function itemFromQuote(quote: QuoteRecord, fromHistory: boolean): ProposalItem |
     name: quote.job.name.trim() || 'Peça sem nome',
     unitPrice: quote.result.suggestedPrice,
     sourceQuoteId: fromHistory ? quote.id : null,
+    filamentId: quote.job.filamentId,
+    filamentName: quote.job.filamentName,
+    gramsPerUnit: gramsPerUnit(quote.job),
   })
 }
 
@@ -366,6 +373,28 @@ export const useApp = create<AppState>((set, get) => ({
     save(KEYS.proposals, proposals)
     get().showToast('Orçamento salvo ✔')
     get().cleanupImages()
+  },
+
+  deductStock: () => {
+    const draft = get().proposalDraft
+    if (!draft || draft.stockDeductions.length) return
+    const reqs = requirements(draft.items.map((i) => ({ filamentId: i.filamentId, filamentName: i.filamentName, gramsPerUnit: i.gramsPerUnit, quantity: i.quantity })))
+    const { filaments, deductions } = deduct(reqs, get().filaments)
+    if (!deductions.length) return
+    set({ filaments })
+    save(KEYS.filaments, filaments)
+    get().updateDraft((p) => void (p.stockDeductions = deductions))
+    get().saveDraft()
+  },
+
+  revertStock: () => {
+    const draft = get().proposalDraft
+    if (!draft || !draft.stockDeductions.length) return
+    const filaments = revert(draft.stockDeductions, get().filaments)
+    set({ filaments })
+    save(KEYS.filaments, filaments)
+    get().updateDraft((p) => void (p.stockDeductions = []))
+    get().saveDraft()
   },
 
   deleteProposal: (id) => {
