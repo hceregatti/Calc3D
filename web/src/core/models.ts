@@ -62,6 +62,8 @@ export interface Proposal {
   notes: string
   /** Baixas feitas no estoque de filamento por este orçamento (vazio = ainda não baixado). */
   stockDeductions: StockDeduction[]
+  /** Quando a venda foi confirmada; null = ainda não vendido. */
+  saleConfirmedAt: string | null
 }
 
 /** Dados da empresa e padrões usados para personalizar os orçamentos. */
@@ -127,6 +129,7 @@ export function newProposal(company: CompanyProfile, title = 'Novo orçamento'):
     deliveryTime: company.defaultDeliveryTime,
     notes: company.defaultNotes,
     stockDeductions: [],
+    saleConfirmedAt: null,
   }
 }
 
@@ -156,6 +159,35 @@ export function validUntil(p: Proposal): Date | null {
   const date = new Date(p.updatedAt)
   date.setDate(date.getDate() + p.validityDays)
   return date
+}
+
+/** Situação de um orçamento salvo: aguardando aprovação, vencido ou com venda confirmada. */
+export type ProposalStatus = 'waiting' | 'expired' | 'sold'
+export const PROPOSAL_STATUSES: ProposalStatus[] = ['waiting', 'expired', 'sold']
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+/** Dias de calendário até o vencimento: 0 = vence hoje, negativo = já venceu. Null = sem validade. */
+export function daysUntilExpiry(p: Proposal, now = new Date()): number | null {
+  const until = validUntil(p)
+  if (!until) return null
+  return Math.round((startOfDay(until).getTime() - startOfDay(now).getTime()) / 86_400_000)
+}
+
+/** Venda confirmada vence qualquer prazo; o orçamento só vence depois do último dia de validade. */
+export function proposalStatus(p: Proposal, now = new Date()): ProposalStatus {
+  if (p.saleConfirmedAt) return 'sold'
+  const days = daysUntilExpiry(p, now)
+  return days !== null && days < 0 ? 'expired' : 'waiting'
+}
+
+/** Orçamentos de uma aba, na ordem mais útil para cada uma. */
+export function proposalsIn(list: Proposal[], status: ProposalStatus, now = new Date()): Proposal[] {
+  const time = (d: Date | null, fallback: number) => (d ? d.getTime() : fallback)
+  const filtered = list.filter((p) => proposalStatus(p, now) === status)
+  if (status === 'waiting') return filtered.sort((a, b) => time(validUntil(a), Infinity) - time(validUntil(b), Infinity))
+  if (status === 'expired') return filtered.sort((a, b) => time(validUntil(b), 0) - time(validUntil(a), 0))
+  return filtered.sort((a, b) => (b.saleConfirmedAt ?? '').localeCompare(a.saleConfirmedAt ?? ''))
 }
 
 export const displayName = (name: string, fallback: string) => name.trim() || fallback

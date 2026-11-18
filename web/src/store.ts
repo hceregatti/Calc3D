@@ -13,11 +13,13 @@ import {
   newItem,
   newProposal,
   normalizeProposal,
+  proposalStatus,
   uid,
   withDefaults,
   type CompanyProfile,
   type Proposal,
   type ProposalItem,
+  type ProposalStatus,
   type QuoteRecord,
 } from './core/models'
 import { deduct, filamentDisplayName, filamentPricePerGram, gramsPerUnit, newFilament, normalizeFilament, requirements, revert, type Filament } from './core/filament'
@@ -72,6 +74,8 @@ interface AppState {
   selectedFilamentId: string | null
   proposals: Proposal[]
   proposalDraft: Proposal | null
+  /** Aba da lista de orçamentos. */
+  proposalFilter: ProposalStatus
   selectedQuoteIds: string[]
   toast: { message: string; tone: 'success' | 'error' } | null
   confirm: ConfirmRequest | null
@@ -113,6 +117,13 @@ interface AppState {
   updateDraft: (update: (p: Proposal) => void) => void
   updateItem: (id: string, patch: Partial<ProposalItem>) => void
   saveDraft: () => void
+  setProposalFilter: (status: ProposalStatus) => void
+  /** Marca o orçamento em edição como venda confirmada e salva. */
+  confirmSale: () => void
+  /** Desfaz a venda: volta para a fila (ou para os vencidos, se o prazo já passou). */
+  reopenProposal: () => void
+  /** Renova a validade a partir de hoje e devolve o orçamento vencido para a fila. */
+  renewProposal: () => void
   /** Desconta o consumo do orçamento em edição dos rolos e salva o orçamento. */
   deductStock: () => void
   /** Devolve aos rolos o que o orçamento em edição tinha baixado. */
@@ -160,6 +171,7 @@ export const useApp = create<AppState>((set, get) => ({
   selectedFilamentId: null,
   proposals: sortProposals(load<Proposal[]>(KEYS.proposals, []).map(normalizeProposal)),
   proposalDraft: null,
+  proposalFilter: 'waiting',
   selectedQuoteIds: [],
   toast: null,
   confirm: null,
@@ -329,7 +341,7 @@ export const useApp = create<AppState>((set, get) => ({
     get().guardDiscard(() => {
       const proposal = get().proposals.find((p) => p.id === id)
       if (!proposal) return
-      set({ proposalDraft: structuredClone(proposal) })
+      set({ proposalDraft: structuredClone(proposal), proposalFilter: proposalStatus(proposal) })
       get().go('proposals')
     })
   },
@@ -369,11 +381,28 @@ export const useApp = create<AppState>((set, get) => ({
       proposal.number = number
     }
     const proposals = sortProposals([proposal, ...get().proposals.filter((p) => p.id !== proposal.id)])
-    set({ proposals, proposalDraft: structuredClone(proposal) })
+    set({ proposals, proposalDraft: structuredClone(proposal), proposalFilter: proposalStatus(proposal) })
     save(KEYS.proposals, proposals)
     get().showToast('Orçamento salvo ✔')
     get().cleanupImages()
   },
+
+  setProposalFilter: (proposalFilter) => set({ proposalFilter }),
+
+  confirmSale: () => {
+    if (!get().proposalDraft) return
+    get().updateDraft((p) => void (p.saleConfirmedAt = new Date().toISOString()))
+    get().saveDraft()
+  },
+
+  reopenProposal: () => {
+    if (!get().proposalDraft) return
+    get().updateDraft((p) => void (p.saleConfirmedAt = null))
+    get().saveDraft()
+  },
+
+  // Salvar já reinicia a contagem da validade (updatedAt).
+  renewProposal: () => get().saveDraft(),
 
   deductStock: () => {
     const draft = get().proposalDraft

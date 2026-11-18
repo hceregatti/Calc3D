@@ -54,3 +54,36 @@ describe('orçamento', () => {
     expect(merged.nextProposalNumber).toBe(1)
   })
 })
+
+import { daysUntilExpiry, proposalStatus, proposalsIn } from './models'
+
+describe('situação do orçamento', () => {
+  const at = (iso: string, validityDays: number, sold = false): ReturnType<typeof newProposal> => ({
+    ...newProposal(defaultCompany),
+    updatedAt: iso,
+    validityDays,
+    saleConfirmedAt: sold ? iso : null,
+  })
+  const day = (d: number, h = 12) => new Date(2026, 10, d, h)
+
+  it('aguarda até o último dia de validade e vence no dia seguinte', () => {
+    const p = at(day(1).toISOString(), 15)
+    expect(proposalStatus(p, day(10))).toBe('waiting')
+    expect(proposalStatus(p, day(16, 23))).toBe('waiting')
+    expect(daysUntilExpiry(p, day(16))).toBe(0)
+    expect(proposalStatus(p, day(17, 0))).toBe('expired')
+    expect(daysUntilExpiry(p, day(19))).toBe(-3)
+  })
+
+  it('sem validade nunca vence; venda confirmada vence qualquer prazo', () => {
+    expect(proposalStatus(at(day(1).toISOString(), 0), day(30))).toBe('waiting')
+    expect(proposalStatus(at(day(1).toISOString(), 5, true), day(30))).toBe('sold')
+  })
+
+  it('ordena a fila pelos que vencem primeiro', () => {
+    const a = { ...at(day(1).toISOString(), 30), title: 'A' }
+    const b = { ...at(day(1).toISOString(), 10), title: 'B' }
+    const c = { ...at(day(1).toISOString(), 0), title: 'C' }
+    expect(proposalsIn([a, c, b], 'waiting', day(5)).map((p) => p.title)).toEqual(['B', 'A', 'C'])
+  })
+})

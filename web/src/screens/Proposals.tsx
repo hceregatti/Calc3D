@@ -1,20 +1,26 @@
-import { ArrowDownCircle, Box, CheckCircle2, Cylinder, FileText, Layers, PlusCircle, Printer, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowDownCircle, BadgeCheck, Box, CheckCircle2, Clock, Cylinder, RefreshCw, Undo2, XCircle, FileText, Layers, PlusCircle, Printer, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { money, calculate, canPrice, defaultJob, type PrintJob } from '../core/calculator'
 import { cpfCnpjMask, currencySymbol, phoneMask } from '../core/format'
 import {
   MAX_QUANTITY,
+  PROPOSAL_STATUSES,
   clampQuantity,
+  daysUntilExpiry,
   displayName,
   formattedNumber,
   fromCents,
   itemSubtotalCents,
   itemsTotalCents,
+  proposalStatus,
+  proposalsIn,
   toCents,
   totalCents,
   uid,
+  validUntil,
   type Proposal,
   type ProposalItem,
+  type ProposalStatus,
 } from '../core/models'
 import { filamentDisplayName, requirements, shortage, usageChanged } from '../core/filament'
 import { weight } from '../core/format'
@@ -24,8 +30,30 @@ import { ProposalPreview } from '../pdf/ProposalDocument'
 import { useApp } from '../store'
 import { BreakdownCard, PartForm, PriceCard } from './PrintJob'
 
+const STATUS_LABEL: Record<ProposalStatus, string> = { waiting: 'Aguardando', expired: 'Vencidos', sold: 'Vendas' }
+const EMPTY_TEXT: Record<ProposalStatus, [string, string]> = {
+  waiting: ['Nada aguardando', 'Orçamentos salvos aguardam aqui até serem aprovados ou vencerem.'],
+  expired: ['Nenhum vencido', 'Orçamentos que passam da validade sem aprovação saem da fila e vêm para cá.'],
+  sold: ['Nenhuma venda', 'Confirme a venda de um orçamento para vê-lo aqui.'],
+}
+const TOTAL_LABEL: Record<ProposalStatus, string> = { waiting: 'Em aberto', expired: 'Perdido por validade', sold: 'Total vendido' }
+
+function statusText(p: Proposal): { text: string; tone: '' | 'warn' | 'danger' | 'success' } {
+  const status = proposalStatus(p)
+  if (status === 'sold') {
+    return { text: `Venda em ${new Date(p.saleConfirmedAt ?? p.updatedAt).toLocaleDateString('pt-BR', { dateStyle: 'medium' })}`, tone: 'success' }
+  }
+  const days = daysUntilExpiry(p)
+  if (status === 'expired') return { text: days === -1 ? 'Venceu ontem' : `Venceu há ${-(days ?? 0)} dias`, tone: 'danger' }
+  if (days === null) return { text: 'Sem validade', tone: '' }
+  const text = days === 0 ? 'Vence hoje' : days === 1 ? 'Vence amanhã' : `Vence em ${days} dias`
+  return { text, tone: days <= 2 ? 'warn' : '' }
+}
+
 export function ProposalsScreen() {
-  const { proposals, proposalDraft, startNewProposal, openProposal } = useApp()
+  const { proposals, proposalDraft, proposalFilter, setProposalFilter, startNewProposal, openProposal } = useApp()
+  const shown = proposalsIn(proposals, proposalFilter)
+  const total = shown.reduce((sum, p) => sum + fromCents(totalCents(p)), 0)
 
   return (
     <div className="page">
@@ -36,27 +64,42 @@ export function ProposalsScreen() {
       </PageHeader>
       <div className="master-detail">
         <div className="master">
-          {proposals.length === 0 && !proposalDraft ? (
-            <Empty icon={FileText} title="Nenhum orçamento" text="Monte orçamentos com várias peças do histórico ou itens manuais." />
+          <div className="tabs" role="tablist" aria-label="Situação dos orçamentos">
+            {PROPOSAL_STATUSES.map((s) => (
+              <button key={s} role="tab" aria-selected={proposalFilter === s} className={proposalFilter === s ? 'active' : ''} onClick={() => setProposalFilter(s)}>
+                {STATUS_LABEL[s]} ({proposalsIn(proposals, s).length})
+              </button>
+            ))}
+          </div>
+          {shown.length === 0 ? (
+            <Empty icon={FileText} title={EMPTY_TEXT[proposalFilter][0]} text={EMPTY_TEXT[proposalFilter][1]} />
           ) : (
             <div className="list">
-              {proposals.map((p) => (
-                <div key={p.id} className={`list-row ${proposalDraft?.id === p.id ? 'selected' : ''}`} onClick={() => openProposal(p.id)}>
-                  <div className="grow text">
-                    <strong className="ellipsis">
-                      {formattedNumber(p) && <span className="muted">Nº {formattedNumber(p)} · </span>}
-                      {displayName(p.title, 'Orçamento sem título')}
-                    </strong>
-                    <small className="muted">
-                      {p.items.length} {p.items.length === 1 ? 'item' : 'itens'} ·{' '}
-                      {new Date(p.updatedAt).toLocaleDateString('pt-BR', { dateStyle: 'medium' })}
-                    </small>
+              {shown.map((p) => {
+                const st = statusText(p)
+                return (
+                  <div key={p.id} className={`list-row ${proposalDraft?.id === p.id ? 'selected' : ''}`} onClick={() => openProposal(p.id)}>
+                    <div className="grow text">
+                      <strong className="ellipsis">
+                        {formattedNumber(p) && <span className="muted">Nº {formattedNumber(p)} · </span>}
+                        {displayName(p.title, 'Orçamento sem título')}
+                      </strong>
+                      <small className="muted">
+                        {p.items.length} {p.items.length === 1 ? 'item' : 'itens'} ·{' '}
+                        {new Date(p.updatedAt).toLocaleDateString('pt-BR', { dateStyle: 'medium' })}
+                      </small>
+                      <small className={st.tone ? `status-${st.tone}` : 'muted'}><strong>{st.text}</strong></small>
+                    </div>
+                    <span className="num muted">{money(fromCents(totalCents(p)))}</span>
                   </div>
-                  <span className="num muted">{money(fromCents(totalCents(p)))}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
+          <div className="list-footer">
+            <small className="muted">{TOTAL_LABEL[proposalFilter]}</small>
+            <span className="num muted">{money(total)}</span>
+          </div>
         </div>
         <div className="detail">
           {proposalDraft ? (
@@ -67,6 +110,41 @@ export function ProposalsScreen() {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Situação do orçamento (aguardando, vencido ou vendido) e as ações de cada uma. */
+function ProposalStatusRows({ proposal, unsaved }: { proposal: Proposal; unsaved: boolean }) {
+  const { confirmSale, reopenProposal, renewProposal } = useApp()
+  const status = proposalStatus(proposal)
+  const days = daysUntilExpiry(proposal)
+  const fmt = (iso: string | Date) => new Date(iso).toLocaleDateString('pt-BR', { dateStyle: 'medium' })
+  return (
+    <>
+      <Row label="Situação">
+        {status === 'sold' ? (
+          <span className="status-success status"><BadgeCheck size={14} /> Venda confirmada em {new Date(proposal.saleConfirmedAt ?? proposal.updatedAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+        ) : status === 'expired' ? (
+          <span className="status-danger status"><XCircle size={14} /> Vencido em {fmt(validUntil(proposal) ?? proposal.updatedAt)}</span>
+        ) : (
+          <span className="status"><Clock size={14} /> Aguardando aprovação{days === null ? ' · sem validade' : days === 0 ? ' · vence hoje' : ` · vence em ${days} ${days === 1 ? 'dia' : 'dias'}`}</span>
+        )}
+      </Row>
+      <div className="btn-row">
+        {status !== 'sold' && (
+          <button className="btn" disabled={unsaved} onClick={confirmSale}><BadgeCheck size={16} /> Confirmar venda</button>
+        )}
+        {status === 'expired' && (
+          <button className="btn" disabled={unsaved} onClick={renewProposal} title="Reinicia a contagem da validade a partir de hoje e devolve o orçamento à fila">
+            <RefreshCw size={16} /> Renovar validade
+          </button>
+        )}
+        {status === 'sold' && (
+          <button className="btn" disabled={unsaved} onClick={reopenProposal}><Undo2 size={16} /> Desfazer venda</button>
+        )}
+      </div>
+      {unsaved && <p className="feedback">Salve as alterações para mudar a situação.</p>}
+    </>
   )
 }
 
@@ -86,6 +164,7 @@ function ProposalEditor({ proposal }: { proposal: Proposal }) {
         <Row label="Número">{formattedNumber(proposal) ? `Nº ${formattedNumber(proposal)}` : <span className="muted">Definido ao salvar</span>}</Row>
         <TextField label="Título do orçamento" value={proposal.title} onChange={set('title')} />
         <Row label="Atualizado">{new Date(proposal.updatedAt).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })}</Row>
+        {isSaved && <ProposalStatusRows proposal={proposal} unsaved={unsaved} />}
       </Section>
 
       <Section title="Cliente">
