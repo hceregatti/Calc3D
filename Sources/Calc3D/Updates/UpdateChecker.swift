@@ -99,10 +99,18 @@ final class UpdateChecker {
 
             let newApp = try await Task.detached { try Self.extractApp(dmg: dmg, staging: staging) }.value
             try Self.launchReplacement(newApp: newApp, target: target)
-            NSApp.terminate(nil)
+            quit()
         } catch {
             phase = .failed("A atualização falhou. Você pode baixar a versão manualmente na página de releases.")
         }
+    }
+
+    /// Encerra o app para o script trocar o bundle. Fecha a janela de atualização antes e,
+    /// como `terminate` pode ser adiado ou cancelado, força a saída se o app ainda estiver aberto.
+    private func quit() {
+        isPresented = false
+        NSApp.terminate(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { exit(0) }
     }
 
     // MARK: - Instalação
