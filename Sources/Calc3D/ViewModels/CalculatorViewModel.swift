@@ -155,6 +155,7 @@ final class CalculatorViewModel {
             guard filaments != oldValue else { return }
             filamentsStore.save(filaments)
             syncJobFilament()
+            syncDefaultFilament()
         }
     }
     var selectedFilamentID: UUID?
@@ -207,6 +208,36 @@ final class CalculatorViewModel {
         defaults.currency = settings.currency
         defaults.weightUnit = settings.weightUnit
         settings = defaults
+    }
+
+    /// Define o filamento padrão a partir da biblioteca (nil = valores manuais, que ficam como estão).
+    func setDefaultFilament(_ filament: Filament?) {
+        settings.defaultFilamentID = filament?.id
+        if let filament {
+            settings.spoolPrice = filament.price
+            settings.spoolWeight = filament.netWeight
+        }
+    }
+
+    /// Mantém o filamento padrão alinhado à biblioteca quando o rolo é editado ou excluído.
+    /// A alteração também vai para os parâmetros já salvos, sem salvar outras edições pendentes.
+    func syncDefaultFilament() {
+        guard let id = settings.defaultFilamentID else { return }
+        let source = filaments.first { $0.id == id }
+        func apply(_ s: inout ShopSettings) {
+            guard let source else { s.defaultFilamentID = nil; return }
+            s.spoolPrice = source.price
+            s.spoolWeight = source.netWeight
+        }
+        var saved = lastSavedSettings
+        apply(&saved)
+        if saved != lastSavedSettings {
+            store.save(saved)
+            lastSavedSettings = saved
+        }
+        var current = settings
+        apply(&current)
+        settings = current
     }
 
     func saveSettings() {

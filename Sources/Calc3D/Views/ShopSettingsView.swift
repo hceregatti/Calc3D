@@ -50,8 +50,26 @@ struct ShopSettingsView: View {
             }
 
             Section {
-                NumberField(title: "Preço do rolo", value: s.spoolPrice, unit: Currency.symbol, style: .money)
+                LabeledContent {
+                    Picker("Filamento padrão", selection: Binding<UUID?>(
+                        get: { model.settings.defaultFilamentID },
+                        set: { model.setDefaultFilament(model.filament(withID: $0)) }
+                    )) {
+                        Text("Outro (manual)").tag(UUID?.none)
+                        ForEach(model.filaments) { Text($0.displayName).tag(UUID?.some($0.id)) }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: 260)
+                } label: {
+                    Text("Filamento padrão")
+                    Text(model.filaments.isEmpty ? "Cadastre rolos na aba Filamentos" : "Usado nas peças sem filamento escolhido")
+                }
+                let fromLibrary = model.settings.defaultFilamentID != nil
+                NumberField(title: "Preço do rolo", value: s.spoolPrice, unit: Currency.symbol,
+                            hint: fromLibrary ? "Vem da biblioteca; escolha “Outro (manual)” para digitar" : nil, style: .money)
+                    .disabled(fromLibrary)
                 NumberField(title: "Peso do rolo", value: s.spoolWeight, unit: "g", style: .weight)
+                    .disabled(fromLibrary)
             } header: {
                 BadgeLabel("Filamento padrão", systemImage: "circle.circle.fill", color: .orange)
             }
