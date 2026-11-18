@@ -10,6 +10,8 @@ public struct ShopSettings: Codable, Equatable, Sendable {
     public var spoolPrice: Double = 120
     /// Peso líquido do rolo (g).
     public var spoolWeight: Double = 1000
+    /// Filamento da biblioteca usado como padrão; nil = preço e peso digitados à mão.
+    public var defaultFilamentID: UUID?
 
     // MARK: Energia
     /// Consumo médio real da impressora (W), não a potência da fonte.
@@ -65,6 +67,7 @@ public struct ShopSettings: Codable, Equatable, Sendable {
         let d = Self.defaults
         spoolPrice = value(.spoolPrice, d.spoolPrice)
         spoolWeight = value(.spoolWeight, d.spoolWeight)
+        defaultFilamentID = try? c.decodeIfPresent(UUID.self, forKey: .defaultFilamentID)
         powerWatts = value(.powerWatts, d.powerWatts)
         energyTariff = value(.energyTariff, d.energyTariff)
         printerPrice = value(.printerPrice, d.printerPrice)

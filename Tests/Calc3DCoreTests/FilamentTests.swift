@@ -29,3 +29,14 @@ import Foundation
         #expect(abs(doubled - base * 2) < 1e-9)
     }
 }
+
+@Suite struct DefaultFilamentSettingsTests {
+    @Test func filamentoPadraoSobreviveAoJSONEDadosAntigosSemOCampo() throws {
+        var s = ShopSettings.defaults
+        s.defaultFilamentID = UUID()
+        let back = try JSONDecoder().decode(ShopSettings.self, from: JSONEncoder().encode(s))
+        #expect(back.defaultFilamentID == s.defaultFilamentID)
+        let old = try JSONDecoder().decode(ShopSettings.self, from: Data(#"{"spoolPrice": 99}"#.utf8))
+        #expect(old.defaultFilamentID == nil && old.spoolPrice == 99)
+    }
+}
