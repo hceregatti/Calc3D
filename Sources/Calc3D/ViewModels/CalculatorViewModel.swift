@@ -9,6 +9,7 @@ enum Screen: String, CaseIterable, Identifiable {
     case printJob
     case parts
     case filaments
+    case catalog
     case proposals
     case settings
     case company
@@ -21,6 +22,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .printJob: "Calcular peça"
         case .parts: "Peças"
         case .filaments: "Filamentos"
+        case .catalog: "Catálogo"
         case .proposals: "Orçamentos"
         case .settings: "Parâmetros fixos"
         case .company: "Personalizar orçamento"
@@ -33,6 +35,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .printJob: "Dados da impressão e preço"
         case .parts: "Histórico de cálculos de peças"
         case .filaments: "Biblioteca de rolos e preços"
+        case .catalog: "Peças compartilhadas"
         case .proposals: "Orçamentos com várias peças"
         case .settings: "Máquina, energia, custos e taxas"
         case .company: "Logo, empresa e condições"
@@ -45,6 +48,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .printJob: "cube.fill"
         case .parts: "square.stack.3d.up.fill"
         case .filaments: "cylinder.split.1x2.fill"
+        case .catalog: "books.vertical.fill"
         case .proposals: "doc.text.fill"
         case .settings: "gearshape.fill"
         case .company: "paintbrush.fill"
@@ -57,6 +61,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .printJob: .orange
         case .parts: .purple
         case .filaments: .indigo
+        case .catalog: .cyan
         case .proposals: .green
         case .settings: .gray
         case .company: .teal
@@ -158,6 +163,22 @@ final class CalculatorViewModel {
         }
     }
     var selectedFilamentID: UUID?
+
+    // Catálogo compartilhado (pasta sincronizada com outras pessoas).
+    var catalogEntries: [CatalogEntry] = []
+    var selectedCatalogEntryID: UUID?
+    var catalogOnlyMine = false
+    var catalogSearch = ""
+    var catalogFolderPath: String? {
+        didSet { catalogSettings.folderPath = catalogFolderPath }
+    }
+    var catalogUserName: String {
+        didSet { catalogSettings.userName = catalogUserName }
+    }
+    let catalogUserID: UUID
+    var catalogMessage: String?
+    var isRefreshingCatalog = false
+    @ObservationIgnored let catalogSettings = CatalogSettingsStore()
     var filamentPendingDeletionID: UUID?
     private(set) var settingsFeedback: String?
 
@@ -178,6 +199,10 @@ final class CalculatorViewModel {
         self.quotesStore = quotesStore
         self.proposalsStore = proposalsStore
         self.filamentsStore = filamentsStore
+        let catalogPrefs = CatalogSettingsStore()
+        self.catalogFolderPath = catalogPrefs.folderPath
+        self.catalogUserName = catalogPrefs.userName
+        self.catalogUserID = catalogPrefs.userID
         self.filaments = filamentsStore.load()
         self.imageStore = imageStore
         let company = store.loadCompany()
@@ -574,6 +599,13 @@ final class CalculatorViewModel {
     }
 
     /// Reutiliza os dados da peça, sem substituir os parâmetros fixos atuais.
+    /// Guarda uma cópia de peça (ex.: vinda do catálogo) no histórico.
+    func addQuoteToHistory(_ quote: QuoteRecord) {
+        quotes.insert(quote, at: 0)
+        quotesStore.save(quotes)
+        selectedQuoteIDs = [quote.id]
+    }
+
     func useQuoteAsBase(_ quote: QuoteRecord) {
         calculator.load(quote.job)
         screen = .printJob
@@ -595,7 +627,7 @@ final class CalculatorViewModel {
         }
     }
 
-    private func showQuoteFeedback(_ message: String) {
+    func showQuoteFeedback(_ message: String) {
         quoteFeedback = message
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(2.5))

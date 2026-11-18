@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Janela principal: barra lateral com as telas e o conteúdo selecionado.
@@ -44,6 +45,8 @@ struct ContentView: View {
                 PartsView()
             case .filaments:
                 FilamentsView()
+            case .catalog:
+                CatalogView()
             case .proposals:
                 ProposalsView()
             case .settings:
@@ -53,6 +56,10 @@ struct ContentView: View {
             }
         }
         .tint(Theme.ink)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshCatalogIfConfigured()
+        }
+        .task { model.refreshCatalogIfConfigured() }
         .sheet(isPresented: Binding(
             get: { updater.isPresented },
             set: { if !$0 { updater.dismiss() } }
