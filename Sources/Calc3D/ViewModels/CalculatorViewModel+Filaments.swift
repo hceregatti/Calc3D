@@ -51,4 +51,35 @@ extension CalculatorViewModel {
             if calc.job.filamentPricePerGram != f.pricePerGram { calc.job.filamentPricePerGram = f.pricePerGram }
         }
     }
+
+    // MARK: - Baixa de estoque pelos orçamentos
+
+    /// Desconta o consumo do orçamento dos rolos e salva o orçamento com o registro da baixa.
+    func deductStock(for proposal: ProposalRecord) {
+        guard !proposal.hasStockDeduction else { return }
+        var proposal = proposal
+        let deductions = FilamentUsage.deduct(proposal.filamentRequirements, from: &filaments)
+        guard !deductions.isEmpty else { return }
+        proposal.stockDeductions = deductions
+        saveProposal(proposal)
+        proposalDraft = proposals.first { $0.id == proposal.id }
+    }
+
+    /// Devolve aos rolos o que o orçamento tinha baixado.
+    func revertStock(for proposal: ProposalRecord) {
+        guard proposal.hasStockDeduction else { return }
+        var proposal = proposal
+        FilamentUsage.revert(proposal.stockDeductions, in: &filaments)
+        proposal.stockDeductions = []
+        saveProposal(proposal)
+        proposalDraft = proposals.first { $0.id == proposal.id }
+    }
+
+    /// Baixas já feitas em um rolo, das mais recentes para as mais antigas (para a ficha do filamento).
+    func stockHistory(for filamentID: UUID) -> [(proposal: ProposalRecord, deduction: StockDeduction)] {
+        proposals.flatMap { p in
+            p.stockDeductions.filter { $0.filamentID == filamentID }.map { (p, $0) }
+        }
+        .sorted { $0.deduction.date > $1.deduction.date }
+    }
 }

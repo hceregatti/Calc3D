@@ -97,8 +97,13 @@ private struct FilamentRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(filament.displayName.isEmpty ? "Novo filamento" : filament.displayName)
                     .lineLimit(1)
-                Text("\(Weight.format(grams: filament.remainingWeight)) restantes · \(Weight.pricePerBulkUnit(perGram: filament.pricePerGram))")
-                    .font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text("\(Weight.format(grams: filament.remainingWeight)) restantes · \(Weight.pricePerBulkUnit(perGram: filament.pricePerGram))")
+                        .font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+                    if filament.isRunningLow {
+                        Text("Acabando").font(.caption2.weight(.semibold)).foregroundStyle(Theme.warn)
+                    }
+                }
             }
         }
         .padding(.vertical, 2)
@@ -179,6 +184,24 @@ private struct FilamentEditor: View {
             } footer: {
                 Text("“Buscar na web” abre uma pesquisa com marca, material, cor e peso. Cole aqui o link do anúncio escolhido.")
                     .font(.caption).foregroundStyle(Theme.muted)
+            }
+
+            let history = model.stockHistory(for: filament.id)
+            if !history.isEmpty {
+                Section {
+                    ForEach(Array(history.enumerated()), id: \.offset) { _, entry in
+                        LabeledContent {
+                            Text("−\(Weight.format(grams: entry.deduction.grams))").monospacedDigit()
+                        } label: {
+                            Text(entry.proposal.title.isEmpty ? "Orçamento sem título" : entry.proposal.title)
+                            Text(entry.deduction.date.formatted(date: .abbreviated, time: .shortened))
+                        }
+                    }
+                } header: {
+                    BadgeLabel("Consumo", systemImage: "chart.bar.fill", color: .pink)
+                } footer: {
+                    Text("Baixas feitas por orçamentos neste rolo.").font(.caption).foregroundStyle(Theme.muted)
+                }
             }
 
             Section {

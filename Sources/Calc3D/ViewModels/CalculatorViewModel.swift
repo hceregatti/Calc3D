@@ -450,7 +450,10 @@ final class CalculatorViewModel {
         return ProposalItem(
             name: name.isEmpty ? "Peça sem nome" : name,
             unitPrice: price,
-            sourceQuoteID: quotes.contains { $0.id == quote.id } ? quote.id : nil
+            sourceQuoteID: quotes.contains { $0.id == quote.id } ? quote.id : nil,
+            filamentID: quote.job.filamentID,
+            filamentName: quote.job.filamentName,
+            gramsPerUnit: FilamentUsage.gramsPerUnit(job: quote.job)
         )
     }
 

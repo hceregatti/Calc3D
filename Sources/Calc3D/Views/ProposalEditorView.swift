@@ -63,6 +63,8 @@ struct ProposalEditorView: View {
                     Text("Os valores ficam copiados no orçamento: alterar ou excluir a peça no histórico não muda este documento.")
                 }
 
+                FilamentUsageSection(proposal: proposal)
+
                 Section {
                     LabeledContent("Subtotal dos itens", value: proposal.itemsTotal.map(Currency.format) ?? "Total excede o limite")
                     LabeledContent("Frete") {
@@ -389,5 +391,65 @@ private struct PartCalculatorSheet: View {
             .padding(16)
         }
         .frame(minWidth: 900, idealWidth: 980, minHeight: 640, idealHeight: 720)
+    }
+}
+
+/// Consumo de filamento do orçamento, com aviso de falta e baixa no estoque.
+private struct FilamentUsageSection: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let proposal: ProposalRecord
+
+    var body: some View {
+        let requirements = proposal.filamentRequirements
+        if !requirements.isEmpty || proposal.hasStockDeduction {
+            let done = proposal.hasStockDeduction
+            let changed = done && FilamentUsage.hasChanged(since: proposal.stockDeductions, requirements: requirements)
+            Section {
+                ForEach(requirements, id: \.filamentID) { need in
+                    let filament = model.filament(withID: need.filamentID)
+                    let shortage = FilamentUsage.shortage(required: need.grams, available: filament?.remainingWeight ?? 0)
+                    LabeledContent {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(Weight.format(grams: need.grams)).monospacedDigit()
+                            if done {
+                                EmptyView()
+                            } else if filament == nil {
+                                Text("Filamento removido da biblioteca").font(.caption).foregroundStyle(Theme.warn)
+                            } else if shortage > 0 {
+                                Text("Faltam \(Weight.format(grams: shortage))").font(.caption).foregroundStyle(Theme.warn)
+                            } else if let filament {
+                                Text("Disponível: \(Weight.format(grams: filament.remainingWeight))")
+                                    .font(.caption).foregroundStyle(Theme.muted)
+                            }
+                        }
+                    } label: {
+                        Text(filament?.displayName ?? need.filamentName)
+                    }
+                }
+
+                if done, let date = proposal.stockDeductions.first?.date {
+                    Label("Baixa feita em \(date.formatted(date: .abbreviated, time: .shortened))", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.success)
+                    if changed {
+                        Text("As peças mudaram depois da baixa. Estorne a baixa e dê baixa de novo para atualizar o estoque.")
+                            .font(.caption).foregroundStyle(Theme.warn)
+                    }
+                    Button("Estornar baixa") { model.revertStock(for: proposal) }
+                        .help("Devolve aos rolos o filamento descontado por este orçamento")
+                } else {
+                    Button {
+                        model.deductStock(for: proposal)
+                    } label: {
+                        Label("Dar baixa no estoque", systemImage: "arrow.down.circle.fill")
+                    }
+                    .disabled(requirements.allSatisfy { model.filament(withID: $0.filamentID) == nil })
+                    .help("Desconta o filamento deste orçamento do peso restante dos rolos e salva o orçamento")
+                }
+            } header: {
+                Text("Consumo de filamento")
+            } footer: {
+                Text("Peso da mesa com desperdício, dividido pelas peças da mesa, vezes a quantidade. Itens sem filamento da biblioteca não entram.")
+            }
+        }
     }
 }

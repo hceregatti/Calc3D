@@ -1,3 +1,4 @@
+import Calc3DCore
 import Foundation
 
 /// Item comercial independente, com valores copiados no momento da inclusão.
@@ -13,6 +14,10 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
     let sourceQuoteID: UUID?
     /// Foto do produto (arquivo no ImageStore). Sem foto, usa a imagem padrão.
     var imageID: UUID?
+    /// Filamento da biblioteca usado na peça e consumo por unidade (g), copiados na inclusão.
+    var filamentID: UUID?
+    var filamentName: String?
+    var gramsPerUnit: Double?
 
     var unitPrice: Double {
         get { Double(unitPriceCents) / 100 }
@@ -36,7 +41,10 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
         quantity: Int = 1,
         unitPrice: Double,
         sourceQuoteID: UUID? = nil,
-        imageID: UUID? = nil
+        imageID: UUID? = nil,
+        filamentID: UUID? = nil,
+        filamentName: String? = nil,
+        gramsPerUnit: Double? = nil
     ) {
         self.id = id
         self.name = name
@@ -45,6 +53,9 @@ struct ProposalItem: Codable, Identifiable, Equatable, Sendable {
         self.unitPriceCents = Self.cents(for: unitPrice)
         self.sourceQuoteID = sourceQuoteID
         self.imageID = imageID
+        self.filamentID = filamentID
+        self.filamentName = filamentName
+        self.gramsPerUnit = gramsPerUnit
     }
 
     static func cents(for value: Double) -> Int64 {
@@ -83,6 +94,18 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
     var paymentTerms: String
     var deliveryTime: String
     var notes: String
+
+    /// Baixas feitas no estoque de filamento por este orçamento (vazio = ainda não baixado).
+    var stockDeductions: [StockDeduction] = []
+
+    var hasStockDeduction: Bool { !stockDeductions.isEmpty }
+
+    /// Consumo de filamento previsto, somado por rolo.
+    var filamentRequirements: [FilamentUsage.Requirement] {
+        FilamentUsage.requirements(items.map {
+            .init(filamentID: $0.filamentID, filamentName: $0.filamentName ?? "", gramsPerUnit: $0.gramsPerUnit, quantity: $0.quantity)
+        })
+    }
 
     var discount: Double {
         get { Double(discountCents) / 100 }
@@ -189,12 +212,13 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
         paymentTerms = try c.decodeIfPresent(String.self, forKey: .paymentTerms) ?? ""
         deliveryTime = try c.decodeIfPresent(String.self, forKey: .deliveryTime) ?? ""
         notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        stockDeductions = try c.decodeIfPresent([StockDeduction].self, forKey: .stockDeductions) ?? []
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, number, title, createdAt, updatedAt
         case customerName, customerContact, customerDocument, customerAddress
         case items, discountCents, shippingCents
-        case validityDays, paymentTerms, deliveryTime, notes
+        case validityDays, paymentTerms, deliveryTime, notes, stockDeductions
     }
 }
