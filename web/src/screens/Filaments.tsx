@@ -95,7 +95,7 @@ function FilamentEditor({ filament: f }: { filament: Filament }) {
         <NumberField label="Peso restante" kind="weight" value={f.remainingWeight} hint="Quanto ainda há no rolo" onChange={(remainingWeight) => set({ remainingWeight })} />
         <NumberField label="Diâmetro" unit="mm" value={f.diameter} hint="1,75 ou 2,85" onChange={(diameter) => set({ diameter })} />
         <Row label="Preço por unidade de peso">{pricePerBulk(filamentPricePerGram(f), weightUnit)}</Row>
-        <progress className="spool-bar" value={remainingFraction(f)} max={1} aria-label="Restante do rolo" />
+        <progress className="spool-bar" style={{ accentColor: f.colorHex }} value={remainingFraction(f)} max={1} aria-label="Restante do rolo" />
       </Section>
 
       <Section title="Impressão" icon={Thermometer} color="#ff9f0a">
