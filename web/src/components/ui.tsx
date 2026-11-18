@@ -98,6 +98,7 @@ export function NumberInput({
   width = 110,
   ariaLabel,
   kind = 'decimal',
+  disabled = false,
 }: {
   value: number
   onChange: (v: number) => void
@@ -107,6 +108,7 @@ export function NumberInput({
   width?: number
   ariaLabel?: string
   kind?: NumberKind
+  disabled?: boolean
 }) {
   const unit = useApp((s) => s.settings.weightUnit)
   const maxFraction = kind === 'money' ? 2 : kind === 'weight' ? WEIGHT_UNITS[unit].digits : digits
@@ -128,6 +130,7 @@ export function NumberInput({
       className="input number"
       inputMode="decimal"
       aria-label={ariaLabel}
+      disabled={disabled}
       style={{ width }}
       value={text}
       onFocus={(e) => {
@@ -162,6 +165,7 @@ export function NumberField({
   max,
   warn,
   kind,
+  disabled,
 }: {
   label: string
   value: number
@@ -172,13 +176,14 @@ export function NumberField({
   max?: number
   warn?: boolean
   kind?: NumberKind
+  disabled?: boolean
 }) {
   const weightUnit = useApp((s) => s.settings.weightUnit)
   const currency = useApp((s) => s.settings.currency)
   const shownUnit = kind === 'weight' ? weightUnit : kind === 'money' ? currencySymbol(currency) + (unit ?? '') : unit
   return (
     <Row label={label} hint={hint && <span className={warn ? 'warn' : undefined}>{hint}</span>}>
-      <NumberInput value={value} onChange={onChange} min={min} max={max} ariaLabel={label} kind={kind} />
+      <NumberInput value={value} onChange={onChange} min={min} max={max} ariaLabel={label} kind={kind} disabled={disabled} />
       <span className="unit">{shownUnit}</span>
     </Row>
   )

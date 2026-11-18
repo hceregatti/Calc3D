@@ -89,6 +89,8 @@ interface AppState {
   newJob: () => void
 
   setSettings: (patch: Partial<ShopSettings>) => void
+  /** Define o filamento padrão a partir da biblioteca (null = valores manuais, que ficam como estão). */
+  setDefaultFilament: (id: string | null) => void
   saveSettings: () => void
   resetSettings: () => void
 
@@ -159,6 +161,23 @@ const initialSettings = withValidDisplay(withDefaults(defaultSettings, load(KEYS
 applyDisplay(initialSettings)
 const initialCompany = withDefaults(defaultCompany, load(KEYS.company, null))
 
+/**
+ * Mantém o filamento padrão alinhado à biblioteca quando o rolo é editado ou excluído.
+ * A alteração também vai para os parâmetros já salvos, sem salvar outras edições pendentes.
+ */
+function syncDefaultFilament() {
+  const { settings, savedSettings, filaments } = useApp.getState()
+  const id = settings.defaultFilamentId
+  if (!id) return
+  const source = filaments.find((f) => f.id === id)
+  const patch: Partial<ShopSettings> = source
+    ? { spoolPrice: source.price, spoolWeight: source.netWeight }
+    : { defaultFilamentId: null }
+  const saved = { ...savedSettings, ...(savedSettings.defaultFilamentId === id ? patch : {}) }
+  save(KEYS.settings, saved)
+  useApp.setState({ settings: { ...settings, ...patch }, savedSettings: saved })
+}
+
 export const useApp = create<AppState>((set, get) => ({
   screen: screenFromHash(),
   settings: initialSettings,
@@ -208,6 +227,10 @@ export const useApp = create<AppState>((set, get) => ({
     applyDisplay(settings)
     set({ settings })
   },
+  setDefaultFilament: (id) => {
+    const f = id ? get().filaments.find((x) => x.id === id) : null
+    get().setSettings(f ? { defaultFilamentId: f.id, spoolPrice: f.price, spoolWeight: f.netWeight } : { defaultFilamentId: null })
+  },
   saveSettings: () => {
     const { settings } = get()
     save(KEYS.settings, settings)
@@ -248,8 +271,9 @@ export const useApp = create<AppState>((set, get) => ({
     const filaments = get().filaments.map((f) => (f.id === id ? { ...f, ...patch } : f))
     set({ filaments })
     save(KEYS.filaments, filaments)
-    // Mantém o cálculo em andamento alinhado ao preço do filamento editado.
+    // Mantém o cálculo em andamento e o filamento padrão alinhados ao rolo editado.
     if (get().job.filamentId === id) get().setJob(get().filamentJobPatch(id))
+    syncDefaultFilament()
   },
 
   duplicateFilament: (id) => {
@@ -265,6 +289,7 @@ export const useApp = create<AppState>((set, get) => ({
     const filaments = get().filaments.filter((f) => f.id !== id)
     set({ filaments, selectedFilamentId: get().selectedFilamentId === id ? null : get().selectedFilamentId })
     save(KEYS.filaments, filaments)
+    syncDefaultFilament()
   },
 
   selectFilament: (id) => set({ selectedFilamentId: id }),

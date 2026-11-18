@@ -23,6 +23,7 @@ import { useRef, useState } from 'react'
 import { exportBackup, importBackup } from '../backup'
 import { money, derived } from '../core/calculator'
 import { CURRENCIES, WEIGHT_UNITS, cpfCnpjMask, phoneMask, type CurrencyCode, type WeightUnitId } from '../core/format'
+import { filamentDisplayName } from '../core/filament'
 import { defaultCompany, newItem, newProposal, toCents } from '../core/models'
 import { ImageSlot } from '../components/ImageSlot'
 import { NumberField, NumberInput, PageHeader, Row, Section, Stepper, TextField } from '../components/ui'
@@ -39,7 +40,8 @@ function SaveStatus({ unsaved, savedLabel }: { unsaved: boolean; savedLabel: str
 }
 
 export function ShopSettingsScreen() {
-  const { settings: s, savedSettings, setSettings, saveSettings, resetSettings } = useApp()
+  const { settings: s, savedSettings, setSettings, saveSettings, resetSettings, filaments, setDefaultFilament } = useApp()
+  const fromLibrary = s.defaultFilamentId !== null
   const unsaved = JSON.stringify(s) !== JSON.stringify(savedSettings)
   const d = derived(s)
   type NumericKey = { [K in keyof typeof s]: (typeof s)[K] extends number ? K : never }[keyof typeof s]
@@ -87,8 +89,15 @@ export function ShopSettingsScreen() {
       </Section>
 
       <Section title="Filamento padrão" icon={CircleDot} color="#ff9f0a">
-        <NumberField label="Preço do rolo" kind="money" {...field('spoolPrice')} />
-        <NumberField label="Peso do rolo" kind="weight" {...field('spoolWeight')} />
+        <Row label="Filamento padrão" hint={filaments.length ? 'Usado nas peças sem filamento escolhido' : 'Cadastre rolos na aba Filamentos'}>
+          <select className="input" style={{ width: 260 }} aria-label="Filamento padrão" value={s.defaultFilamentId ?? ''}
+            onChange={(e) => setDefaultFilament(e.target.value || null)}>
+            <option value="">Outro (manual)</option>
+            {filaments.map((f) => <option key={f.id} value={f.id}>{filamentDisplayName(f)}</option>)}
+          </select>
+        </Row>
+        <NumberField label="Preço do rolo" kind="money" disabled={fromLibrary} hint={fromLibrary ? 'Vem da biblioteca; escolha “Outro (manual)” para digitar' : undefined} {...field('spoolPrice')} />
+        <NumberField label="Peso do rolo" kind="weight" disabled={fromLibrary} {...field('spoolWeight')} />
       </Section>
 
       <Section title="Energia" icon={Zap} color="#ffd60a">

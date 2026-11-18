@@ -18,6 +18,8 @@ import { money, weight, type CurrencyCode, type WeightUnitId } from './format'
 export interface ShopSettings {
   spoolPrice: number
   spoolWeight: number
+  /** Filamento da biblioteca usado como padrão; null = preço e peso digitados à mão. */
+  defaultFilamentId: string | null
   powerWatts: number
   energyTariff: number
   printerPrice: number
@@ -42,6 +44,7 @@ export interface ShopSettings {
 export const defaultSettings: ShopSettings = {
   spoolPrice: 120,
   spoolWeight: 1000,
+  defaultFilamentId: null,
   powerWatts: 150,
   energyTariff: 1.05,
   printerPrice: 3500,
