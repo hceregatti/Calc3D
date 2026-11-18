@@ -85,6 +85,8 @@ final class CalculatorViewModel {
 
     /// Orçamento selecionado na tela de orçamentos.
     var selectedProposalID: UUID?
+    /// Aba da lista de orçamentos: aguardando aprovação, vencidos ou vendas.
+    var proposalFilter: ProposalStatus = .waiting
     var proposalDraft: ProposalRecord?
     var proposalPendingDeletionID: UUID?
     var isConfirmingProposalDiscard = false
@@ -344,6 +346,7 @@ final class CalculatorViewModel {
         proposals.sort { $0.updatedAt > $1.updatedAt }
         proposalsStore.save(proposals)
         selectedProposalID = proposal.id
+        proposalFilter = proposal.status()
     }
 
     /// Reserva o próximo número sequencial sem descartar edições pendentes do perfil.
@@ -554,6 +557,7 @@ final class CalculatorViewModel {
         guard let proposal = proposals.first(where: { $0.id == id }) else { return }
         proposalDraft = proposal
         selectedProposalID = proposal.id
+        proposalFilter = proposal.status()
     }
 
     func deleteProposal(_ proposal: ProposalRecord) {

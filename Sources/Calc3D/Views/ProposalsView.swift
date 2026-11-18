@@ -23,12 +23,42 @@ struct ProposalsView: View {
                 }
                 .padding(12)
 
+                Picker("Situação", selection: $model.proposalFilter) {
+                    ForEach(ProposalStatus.allCases, id: \.self) { status in
+                        Text("\(status.title) (\(model.proposals(in: status).count))").tag(status)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+
+                let shown = model.proposals(in: model.proposalFilter)
                 List(selection: $model.selectedProposalID) {
-                    ForEach(model.proposals) { proposal in
+                    ForEach(shown) { proposal in
                         ProposalRow(proposal: proposal)
                             .tag(proposal.id)
                     }
                 }
+                .overlay {
+                    if shown.isEmpty {
+                        ContentUnavailableView {
+                            Label(emptyTitle(model.proposalFilter), systemImage: model.proposalFilter.systemImage)
+                        } description: {
+                            Text(emptyText(model.proposalFilter))
+                        }
+                    }
+                }
+                Divider()
+                HStack {
+                    Text(totalLabel(model.proposalFilter))
+                    Spacer()
+                    Text(Currency.format(model.proposalsTotal(in: model.proposalFilter))).monospacedDigit()
+                }
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .onChange(of: model.selectedProposalID) { _, proposalID in
                     if let proposalID {
                         model.requestOpenProposal(proposalID)
@@ -73,6 +103,30 @@ struct ProposalsView: View {
             Text("\(title.isEmpty ? "Este orçamento" : "\"\(title)\"") será removido permanentemente.")
         }
     }
+
+    private func emptyTitle(_ status: ProposalStatus) -> String {
+        switch status {
+        case .waiting: "Nada aguardando"
+        case .expired: "Nenhum vencido"
+        case .sold: "Nenhuma venda"
+        }
+    }
+
+    private func emptyText(_ status: ProposalStatus) -> String {
+        switch status {
+        case .waiting: "Orçamentos salvos aguardam aqui até serem aprovados ou vencerem."
+        case .expired: "Orçamentos que passam da validade sem aprovação saem da fila e vêm para cá."
+        case .sold: "Confirme a venda de um orçamento para vê-lo aqui."
+        }
+    }
+
+    private func totalLabel(_ status: ProposalStatus) -> String {
+        switch status {
+        case .waiting: "Em aberto"
+        case .expired: "Perdido por validade"
+        case .sold: "Total vendido"
+        }
+    }
 }
 
 private struct ProposalRow: View {
@@ -92,7 +146,31 @@ private struct ProposalRow: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            Text(statusText)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(statusColor)
         }
         .padding(.vertical, 4)
+    }
+
+    private var statusText: String {
+        switch proposal.status() {
+        case .sold:
+            return "Venda em " + (proposal.saleConfirmedAt ?? proposal.updatedAt).formatted(date: .abbreviated, time: .omitted)
+        case .expired:
+            let days = -(proposal.daysUntilExpiry() ?? 0)
+            return days == 1 ? "Venceu ontem" : "Venceu há \(days) dias"
+        case .waiting:
+            guard let days = proposal.daysUntilExpiry() else { return "Sem validade" }
+            return days == 0 ? "Vence hoje" : days == 1 ? "Vence amanhã" : "Vence em \(days) dias"
+        }
+    }
+
+    private var statusColor: Color {
+        switch proposal.status() {
+        case .sold: Theme.success
+        case .expired: Theme.danger
+        case .waiting: (proposal.daysUntilExpiry() ?? 99) <= 2 ? Theme.warn : Theme.muted
+        }
     }
 }

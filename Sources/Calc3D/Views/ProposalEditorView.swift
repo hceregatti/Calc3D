@@ -18,6 +18,9 @@ struct ProposalEditorView: View {
                     LabeledContent("Número", value: proposal.formattedNumber.map { "Nº \($0)" } ?? "Definido ao salvar")
                     TextField("Título do orçamento", text: textBinding(\.title, in: model))
                     LabeledContent("Atualizada", value: proposal.updatedAt.formatted(date: .long, time: .shortened))
+                    if isSaved {
+                        ProposalStatusRow(proposal: proposal)
+                    }
                 }
 
                 Section("Cliente") {
@@ -451,5 +454,59 @@ private struct FilamentUsageSection: View {
                 Text("Peso da mesa com desperdício, dividido pelas peças da mesa, vezes a quantidade. Itens sem filamento da biblioteca não entram.")
             }
         }
+    }
+}
+
+/// Situação do orçamento (aguardando, vencido ou vendido) e as ações de cada uma.
+private struct ProposalStatusRow: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let proposal: ProposalRecord
+
+    var body: some View {
+        let status = proposal.status()
+        let blocked = model.proposalHasUnsavedChanges
+        VStack(alignment: .leading, spacing: 8) {
+            switch status {
+            case .waiting:
+                LabeledContent("Situação") {
+                    Label(waitingText, systemImage: ProposalStatus.waiting.systemImage).foregroundStyle(Theme.ink2)
+                }
+                Button { model.confirmSale(for: proposal) } label: {
+                    Label("Confirmar venda", systemImage: "checkmark.seal.fill")
+                }
+                .disabled(blocked)
+            case .expired:
+                LabeledContent("Situação") {
+                    Label("Vencido em \(proposal.validUntil?.formatted(date: .abbreviated, time: .omitted) ?? "—")",
+                          systemImage: ProposalStatus.expired.systemImage).foregroundStyle(Theme.danger)
+                }
+                HStack {
+                    Button { model.confirmSale(for: proposal) } label: {
+                        Label("Confirmar venda", systemImage: "checkmark.seal.fill")
+                    }
+                    Button { model.renewProposal(proposal) } label: {
+                        Label("Renovar validade", systemImage: "arrow.clockwise")
+                    }
+                    .help("Reinicia a contagem da validade a partir de hoje e devolve o orçamento à fila")
+                }
+                .disabled(blocked)
+            case .sold:
+                LabeledContent("Situação") {
+                    Label("Venda confirmada em \((proposal.saleConfirmedAt ?? proposal.updatedAt).formatted(date: .abbreviated, time: .shortened))",
+                          systemImage: ProposalStatus.sold.systemImage).foregroundStyle(Theme.success)
+                }
+                Button("Desfazer venda") { model.reopenProposal(proposal) }
+                    .disabled(blocked)
+            }
+            if blocked {
+                Text("Salve as alterações para mudar a situação.").font(.caption).foregroundStyle(Theme.muted)
+            }
+        }
+    }
+
+    private var waitingText: String {
+        guard let days = proposal.daysUntilExpiry() else { return "Aguardando aprovação · sem validade" }
+        return days == 0 ? "Aguardando aprovação · vence hoje"
+            : "Aguardando aprovação · vence em \(days) \(days == 1 ? "dia" : "dias")"
     }
 }

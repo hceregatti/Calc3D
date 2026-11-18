@@ -98,6 +98,9 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
     /// Baixas feitas no estoque de filamento por este orçamento (vazio = ainda não baixado).
     var stockDeductions: [StockDeduction] = []
 
+    /// Quando a venda foi confirmada; nil = ainda não vendido.
+    var saleConfirmedAt: Date?
+
     var hasStockDeduction: Bool { !stockDeductions.isEmpty }
 
     /// Consumo de filamento previsto, somado por rolo.
@@ -144,8 +147,16 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
     }
 
     var validUntil: Date? {
-        guard validityDays > 0 else { return nil }
-        return Calendar.current.date(byAdding: .day, value: validityDays, to: updatedAt)
+        ProposalStatus.validUntil(updatedAt: updatedAt, validityDays: validityDays)
+    }
+
+    func status(now: Date = .now) -> ProposalStatus {
+        ProposalStatus.evaluate(updatedAt: updatedAt, validityDays: validityDays, saleConfirmedAt: saleConfirmedAt, now: now)
+    }
+
+    /// Dias até vencer (0 = hoje, negativo = vencido); nil sem validade.
+    func daysUntilExpiry(now: Date = .now) -> Int? {
+        ProposalStatus.daysUntilExpiry(updatedAt: updatedAt, validityDays: validityDays, now: now)
     }
 
     init(
@@ -213,12 +224,13 @@ struct ProposalRecord: Codable, Identifiable, Equatable, Sendable {
         deliveryTime = try c.decodeIfPresent(String.self, forKey: .deliveryTime) ?? ""
         notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
         stockDeductions = try c.decodeIfPresent([StockDeduction].self, forKey: .stockDeductions) ?? []
+        saleConfirmedAt = try c.decodeIfPresent(Date.self, forKey: .saleConfirmedAt)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, number, title, createdAt, updatedAt
         case customerName, customerContact, customerDocument, customerAddress
         case items, discountCents, shippingCents
-        case validityDays, paymentTerms, deliveryTime, notes, stockDeductions
+        case validityDays, paymentTerms, deliveryTime, notes, stockDeductions, saleConfirmedAt
     }
 }
