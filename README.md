@@ -21,6 +21,11 @@ O app não é notarizado pela Apple, então na primeira abertura o macOS bloquei
 xattr -dr com.apple.quarantine /Applications/Calc3D.app
 ```
 
+**Atualizações**: o app avisa quando há uma versão nova ao abrir, e o menu **Calc3D → Verificar se há
+Atualizações…** faz a checagem na hora. Ele consulta a API do GitHub e, se ela recusar (limite de 60
+consultas por hora sem login), usa a página pública de releases, então a busca continua funcionando.
+A atualização baixa o `.dmg`, troca o app e o reabre.
+
 Para publicar uma nova versão, atualize `CFBundleShortVersionString` e `CFBundleVersion` em `Resources/Info.plist` (e a versão em `web/package.json`), faça push da `main` e depois envie a tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` e o anexa ao Release.
 
 ## Comandos
@@ -106,6 +111,8 @@ scripts/
 - **Cor de destaque**: terracota (`#C2410C` no claro, `#F2784B` no escuro) em botões primários, item
   ativo da barra lateral, foco dos campos, links e no preço sugerido. As categorias do gráfico de
   custo têm cores distintas para facilitar a leitura.
+- **Cursor**: botões, menus e itens clicáveis das listas mostram o cursor de mãozinha ao passar o mouse
+  (botões desabilitados mantêm o cursor normal).
 
 ### Importar STL e 3MF
 
@@ -137,11 +144,12 @@ com os próprios parâmetros.
   bico, a altura de camada e o perfil de impressão (lidos de `Metadata/project_settings.config`,
   mesmo em arquivos não fatiados).
 - **Calcular**: abre o modelo em Calcular peça. **Salvar**: guarda a peça calculada no seu histórico.
-  **Baixar**: salva uma cópia do arquivo no computador. **Abrir no fatiador**: abre o modelo no
-  **Bambu Studio** ou no **Creality Print** (os instalados em Aplicativos; o que não estiver aparece
-  desabilitado). O app abre uma cópia temporária, então salvar no fatiador não altera o arquivo
-  compartilhado. **Mostrar no Finder** e **Excluir** (vai para a Lixeira e some para todos que usam a
-  pasta).
+  **Baixar**: salva uma cópia do arquivo no computador. **Mostrar no Finder** e **Excluir** (vai para
+  a Lixeira e some para todos que usam a pasta).
+- **Abrir no fatiador**: dois cartões, um para o **Bambu Studio** e outro para o **Creality Print**,
+  com o ícone do aplicativo instalado. Um clique abre o modelo no fatiador; o que não estiver em
+  Aplicativos aparece esmaecido como "Não instalado". O app abre uma cópia temporária, então salvar
+  no fatiador não altera o arquivo compartilhado. As mesmas opções estão no clique direito da lista.
 
 ## Modelo de custo
 
