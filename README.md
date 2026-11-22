@@ -21,7 +21,7 @@ O app não é notarizado pela Apple, então na primeira abertura o macOS bloquei
 xattr -dr com.apple.quarantine /Applications/Calc3D.app
 ```
 
-Para publicar uma nova versão, atualize `CFBundleShortVersionString` em `Resources/Info.plist` e envie uma tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` e o anexa ao Release.
+Para publicar uma nova versão, atualize `CFBundleShortVersionString` e `CFBundleVersion` em `Resources/Info.plist` (e a versão em `web/package.json`), faça push da `main` e depois envie a tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` e o anexa ao Release.
 
 ## Comandos
 
@@ -46,12 +46,16 @@ Sources/
     CostCalculator.swift       #   motor de cálculo (todas as fórmulas)
     CostResult.swift           #   resultado, categorias, erros de precificação
     QuoteSummary.swift         #   texto do orçamento + formatação em R$
+    Filament.swift             #   biblioteca de filamentos e estoque
+    CatalogStore.swift         #   lista os modelos 3MF/STL da pasta do catálogo
+    AppUpdate.swift            #   versões semânticas e releases do GitHub
   Calc3D/                      # App macOS (SwiftUI)
     App/Calc3DApp.swift        #   ponto de entrada, janela e menus
     ViewModels/                #   estado da tela (Observation)
     Persistence/               #   salva parâmetros no UserDefaults
+    Import/                    #   leitura de STL/3MF (fatiamento e estimativa de peso por volume)
     Views/
-      ContentView.swift        #   barra lateral com as duas telas
+      ContentView.swift        #   barra lateral com as telas
       PrintJobView.swift       #   tela de impressão: dados da peça + resultado
       ShopSettingsView.swift   #   tela de parâmetros fixos
       ResultsPanel.swift       #   preço, indicadores e composição do custo
@@ -71,20 +75,50 @@ scripts/
   o cálculo no histórico; "Adicionar a orçamento" inclui o cálculo atual direto em um orçamento.
 - **Peças** (⌘3): histórico de cálculos de peças, com os parâmetros originais. Selecione várias
   (⌘-clique/⇧-clique) para gerar um orçamento ou adicioná-las a um orçamento existente.
-- **Orçamentos** (⌘4): orçamentos com várias peças, quantidades, cliente e exportação em PDF.
+- **Filamentos** (⌘4): biblioteca de rolos com preço, cor e peso restante. A peça usa o preço do filamento
+  escolhido, e o consumo dos orçamentos pode dar baixa no peso restante do rolo.
+- **Catálogo** (⌘5): pasta compartilhada com modelos 3MF/STL já configurados (veja [Catálogo](#catálogo)).
+- **Orçamentos** (⌘6): orçamentos com várias peças, quantidades, cliente e exportação em PDF.
   "Calcular nova peça…" abre o mesmo formulário da tela Calcular peça (inclusive importação de
   STL/3MF) e adiciona o preço sugerido ao orçamento, opcionalmente salvando a peça no histórico.
-  "Adicionar do histórico…" inclui várias peças já salvas de uma vez.
-- **Personalizar orçamento** (⌘5): logo, dados e contatos da empresa, cor do PDF, rodapé,
+  "Adicionar do histórico…" inclui várias peças já salvas de uma vez. A fila separa orçamentos
+  aguardando, vencidos e vendas.
+- **Parâmetros fixos** (⌘7 ou ⌘,): configurados uma vez. Filamento padrão (escolhido na biblioteca),
+  energia, máquina, valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
+  Mostra quanto custa uma hora de máquina e permite salvar alterações explicitamente.
+- **Personalizar orçamento** (⌘8): logo, dados e contatos da empresa, cor do PDF, rodapé,
   numeração e condições padrão (validade, pagamento, prazo, observações). Cada produto do
   orçamento aceita uma foto; sem foto, o PDF usa uma imagem padrão.
-- **Parâmetros fixos** (⌘6 ou ⌘,): configurados uma vez. Filamento padrão, energia, máquina,
-  valor da hora, embalagem, custos fixos, taxa de falha, impostos e taxas de venda.
-  Mostra quanto custa uma hora de máquina e permite salvar alterações explicitamente.
-
-Na tela Calcular peça, importe arquivos STL ou 3MF do Bambu Studio. Arquivos fatiados podem preencher peso e tempo quando os metadados estiverem disponíveis; nos demais casos, preencha os valores do fatiador.
 
 ⌘N inicia uma nova peça, ⇧⌘N cria um novo orçamento e ⇧⌘C copia o resumo da peça.
+
+### Importar STL e 3MF
+
+Na tela Calcular peça, "Importar STL ou 3MF" preenche o nome e, quando possível, o peso e o tempo:
+
+- **3MF fatiado** (Bambu Studio/Orca): o app lê as estimativas gravadas pelo fatiador em
+  `Metadata/slice_info.config`: peso, tempo e filamentos de cada mesa. Com mais de uma mesa fatiada,
+  você escolhe qual usar (no Catálogo).
+- **3MF sem fatiamento ou STL**: o arquivo não traz peso nem tempo. O app **estima o peso pelo
+  volume** da malha (casca + preenchimento, com a densidade e o preenchimento do projeto, ou PLA a
+  15% se não constarem) e avisa que é uma aproximação. O tempo de impressão não é estimado: preencha
+  o valor do fatiador.
+
+## Catálogo
+
+O Catálogo é uma pasta compartilhada (iCloud Drive, Google Drive, Dropbox, rede…) com arquivos
+3MF/STL já configurados. Ele não guarda cálculos: cada pessoa lê as informações do arquivo e calcula
+com os próprios parâmetros.
+
+- **Escolher a pasta**: na primeira vez, selecione a pasta; subpastas também são lidas. Arquivos da
+  nuvem ainda não baixados são avisados e entram ao atualizar.
+- **Enviar arquivo**: copia 3MF/STL do computador para a pasta, sem sobrescrever (nomes repetidos
+  viram "nome 2").
+- **Detalhe do modelo**: formato, pasta, mesas, peso, tempo e filamentos lidos do arquivo, e o custo e
+  o preço sugeridos com os seus parâmetros (quando há peso e tempo do fatiador).
+- **Calcular**: abre o modelo em Calcular peça. **Salvar**: guarda a peça calculada no seu histórico.
+  **Baixar**: salva uma cópia do arquivo no computador. **Mostrar no Finder** e **Excluir** (vai para a
+  Lixeira e some para todos que usam a pasta).
 
 ## Modelo de custo
 
