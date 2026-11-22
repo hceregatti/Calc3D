@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import Calc3DCore
 
 /// O que foi possível ler de um modelo do catálogo.
@@ -86,9 +87,17 @@ extension CalculatorViewModel {
         }
     }
 
+    /// Dados do arquivo já com a mesa escolhida (quando há várias); nil se ainda não leu ou falhou.
+    func catalogData(for file: CatalogFile) -> ImportedModelData? {
+        guard case .loaded(let data)? = catalogFileInfo[file.id] else { return nil }
+        guard data.plates.count > 1 else { return data }
+        let wanted = catalogPlateChoice[file.id] ?? data.plates[0].index
+        return data.selecting(data.plates.first { $0.index == wanted } ?? data.plates[0])
+    }
+
     /// Peça calculada com os meus parâmetros a partir do que o arquivo traz; nil se faltar peso ou tempo.
     func catalogJob(for file: CatalogFile) -> PrintJob? {
-        guard case .loaded(let data)? = catalogFileInfo[file.id],
+        guard let data = catalogData(for: file),
               let weight = data.weightGrams, let seconds = data.durationSeconds, seconds > 0 else { return nil }
         var job = calculator.job
         job.name = data.name
@@ -101,10 +110,67 @@ extension CalculatorViewModel {
 
     /// Abre o modelo em "Calcular peça" com os meus parâmetros fixos.
     func openCatalogFileInCalculator(_ file: CatalogFile) {
-        guard case .loaded(let data)? = catalogFileInfo[file.id] else { return }
+        guard let data = catalogData(for: file) else { return }
         calculator.load(calculator.job)
         calculator.applyImportedModel(data)
         screen = .printJob
+    }
+
+    /// Envia arquivos 3MF/STL do computador para a pasta do catálogo, sem sobrescrever nenhum existente.
+    func uploadToCatalog() {
+        guard let folder = catalogFolderPath else { return }
+        let panel = NSOpenPanel()
+        panel.title = "Enviar modelos para o catálogo"
+        panel.prompt = "Enviar"
+        panel.allowedContentTypes = CatalogFile.supportedExtensions.sorted().compactMap { UTType(filenameExtension: $0) }
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK else { return }
+
+        let fm = FileManager.default
+        let root = URL(fileURLWithPath: folder, isDirectory: true)
+        var sent = 0
+        var failures: [String] = []
+        var lastSent: URL?
+        for source in panel.urls {
+            var target = root.appendingPathComponent(source.lastPathComponent)
+            var counter = 2
+            while fm.fileExists(atPath: target.path) {
+                let base = source.deletingPathExtension().lastPathComponent
+                target = root.appendingPathComponent("\(base) \(counter).\(source.pathExtension)")
+                counter += 1
+            }
+            do {
+                try fm.copyItem(at: source, to: target)
+                sent += 1
+                lastSent = target
+            } catch {
+                failures.append("\(source.lastPathComponent): \(error.localizedDescription)")
+            }
+        }
+        refreshCatalog()
+        if sent == 1, let lastSent { selectedCatalogFileID = lastSent.standardizedFileURL.path }
+        var parts: [String] = []
+        if sent > 0 { parts.append(sent == 1 ? "1 arquivo enviado ao catálogo ✔" : "\(sent) arquivos enviados ao catálogo ✔") }
+        if !failures.isEmpty { parts.append("Falhou: " + failures.joined(separator: "; ")) }
+        catalogMessage = parts.joined(separator: " ")
+    }
+
+    /// Salva uma cópia do arquivo do catálogo no computador.
+    func downloadCatalogFile(_ file: CatalogFile) {
+        let panel = NSSavePanel()
+        panel.title = "Baixar modelo do catálogo"
+        panel.nameFieldStringValue = file.url.lastPathComponent
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        let fm = FileManager.default
+        do {
+            if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
+            try fm.copyItem(at: file.url, to: destination)
+            catalogMessage = "\"\(file.url.lastPathComponent)\" baixado ✔"
+        } catch {
+            catalogMessage = "Não foi possível baixar \"\(file.name)\": \(error.localizedDescription)"
+        }
     }
 
     /// Guarda no meu histórico a peça calculada com os meus parâmetros.

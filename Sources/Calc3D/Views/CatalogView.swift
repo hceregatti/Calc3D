@@ -93,6 +93,11 @@ private struct CatalogBrowser: View {
         }
         .toolbar {
             ToolbarItemGroup {
+                Button { model.uploadToCatalog() } label: {
+                    Label("Enviar arquivo", systemImage: "square.and.arrow.up")
+                }
+                .help("Envia arquivos 3MF/STL do seu computador para a pasta do catálogo")
+
                 Button { model.refreshCatalog() } label: {
                     Label("Atualizar", systemImage: "arrow.clockwise")
                 }
@@ -156,15 +161,38 @@ private struct CatalogFileDetail: View {
                     HStack { ProgressView().controlSize(.small); Text("Lendo o arquivo…") }
                 case .failed(let message):
                     Text(message).foregroundStyle(Theme.warn)
-                case .loaded(let data):
+                case .loaded(let raw):
+                    if raw.plates.count > 1 {
+                        Picker("Mesa", selection: Binding(
+                            get: { model.catalogPlateChoice[file.id] ?? raw.plates[0].index },
+                            set: { model.catalogPlateChoice[file.id] = $0 }
+                        )) {
+                            ForEach(raw.plates) { Text("Mesa \($0.index)").tag($0.index) }
+                        }
+                    }
+                    let data = model.catalogData(for: file) ?? raw
                     LabeledContent("Peso", value: data.weightGrams.map { Weight.format(grams: $0) } ?? "Não informado no arquivo")
                     LabeledContent("Tempo de impressão", value: data.durationSeconds.flatMap { $0 > 0 ? Self.format(seconds: $0) : nil } ?? "Não informado no arquivo")
+                    if raw.plates.count > 1 {
+                        Text("Arquivo com \(raw.plates.count) mesas fatiadas; escolha qual calcular.")
+                            .font(.caption).foregroundStyle(Theme.muted)
+                    }
+                    let usedPlate = raw.plates.count > 1
+                        ? raw.plates.first { $0.index == (model.catalogPlateChoice[file.id] ?? raw.plates[0].index) }
+                        : raw.plates.first
+                    ForEach(Array((usedPlate?.filaments ?? []).enumerated()), id: \.offset) { offset, filament in
+                        LabeledContent("Filamento \(offset + 1)") {
+                            Text([filament.type, filament.colorHex, Weight.format(grams: filament.grams)]
+                                .compactMap { $0 }.joined(separator: " · "))
+                        }
+                    }
                 }
             } header: {
                 BadgeLabel("Informações do arquivo", systemImage: "doc.text.magnifyingglass", color: .orange)
             } footer: {
-                if case .loaded(let data)? = info, data.weightGrams == nil || data.durationSeconds == nil {
-                    Text("O arquivo não traz peso e/ou tempo (precisa estar fatiado). Abra em “Calcular peça” para preencher à mão.")
+                if case .loaded(let data)? = info, model.catalogData(for: file).map({ $0.weightGrams == nil || $0.durationSeconds == nil }) ?? false {
+                    Text(data.plates.count > 1 ? "Escolha uma mesa para ver o peso e o tempo."
+                         : "O arquivo não traz peso e/ou tempo (precisa estar fatiado). Abra em “Calcular peça” para preencher à mão.")
                         .font(.caption).foregroundStyle(Theme.muted)
                 }
             }
@@ -195,6 +223,9 @@ private struct CatalogFileDetail: View {
                         Label("Salvar no meu histórico", systemImage: "square.and.arrow.down.fill")
                     }
                     .disabled(job == nil)
+                    Button { model.downloadCatalogFile(file) } label: {
+                        Label("Baixar para o computador", systemImage: "arrow.down.circle")
+                    }
                     Spacer()
                     Button { model.revealCatalogFile(file) } label: {
                         Label("Mostrar no Finder", systemImage: "folder")

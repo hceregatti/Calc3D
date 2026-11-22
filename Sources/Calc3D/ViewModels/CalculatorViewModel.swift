@@ -176,6 +176,8 @@ final class CalculatorViewModel {
     var isRefreshingCatalog = false
     /// Dados lidos de cada arquivo já aberto (nil enquanto lê; erro vira mensagem).
     var catalogFileInfo: [String: CatalogFileInfo] = [:]
+    /// Mesa escolhida em arquivos com mais de uma mesa fatiada.
+    var catalogPlateChoice: [String: Int] = [:]
     @ObservationIgnored let catalogSettings = CatalogSettingsStore()
     var filamentPendingDeletionID: UUID?
     private(set) var settingsFeedback: String?

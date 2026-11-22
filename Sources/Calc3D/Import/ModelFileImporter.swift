@@ -1,9 +1,31 @@
 import Foundation
 
+struct ImportedFilament: Sendable, Equatable {
+    let type: String?
+    let colorHex: String?
+    let grams: Double
+}
+
+/// Estimativas de uma mesa gravadas pelo fatiador.
+struct ImportedPlate: Sendable, Identifiable {
+    let index: Int
+    let weightGrams: Double?
+    let durationSeconds: Double?
+    let filaments: [ImportedFilament]
+    var id: Int { index }
+}
+
 struct ImportedModelData: Sendable {
     let name: String
     let weightGrams: Double?
     let durationSeconds: Double?
+    /// Todas as mesas fatiadas do arquivo (vazio em STL ou 3MF sem fatiamento).
+    var plates: [ImportedPlate] = []
+
+    /// Mesmos dados, usando só a mesa escolhida.
+    func selecting(_ plate: ImportedPlate) -> ImportedModelData {
+        ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates)
+    }
 }
 
 enum ModelFileImportError: LocalizedError {
@@ -86,15 +108,20 @@ enum ModelFileImporter {
         guard xml.parse() else { throw ModelFileImportError.invalid3MF }
 
         let estimatedPlates = parser.plates.filter { ($0.prediction ?? 0) > 0 }
-        guard estimatedPlates.count == 1, let plate = estimatedPlates.first else {
-            return ImportedModelData(name: name, weightGrams: nil, durationSeconds: nil)
+        let plates = estimatedPlates.enumerated().map { offset, plate in
+            let weight = plate.filamentWeights.values.reduce(0, +)
+            return ImportedPlate(
+                index: plate.index ?? offset + 1,
+                weightGrams: weight > 0 ? weight : nil,
+                durationSeconds: plate.prediction,
+                filaments: plate.filaments
+            )
         }
-        let weight = plate.filamentWeights.values.reduce(0, +)
-        return ImportedModelData(
-            name: name,
-            weightGrams: weight > 0 ? weight : nil,
-            durationSeconds: plate.prediction
-        )
+        // Com mais de uma mesa fatiada não dá para saber qual vale; a escolha fica com quem usa.
+        guard plates.count == 1, let plate = plates.first else {
+            return ImportedModelData(name: name, weightGrams: nil, durationSeconds: nil, plates: plates)
+        }
+        return ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates)
     }
 
     private static func runUnzip(_ arguments: [String], maxBytes: Int) throws -> Data {
@@ -126,7 +153,9 @@ enum ModelFileImporter {
 }
 
 private struct ParsedPlate {
+    var index: Int?
     var prediction: Double?
+    var filaments: [ImportedFilament] = []
     var filamentWeights: [String: Double] = [:]
 }
 
@@ -146,15 +175,23 @@ private final class SliceInfoParser: NSObject, XMLParserDelegate {
             plates.append(ParsedPlate())
             currentPlateIndex = plates.indices.last
         case "metadata":
-            guard let index = currentPlateIndex,
-                  attributes["key"]?.lowercased() == "prediction",
-                  let value = decimal(attributes["value"]), value > 0 else { return }
-            plates[index].prediction = value
+            guard let index = currentPlateIndex else { return }
+            switch attributes["key"]?.lowercased() {
+            case "prediction":
+                if let value = decimal(attributes["value"]), value > 0 { plates[index].prediction = value }
+            case "index":
+                plates[index].index = attributes["value"].flatMap { Int($0) }
+            default:
+                break
+            }
         case "filament":
             guard let index = currentPlateIndex,
                   let id = attributes["id"],
                   let weight = decimal(attributes["used_g"]), weight > 0 else { return }
             plates[index].filamentWeights[id] = weight
+            let type = attributes["type"].flatMap { $0.isEmpty ? nil : $0 }
+            let color = attributes["color"].flatMap { $0.isEmpty ? nil : $0 }
+            plates[index].filaments.append(ImportedFilament(type: type, colorHex: color, grams: weight))
         default:
             break
         }
