@@ -25,4 +25,13 @@ import Foundation
         let json = #"{"tag_name":"v2.0.0","prerelease":true,"html_url":"https://e.com"}"#
         #expect(ReleaseInfo.parse(Data(json.utf8)) == nil)
     }
+
+    @Test func interpretaRedirecionamentoDaUltimaVersao() throws {
+        let location = try #require(URL(string: "https://github.com/hceregatti/Calc3D/releases/tag/v1.12.2"))
+        let info = try #require(ReleaseInfo.fromLatestRedirect(location))
+        #expect(info.version == AppVersion("1.12.2"))
+        #expect(info.pageURL == location)
+        #expect(info.dmgURL?.absoluteString == "https://github.com/hceregatti/Calc3D/releases/download/v1.12.2/Calc3D.dmg")
+        #expect(ReleaseInfo.fromLatestRedirect(try #require(URL(string: "https://github.com/hceregatti/Calc3D/releases"))) == nil)
+    }
 }

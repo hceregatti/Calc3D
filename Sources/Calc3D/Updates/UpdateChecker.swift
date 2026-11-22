@@ -16,6 +16,7 @@ final class UpdateChecker {
     }
 
     static let latestReleaseURL = URL(string: "https://api.github.com/repos/hceregatti/Calc3D/releases/latest")!
+    static let latestPageURL = URL(string: "https://github.com/hceregatti/Calc3D/releases/latest")!
     private static let skippedKey = "update.skippedVersion"
 
     var phase: Phase = .idle
@@ -41,10 +42,7 @@ final class UpdateChecker {
         do {
             var request = URLRequest(url: Self.latestReleaseURL, timeoutInterval: 15)
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard (response as? HTTPURLResponse)?.statusCode == 200,
-                  let release = ReleaseInfo.parse(data)
-            else { throw UpdateError.badResponse }
+            let release = try await fetchLatestRelease(request)
 
             guard release.version > currentVersion else {
                 if manual { phase = .upToDate }
@@ -57,6 +55,24 @@ final class UpdateChecker {
             // Falhas na checagem automática são silenciosas (ex.: sem internet).
             if manual { phase = .failed("Não foi possível buscar atualizações. Verifique sua conexão e tente novamente.") }
         }
+    }
+
+    /// Consulta a API do GitHub; se ela recusar (limite de 60 consultas por hora sem login, por exemplo),
+    /// usa o redirecionamento da página pública de releases, que não tem esse limite.
+    private func fetchLatestRelease(_ apiRequest: URLRequest) async throws -> ReleaseInfo {
+        if let (data, response) = try? await URLSession.shared.data(for: apiRequest),
+           (response as? HTTPURLResponse)?.statusCode == 200,
+           let release = ReleaseInfo.parse(data) {
+            return release
+        }
+        var request = URLRequest(url: Self.latestPageURL, timeoutInterval: 15)
+        request.httpMethod = "HEAD"
+        let (_, response) = try await URLSession.shared.data(for: request, delegate: StopRedirects())
+        guard let http = response as? HTTPURLResponse, (300..<400).contains(http.statusCode),
+              let location = http.value(forHTTPHeaderField: "Location").flatMap({ URL(string: $0, relativeTo: Self.latestPageURL)?.absoluteURL }),
+              let release = ReleaseInfo.fromLatestRedirect(location)
+        else { throw UpdateError.badResponse }
+        return release
     }
 
     /// "Mais tarde": fecha e volta a avisar na próxima abertura do app.
@@ -155,4 +171,14 @@ final class UpdateChecker {
     }
 
     private enum UpdateError: Error { case badResponse }
+}
+
+/// Impede o redirecionamento automático para ler o destino no cabeçalho `Location`.
+private final class StopRedirects: NSObject, URLSessionTaskDelegate, Sendable {
+    func urlSession(
+        _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
+    }
 }

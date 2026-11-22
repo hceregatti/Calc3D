@@ -77,6 +77,20 @@ public struct ReleaseInfo: Equatable, Sendable {
         )
     }
 
+    /// Monta a versão a partir do endereço para onde `github.com/<dono>/<repo>/releases/latest` redireciona
+    /// (`…/releases/tag/v1.2.3`). Não depende da API do GitHub, que limita as consultas sem login.
+    /// O instalador usa o `Calc3D.dmg` de nome fixo que o workflow anexa a cada release.
+    public static func fromLatestRedirect(_ location: URL) -> ReleaseInfo? {
+        let parts = location.pathComponents
+        guard let tagIndex = parts.lastIndex(of: "tag"), tagIndex + 1 < parts.count,
+              let version = AppVersion(parts[tagIndex + 1]) else { return nil }
+        let tag = parts[tagIndex + 1]
+        var components = URLComponents(url: location, resolvingAgainstBaseURL: false)
+        components?.path = location.path.replacingOccurrences(of: "/releases/tag/", with: "/releases/download/") + "/Calc3D.dmg"
+        components?.query = nil
+        return ReleaseInfo(version: version, name: "Calc3D \(tag)", notes: "", pageURL: location, dmgURL: components?.url)
+    }
+
     /// Notas em linhas simples: remove títulos/markdown e troca marcadores por "•".
     public var displayNotes: [String] {
         notes.split(whereSeparator: \.isNewline).compactMap { raw in
