@@ -28,6 +28,31 @@ extension CalculatorViewModel {
         }
     }
 
+    /// Modelos soltos visíveis, aplicando a busca (e escondendo no filtro "Minhas").
+    var visibleCatalogFiles: [CatalogFile] {
+        guard !catalogOnlyMine else { return [] }
+        let query = catalogSearch.trimmingCharacters(in: .whitespaces)
+        return catalogFiles.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    /// Importa o modelo solto e abre em "Calcular peça" com os meus parâmetros.
+    func calculateCatalogFile(_ file: CatalogFile) {
+        let url = file.url
+        Task { @MainActor [weak self] in
+            do {
+                let data = try await Task.detached(priority: .userInitiated) {
+                    try ModelFileImporter.importFile(at: url)
+                }.value
+                guard let self else { return }
+                self.calculator.load(self.calculator.job)
+                self.calculator.applyImportedModel(data)
+                self.screen = .printJob
+            } catch {
+                self?.catalogMessage = "Não foi possível ler \"\(file.name)\": \(error.localizedDescription)"
+            }
+        }
+    }
+
     func chooseCatalogFolder() {
         let panel = NSOpenPanel()
         panel.title = "Escolher a pasta compartilhada do catálogo"
@@ -39,13 +64,16 @@ extension CalculatorViewModel {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         catalogFolderPath = url.path
         selectedCatalogEntryID = nil
+        selectedCatalogFileID = nil
         refreshCatalog()
     }
 
     func disconnectCatalog() {
         catalogFolderPath = nil
         catalogEntries = []
+        catalogFiles = []
         selectedCatalogEntryID = nil
+        selectedCatalogFileID = nil
         catalogMessage = nil
     }
 
@@ -57,6 +85,10 @@ extension CalculatorViewModel {
         do {
             let listing = try store.list()
             catalogEntries = listing.entries
+            catalogFiles = listing.files.filter { !$0.name.isEmpty }
+            if let id = selectedCatalogFileID, !catalogFiles.contains(where: { $0.id == id }) {
+                selectedCatalogFileID = nil
+            }
             if let id = selectedCatalogEntryID, !listing.entries.contains(where: { $0.id == id }) {
                 selectedCatalogEntryID = nil
             }

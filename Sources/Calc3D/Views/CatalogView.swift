@@ -62,6 +62,7 @@ private struct CatalogBrowser: View {
     var body: some View {
         @Bindable var model = model
         let entries = model.visibleCatalogEntries
+        let files = model.visibleCatalogFiles
 
         HStack(spacing: 0) {
             VStack(spacing: 0) {
@@ -77,18 +78,31 @@ private struct CatalogBrowser: View {
                 }
                 .padding(12)
 
-                List(selection: $model.selectedCatalogEntryID) {
+                List(selection: Binding<String?>(
+                    get: { model.selectedCatalogFileID ?? model.selectedCatalogEntryID?.uuidString },
+                    set: { value in
+                        model.selectedCatalogFileID = files.first { $0.id == value }?.id
+                        model.selectedCatalogEntryID = value.flatMap { v in entries.first { $0.id.uuidString == v }?.id }
+                    }
+                )) {
                     ForEach(entries) { entry in
-                        CatalogRow(entry: entry, isMine: model.isMine(entry)).tag(entry.id)
+                        CatalogRow(entry: entry, isMine: model.isMine(entry)).tag(Optional(entry.id.uuidString))
+                    }
+                    if !files.isEmpty {
+                        Section("Modelos na pasta (sem cálculo)") {
+                            ForEach(files) { file in
+                                CatalogFileRow(file: file).tag(Optional(file.id))
+                            }
+                        }
                     }
                 }
                 .overlay {
-                    if entries.isEmpty {
+                    if entries.isEmpty && files.isEmpty {
                         ContentUnavailableView {
                             Label(model.catalogEntries.isEmpty ? "Catálogo vazio" : "Nada encontrado", systemImage: "books.vertical")
                         } description: {
                             Text(model.catalogEntries.isEmpty
-                                 ? "Em “Peças”, selecione as peças e escolha “Publicar no catálogo”."
+                                 ? "Em “Peças”, selecione as peças e escolha “Publicar no catálogo”. Arquivos 3MF/STL colocados na pasta também aparecem aqui."
                                  : "Ajuste a busca ou o filtro.")
                         }
                     }
@@ -104,7 +118,9 @@ private struct CatalogBrowser: View {
 
             Divider()
 
-            if let id = model.selectedCatalogEntryID, let entry = model.catalogEntries.first(where: { $0.id == id }) {
+            if let id = model.selectedCatalogFileID, let file = model.catalogFiles.first(where: { $0.id == id }) {
+                CatalogFileDetail(file: file)
+            } else if let id = model.selectedCatalogEntryID, let entry = model.catalogEntries.first(where: { $0.id == id }) {
                 CatalogDetail(entry: entry).id(entry.id)
             } else {
                 ContentUnavailableView(
@@ -154,6 +170,45 @@ private struct CatalogRow: View {
             .font(.caption).foregroundStyle(Theme.muted)
         }
         .padding(.vertical, 3)
+    }
+}
+
+private struct CatalogFileRow: View {
+    let file: CatalogFile
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(file.name).font(.headline).lineLimit(1)
+            HStack {
+                Text(file.fileExtension.uppercased())
+                Text("·")
+                Text(file.modifiedAt.formatted(date: .abbreviated, time: .omitted))
+                Spacer()
+            }
+            .font(.caption).foregroundStyle(Theme.muted)
+        }
+        .padding(.vertical, 3)
+    }
+}
+
+private struct CatalogFileDetail: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let file: CatalogFile
+
+    var body: some View {
+        VStack(spacing: 16) {
+            ContentUnavailableView(
+                file.name, systemImage: "cube",
+                description: Text("Modelo \(file.fileExtension.uppercased()) solto na pasta, sem cálculo publicado. Calcule com os seus parâmetros para ver o custo e o preço; depois você pode publicá-lo no catálogo.")
+            )
+            Button { model.calculateCatalogFile(file) } label: {
+                Label("Calcular com meus parâmetros", systemImage: "function")
+            }
+            .buttonStyle(.borderedProminent)
+            Text(file.url.path).font(.caption).foregroundStyle(Theme.muted)
+                .lineLimit(1).truncationMode(.middle).padding(.horizontal)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

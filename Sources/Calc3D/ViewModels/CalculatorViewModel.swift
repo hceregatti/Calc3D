@@ -167,7 +167,9 @@ final class CalculatorViewModel {
 
     // Catálogo compartilhado (pasta sincronizada com outras pessoas).
     var catalogEntries: [CatalogEntry] = []
+    var catalogFiles: [CatalogFile] = []
     var selectedCatalogEntryID: UUID?
+    var selectedCatalogFileID: String?
     var catalogOnlyMine = false
     var catalogSearch = ""
     var catalogFolderPath: String? {
