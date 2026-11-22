@@ -53,7 +53,8 @@ Sources/
     App/Calc3DApp.swift        #   ponto de entrada, janela e menus
     ViewModels/                #   estado da tela (Observation)
     Persistence/               #   salva parâmetros no UserDefaults
-    Import/                    #   leitura de STL/3MF (fatiamento e estimativa de peso por volume)
+    Import/                    #   leitura de STL/3MF (fatiamento, impressora, miniaturas, estimativa de
+                               #   peso por volume) e abertura nos fatiadores
     Models/AppearanceMode.swift #  modo claro/escuro/automático
     Views/
       ContentView.swift        #   barra lateral com as telas
@@ -128,11 +129,19 @@ com os próprios parâmetros.
   nuvem ainda não baixados são avisados e entram ao atualizar.
 - **Enviar arquivo**: copia 3MF/STL do computador para a pasta, sem sobrescrever (nomes repetidos
   viram "nome 2").
+- **Imagem do modelo**: a lista mostra uma miniatura e o detalhe, a imagem em tamanho maior. Em 3MF
+  vem da capa/miniatura gravada no próprio arquivo; em STL (ou 3MF sem imagem) é gerada pelo Quick Look.
 - **Detalhe do modelo**: formato, pasta, mesas, peso, tempo e filamentos lidos do arquivo, e o custo e
   o preço sugeridos com os seus parâmetros (quando há peso e tempo do fatiador).
+- **Impressora do projeto**: para 3MF, mostra a impressora para a qual o arquivo foi configurado, o
+  bico, a altura de camada e o perfil de impressão (lidos de `Metadata/project_settings.config`,
+  mesmo em arquivos não fatiados).
 - **Calcular**: abre o modelo em Calcular peça. **Salvar**: guarda a peça calculada no seu histórico.
-  **Baixar**: salva uma cópia do arquivo no computador. **Mostrar no Finder** e **Excluir** (vai para a
-  Lixeira e some para todos que usam a pasta).
+  **Baixar**: salva uma cópia do arquivo no computador. **Abrir no fatiador**: abre o modelo no
+  **Bambu Studio** ou no **Creality Print** (os instalados em Aplicativos; o que não estiver aparece
+  desabilitado). O app abre uma cópia temporária, então salvar no fatiador não altera o arquivo
+  compartilhado. **Mostrar no Finder** e **Excluir** (vai para a Lixeira e some para todos que usam a
+  pasta).
 
 ## Modelo de custo
 
