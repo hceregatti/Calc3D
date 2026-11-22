@@ -183,6 +183,9 @@ final class CalculatorViewModel {
     var catalogFileInfo: [String: CatalogFileInfo] = [:]
     /// Mesa escolhida em arquivos com mais de uma mesa fatiada.
     var catalogPlateChoice: [String: Int] = [:]
+    /// Pré-visualização de cada arquivo já carregada.
+    var catalogThumbnails: [String: NSImage] = [:]
+    @ObservationIgnored var catalogThumbnailRequests: Set<String> = []
     /// Arquivo aguardando a confirmação para ser excluído da pasta do catálogo.
     var catalogFilePendingDeletionID: String?
     @ObservationIgnored let catalogSettings = CatalogSettingsStore()

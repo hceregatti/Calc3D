@@ -58,6 +58,7 @@ extension CalculatorViewModel {
             }
             // Arquivos que mudaram precisam ser lidos de novo.
             catalogFileInfo = catalogFileInfo.filter { key, _ in listing.files.contains { $0.id == key } }
+            catalogThumbnails = catalogThumbnails.filter { key, _ in listing.files.contains { $0.id == key } }
             catalogMessage = listing.pendingDownloads > 0
                 ? "\(listing.pendingDownloads) arquivo(s) ainda sendo baixado(s) da nuvem; atualize em instantes."
                 : nil
@@ -84,6 +85,20 @@ extension CalculatorViewModel {
                 info = .failed(error.localizedDescription)
             }
             self?.catalogFileInfo[id] = info
+        }
+    }
+
+    /// Carrega a imagem do modelo (embutida no 3MF ou gerada pelo Quick Look), uma vez por arquivo.
+    func loadCatalogThumbnail(_ file: CatalogFile) {
+        guard catalogThumbnails[file.id] == nil, catalogThumbnailRequests.insert(file.id).inserted else { return }
+        let url = file.url, id = file.id
+        Task { @MainActor [weak self] in
+            let data = await Task.detached(priority: .utility) { CatalogThumbnail.embeddedImageData(in: url) }.value
+            var image = data.flatMap { NSImage(data: $0) }
+            if image == nil { image = await CatalogThumbnail.quickLookImage(for: url) }
+            guard let self else { return }
+            if let image { self.catalogThumbnails[id] = image }
+            self.catalogThumbnailRequests.remove(id)
         }
     }
 
@@ -190,6 +205,7 @@ extension CalculatorViewModel {
         }
         if selectedCatalogFileID == file.id { selectedCatalogFileID = nil }
         catalogFileInfo[file.id] = nil
+        catalogThumbnails[file.id] = nil
         refreshCatalogKeepingMessage()
     }
 

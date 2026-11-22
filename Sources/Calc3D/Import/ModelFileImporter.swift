@@ -109,7 +109,7 @@ enum ModelFileImporter {
         return data
     }
 
-    private static func archiveEntries(at url: URL) throws -> [String] {
+    static func archiveEntries(at url: URL) throws -> [String] {
         let listing = try runUnzip(["-Z1", url.path], maxBytes: maxArchiveListingBytes)
         guard let paths = String(data: listing, encoding: .utf8) else { throw ModelFileImportError.invalid3MF }
         return paths.split(whereSeparator: \.isNewline).map(String.init)

@@ -136,9 +136,32 @@ private struct CatalogBrowser: View {
 }
 
 private struct CatalogFileRow: View {
+    @Environment(CalculatorViewModel.self) private var model
     let file: CatalogFile
 
     var body: some View {
+        HStack(spacing: 10) {
+            thumbnail
+            details
+        }
+        .padding(.vertical, 3)
+        .onAppear { model.loadCatalogThumbnail(file) }
+    }
+
+    private var thumbnail: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.fill)
+            if let image = model.catalogThumbnails[file.id] {
+                Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+            } else {
+                Image(systemName: "cube").foregroundStyle(Theme.muted)
+            }
+        }
+        .frame(width: 44, height: 44)
+        .clipShape(.rect(cornerRadius: 8, style: .continuous))
+    }
+
+    private var details: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(file.name).font(.headline).lineLimit(1)
             HStack {
@@ -152,7 +175,6 @@ private struct CatalogFileRow: View {
             }
             .font(.caption).foregroundStyle(Theme.muted)
         }
-        .padding(.vertical, 3)
     }
 }
 
@@ -165,6 +187,15 @@ private struct CatalogFileDetail: View {
         let job = model.catalogJob(for: file)
 
         Form {
+            if let image = model.catalogThumbnails[file.id] {
+                Section {
+                    Image(nsImage: image)
+                        .resizable().aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: 260)
+                        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+                }
+            }
+
             Section {
                 LabeledContent("Formato", value: file.fileExtension.uppercased())
                 if !file.folder.isEmpty { LabeledContent("Pasta", value: file.folder) }
@@ -262,7 +293,10 @@ private struct CatalogFileDetail: View {
             }
         }
         .themedForm()
-        .onAppear { model.loadCatalogFileInfo(file) }
+        .onAppear {
+            model.loadCatalogFileInfo(file)
+            model.loadCatalogThumbnail(file)
+        }
     }
 
     private var isLoaded: Bool {
