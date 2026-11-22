@@ -57,6 +57,13 @@ struct FilamentsView: View {
                 }
                 .help("Adicionar um rolo à biblioteca")
             }
+            ToolbarItem {
+                Button { model.filamentPendingDeletionID = model.selectedFilamentID } label: {
+                    Label("Excluir filamento", systemImage: "trash")
+                }
+                .disabled(model.selectedFilamentID == nil)
+                .help("Excluir o filamento selecionado")
+            }
         }
         .confirmationDialog(
             "Excluir filamento?",
@@ -206,6 +213,12 @@ private struct FilamentEditor: View {
                     .lineLimit(3...8)
             } header: {
                 BadgeLabel("Observações", systemImage: "note.text", color: .gray)
+            }
+
+            Section {
+                Button(role: .destructive) { model.filamentPendingDeletionID = filament.id } label: {
+                    Label("Excluir filamento", systemImage: "trash.fill")
+                }
             }
         }
         .themedForm()
