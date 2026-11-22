@@ -53,16 +53,14 @@ private struct CatalogBrowser: View {
                     .textFieldStyle(.roundedBorder)
                     .padding(12)
 
-                List(selection: $model.selectedCatalogFileID) {
-                    ForEach(files) { file in
-                        CatalogFileRow(file: file).tag(Optional(file.id))
-                            .contextMenu {
-                                Button("Baixar") { model.downloadCatalogFile(file) }
-                                Button("Mostrar no Finder") { model.revealCatalogFile(file) }
-                                Divider()
-                                Button("Excluir…", role: .destructive) { model.catalogFilePendingDeletionID = file.id }
-                            }
-                    }
+                SelectionList(items: files, selection: $model.selectedCatalogFileID) { file in
+                    CatalogFileRow(file: file)
+                        .contextMenu {
+                            Button("Baixar") { model.downloadCatalogFile(file) }
+                            Button("Mostrar no Finder") { model.revealCatalogFile(file) }
+                            Divider()
+                            Button("Excluir…", role: .destructive) { model.catalogFilePendingDeletionID = file.id }
+                        }
                 }
                 .overlay {
                     if files.isEmpty {

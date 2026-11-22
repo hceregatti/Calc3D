@@ -8,6 +8,8 @@ struct SymbolBadge: View {
     let color: Color
     var size: CGFloat = 22
     var fill: Color = Theme.fill
+    /// Cor do ícone; nil usa a tinta secundária neutra.
+    var iconColor: Color? = nil
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
@@ -16,7 +18,7 @@ struct SymbolBadge: View {
                 Image(systemName: systemImage)
                     .symbolRenderingMode(.monochrome)
                     .font(.system(size: size * 0.55, weight: .semibold))
-                    .foregroundStyle(Theme.ink2)
+                    .foregroundStyle(iconColor ?? Theme.ink2)
             }
             .frame(width: size, height: size)
             .accessibilityHidden(true)

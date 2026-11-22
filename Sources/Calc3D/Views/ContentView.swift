@@ -103,7 +103,7 @@ private struct SidebarButton: View {
         Button(action: action) {
             HStack(alignment: .center, spacing: 12) {
                 SymbolBadge(systemImage: screen.systemImage, color: screen.color, size: 28,
-                            fill: isSelected ? Theme.surface : Theme.fill)
+                            fill: isSelected ? Theme.surface : Theme.fill, iconColor: isSelected ? Theme.accent : nil)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(screen.title)
                         .fontWeight(isSelected ? .semibold : .regular)

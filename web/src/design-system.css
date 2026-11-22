@@ -164,7 +164,7 @@ body { background: var(--bg); }
   color: var(--c-ink-2) !important;
 }
 .badge svg { color: inherit !important; stroke: currentColor; }
-.nav-item.active .badge { background: var(--c-surface) !important; }
+.nav-item.active .badge { background: var(--c-surface) !important; color: var(--c-accent) !important; }
 
 
 /* --------------------------------------------------------------------------

@@ -34,11 +34,8 @@ struct ProposalsView: View {
                 .padding(.bottom, 8)
 
                 let shown = model.proposals(in: model.proposalFilter)
-                List(selection: $model.selectedProposalID) {
-                    ForEach(shown) { proposal in
-                        ProposalRow(proposal: proposal)
-                            .tag(proposal.id)
-                    }
+                SelectionList(items: shown, selection: $model.selectedProposalID) { proposal in
+                    ProposalRow(proposal: proposal)
                 }
                 .overlay {
                     if shown.isEmpty {

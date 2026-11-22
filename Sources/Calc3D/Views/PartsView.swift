@@ -11,19 +11,16 @@ struct PartsView: View {
 
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                List(selection: $model.selectedQuoteIDs) {
-                    ForEach(model.quotes) { quote in
-                        QuoteRow(quote: quote)
-                            .tag(quote.id)
-                            .contextMenu {
-                                Button("Usar como base") { model.useQuoteAsBase(quote) }
-                                AddToProposalMenu(quotes: contextQuotes(for: quote))
-                                Divider()
-                                Button("Excluir…", role: .destructive) {
-                                    model.quotePendingDeletionID = quote.id
-                                }
+                SelectionList(items: model.quotes, selection: $model.selectedQuoteIDs) { quote in
+                    QuoteRow(quote: quote)
+                        .contextMenu {
+                            Button("Usar como base") { model.useQuoteAsBase(quote) }
+                            AddToProposalMenu(quotes: contextQuotes(for: quote))
+                            Divider()
+                            Button("Excluir…", role: .destructive) {
+                                model.quotePendingDeletionID = quote.id
                             }
-                    }
+                        }
                 }
                 .overlay {
                     if model.quotes.isEmpty {

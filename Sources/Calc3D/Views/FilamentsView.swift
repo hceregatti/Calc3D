@@ -10,20 +10,17 @@ struct FilamentsView: View {
         @Bindable var model = model
 
         HStack(spacing: 0) {
-            List(selection: $model.selectedFilamentID) {
-                ForEach(model.filaments) { filament in
-                    FilamentRow(filament: filament)
-                        .tag(filament.id)
-                        .contextMenu {
-                            Button("Duplicar") { model.duplicateFilament(filament) }
-                            Button("Buscar na web") { model.openFilamentSearch(filament) }
-                            if filament.purchaseLink != nil {
-                                Button("Abrir link de compra") { model.openFilamentPurchase(filament) }
-                            }
-                            Divider()
-                            Button("Excluir…", role: .destructive) { model.filamentPendingDeletionID = filament.id }
+            SelectionList(items: model.filaments, selection: $model.selectedFilamentID) { filament in
+                FilamentRow(filament: filament)
+                    .contextMenu {
+                        Button("Duplicar") { model.duplicateFilament(filament) }
+                        Button("Buscar na web") { model.openFilamentSearch(filament) }
+                        if filament.purchaseLink != nil {
+                            Button("Abrir link de compra") { model.openFilamentPurchase(filament) }
                         }
-                }
+                        Divider()
+                        Button("Excluir…", role: .destructive) { model.filamentPendingDeletionID = filament.id }
+                    }
             }
             .overlay {
                 if model.filaments.isEmpty {
