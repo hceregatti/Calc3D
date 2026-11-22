@@ -24,6 +24,16 @@ struct ContentView: View {
                     Divider()
                         .overlay(Theme.border)
                         .padding(.bottom, 6)
+                    Picker("Aparência", selection: $model.appearance) {
+                        ForEach(AppearanceMode.allCases) { mode in
+                            Image(systemName: mode.systemImage).help(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 6)
+                    .help("Aparência: automático, claro ou escuro")
                     ForEach(Screen.footerScreens) { screen in
                         SidebarButton(screen: screen, isSelected: model.screen == screen) {
                             model.screen = screen
@@ -56,6 +66,7 @@ struct ContentView: View {
             }
         }
         .tint(Theme.accent)
+        .preferredColorScheme(model.appearance.colorScheme)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshCatalogIfConfigured()
         }

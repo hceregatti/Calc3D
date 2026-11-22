@@ -121,6 +121,28 @@
 }
 
 
+/* Escuro forçado pelo seletor de aparência */
+:root[data-theme='dark'] {
+  --c-ink:      #f2f1ee;
+  --c-ink-2:    #d6d5d0;
+  --c-muted:    #9d9c97;
+  --c-border:   #34342f;
+  --c-divider:  #2b2b27;
+  --c-fill:     #2b2b27;
+  --c-active:   #34342f;
+  --c-bg:       #161614;
+  --c-surface:  #1f1f1c;
+  --c-accent:    #f2784b;
+  --c-on-accent: #161614;
+  --c-chart-1: #6ea4f5; --c-chart-2: #7cc4f2; --c-chart-3: #4fc7b8; --c-chart-4: #a98af0;
+  --c-chart-5: #e5c75a; --c-chart-6: #f0766f; --c-chart-7: #7fcf7f; --c-chart-8: #ee86c4;
+  --c-danger:  #e8867c;
+  --c-warn:    #e0b067;
+  --c-success: #8fc39b;
+  --fill-strong: #3a3a35;
+  color-scheme: dark;
+}
+
 /* --------------------------------------------------------------------------
    2. Layout
    -------------------------------------------------------------------------- */
@@ -326,3 +348,18 @@ input[type='checkbox'] { accent-color: var(--c-accent); }
    </svg>
    Versão escura: troque rect fill → #1C1C1A e as cores do cubo → #F2F1EE.
    -------------------------------------------------------------------------- */
+
+
+/* --------------------------------------------------------------------------
+   Seletor de aparência (automático / claro / escuro)
+   -------------------------------------------------------------------------- */
+.theme-toggle {
+  display: flex; gap: 2px; padding: 3px; margin-bottom: 6px;
+  background: var(--c-fill); border-radius: var(--radius-md);
+}
+.theme-toggle button {
+  flex: 1; display: flex; align-items: center; justify-content: center; height: 28px;
+  border: 0; border-radius: var(--radius-sm); background: none; color: var(--c-muted); cursor: pointer;
+}
+.theme-toggle button:hover { color: var(--c-ink); }
+.theme-toggle button.active { background: var(--c-surface); color: var(--c-accent); }

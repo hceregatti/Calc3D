@@ -1,3 +1,4 @@
+import { ImageSlot } from '../components/ImageSlot'
 import {
   AlertTriangle,
   Bookmark,
@@ -118,7 +119,12 @@ export function PartForm({
   return (
     <>
       <Section title="Identificação" icon={Tag} color="#0a84ff">
-        <TextField label="Nome da peça ou pedido" value={job.name} placeholder="Ex.: Suporte de headset" onChange={(name) => setJob({ name })} />
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <ImageSlot imageId={job.imageId ?? null} kind="product" label="Foto da peça" onChange={(imageId) => setJob({ imageId })} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <TextField label="Nome da peça ou pedido" value={job.name} placeholder="Ex.: Suporte de headset" onChange={(name) => setJob({ name })} />
+          </div>
+        </div>
         <div className="row">
           <button className="btn" disabled={importing} onClick={() => file.current?.click()}>
             <Download size={16} /> {importing ? 'Lendo arquivo…' : 'Importar STL ou 3MF'}

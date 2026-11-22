@@ -37,6 +37,28 @@ const KEYS = {
   filaments: 'calc3d.web.filaments.v1',
 }
 
+export type ThemeMode = 'system' | 'light' | 'dark'
+const THEME_KEY = 'calc3d.web.theme'
+
+/** Aplica o modo claro/escuro; 'system' remove o atributo e deixa o navegador decidir. */
+export function applyTheme(mode: ThemeMode) {
+  if (mode === 'system') document.documentElement.removeAttribute('data-theme')
+  else document.documentElement.setAttribute('data-theme', mode)
+}
+
+export function loadTheme(): ThemeMode {
+  const value = localStorage.getItem(THEME_KEY)
+  return value === 'light' || value === 'dark' ? value : 'system'
+}
+
+export function saveTheme(mode: ThemeMode) {
+  try {
+    if (mode === 'system') localStorage.removeItem(THEME_KEY)
+    else localStorage.setItem(THEME_KEY, mode)
+  } catch { /* sem armazenamento: vale só nesta sessão */ }
+  applyTheme(mode)
+}
+
 function load<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -151,6 +173,7 @@ function itemFromQuote(quote: QuoteRecord, fromHistory: boolean): ProposalItem |
     name: quote.job.name.trim() || 'Peça sem nome',
     unitPrice: quote.result.suggestedPrice,
     sourceQuoteId: fromHistory ? quote.id : null,
+    imageId: quote.job.imageId ?? null,
     filamentId: quote.job.filamentId,
     filamentName: quote.job.filamentName,
     gramsPerUnit: gramsPerUnit(quote.job),
@@ -328,6 +351,7 @@ export const useApp = create<AppState>((set, get) => ({
     const quotes = get().quotes.filter((q) => q.id !== id)
     set({ quotes, selectedQuoteIds: get().selectedQuoteIds.filter((s) => s !== id) })
     save(KEYS.quotes, quotes)
+    get().cleanupImages()
   },
 
   useQuoteAsBase: (quote) => {
@@ -505,8 +529,10 @@ export const useApp = create<AppState>((set, get) => ({
 
   /** Mantém só as imagens usadas por orçamentos salvos, o rascunho e o perfil. */
   cleanupImages: () => {
-    const { proposals, proposalDraft, company, savedCompany } = get()
+    const { proposals, proposalDraft, company, savedCompany, quotes, job } = get()
     const keep = new Set<string>()
+    for (const q of quotes) if (q.job.imageId) keep.add(q.job.imageId)
+    if (job.imageId) keep.add(job.imageId)
     for (const p of [...proposals, ...(proposalDraft ? [proposalDraft] : [])]) {
       for (const item of p.items) if (item.imageId) keep.add(item.imageId)
     }

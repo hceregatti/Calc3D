@@ -1,3 +1,5 @@
+import { Monitor, Moon, Sun } from 'lucide-react'
+import { useState } from 'react'
 import { Badge, ConfirmDialog, SCREEN_INFO, Toast } from './components/ui'
 import { CompanyScreen, ShopSettingsScreen } from './screens/Settings'
 import { FilamentsScreen } from './screens/Filaments'
@@ -5,10 +7,30 @@ import { HomeScreen } from './screens/Home'
 import { PartsScreen } from './screens/Parts'
 import { PrintJobScreen } from './screens/PrintJob'
 import { ProposalsScreen } from './screens/Proposals'
-import { useApp, type Screen } from './store'
+import { loadTheme, saveTheme, useApp, type Screen, type ThemeMode } from './store'
 
 const MAIN: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals']
 const FOOTER: Screen[] = ['company', 'settings']
+
+const THEMES: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { mode: 'system', label: 'Automático', icon: Monitor },
+  { mode: 'light', label: 'Claro', icon: Sun },
+  { mode: 'dark', label: 'Escuro', icon: Moon },
+]
+
+function ThemeToggle() {
+  const [mode, setMode] = useState<ThemeMode>(loadTheme)
+  return (
+    <div className="theme-toggle" role="group" aria-label="Aparência">
+      {THEMES.map(({ mode: m, label, icon: Icon }) => (
+        <button key={m} type="button" className={mode === m ? 'active' : ''} title={label} aria-label={label} aria-pressed={mode === m}
+          onClick={() => { setMode(m); saveTheme(m) }}>
+          <Icon size={15} />
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export function App() {
   const screen = useApp((s) => s.screen)
@@ -35,7 +57,7 @@ export function App() {
           <strong>Calc3D</strong>
         </div>
         <div className="nav-main">{MAIN.map(link)}</div>
-        <div className="nav-footer">{FOOTER.map(link)}</div>
+        <div className="nav-footer"><ThemeToggle />{FOOTER.map(link)}</div>
       </nav>
       <main className="content">
         {screen === 'home' && <HomeScreen />}

@@ -82,6 +82,8 @@ export interface PrintJob {
   filamentName: string
   /** Preço por grama do filamento escolhido; substitui o do rolo padrão. */
   filamentPricePerGram: number | null
+  /** Foto da peça (id no IndexedDB); null quando não há foto. */
+  imageId: string | null
 }
 
 export const defaultJob: PrintJob = {
@@ -98,6 +100,7 @@ export const defaultJob: PrintJob = {
   filamentId: null,
   filamentName: '',
   filamentPricePerGram: null,
+  imageId: null,
 }
 
 export const MAX_FAILURE_RATE = 0.9

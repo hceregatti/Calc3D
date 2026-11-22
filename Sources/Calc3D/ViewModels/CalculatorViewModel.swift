@@ -165,6 +165,11 @@ final class CalculatorViewModel {
     }
     var selectedFilamentID: UUID?
 
+    /// Modo claro/escuro escolhido pelo usuário (padrão: acompanha o sistema).
+    var appearance: AppearanceMode {
+        didSet { UserDefaults.standard.set(appearance.rawValue, forKey: AppearanceMode.defaultsKey) }
+    }
+
     // Catálogo compartilhado (pasta sincronizada com outras pessoas).
     var catalogFiles: [CatalogFile] = []
     var selectedCatalogFileID: String?
@@ -204,6 +209,7 @@ final class CalculatorViewModel {
         let catalogPrefs = CatalogSettingsStore()
         self.catalogFolderPath = catalogPrefs.folderPath
         self.filaments = filamentsStore.load()
+        self.appearance = AppearanceMode(rawValue: UserDefaults.standard.string(forKey: AppearanceMode.defaultsKey) ?? "") ?? .system
         self.imageStore = imageStore
         let company = store.loadCompany()
         self.companyProfile = company
@@ -299,6 +305,25 @@ final class CalculatorViewModel {
         return true
     }
 
+    /// Foto da peça em cálculo (a mesma vale no histórico e, ao adicionar, no orçamento).
+    func choosePartPhoto(for calculator: PartCalculator) {
+        guard let id = imageStore.chooseImage(kind: .product, title: "Escolher foto da peça") else { return }
+        calculator.job.imageID = id
+        pruneImages()
+    }
+
+    func setPartPhoto(from url: URL, for calculator: PartCalculator) -> Bool {
+        guard let id = imageStore.importImage(from: url, kind: .product) else { return false }
+        calculator.job.imageID = id
+        pruneImages()
+        return true
+    }
+
+    func removePartPhoto(for calculator: PartCalculator) {
+        calculator.job.imageID = nil
+        pruneImages()
+    }
+
     func chooseProductPhoto(for itemID: UUID) {
         guard let id = imageStore.chooseImage(kind: .product, title: "Escolher foto do produto") else { return }
         updateProposalItem(itemID) { $0.imageID = id }
@@ -337,6 +362,9 @@ final class CalculatorViewModel {
         for proposal in proposals + [proposalDraft].compactMap({ $0 }) {
             ids.formUnion(proposal.items.compactMap(\.imageID))
         }
+        ids.formUnion(quotes.compactMap(\.job.imageID))
+        if let id = calculator.job.imageID { ids.insert(id) }
+        if let id = partDraft?.job.imageID { ids.insert(id) }
         if let logo = companyProfile.logoImageID { ids.insert(logo) }
         if let logo = lastSavedCompanyProfile.logoImageID { ids.insert(logo) }
         imageStore.prune(keeping: ids)
@@ -354,6 +382,7 @@ final class CalculatorViewModel {
         quotes.removeAll { $0.id == quote.id }
         quotesStore.save(quotes)
         selectedQuoteIDs.remove(quote.id)
+        pruneImages()
     }
 
     func updateQuoteNameDraft(_ name: String, for quoteID: UUID) {
@@ -509,6 +538,7 @@ final class CalculatorViewModel {
             name: name.isEmpty ? "Peça sem nome" : name,
             unitPrice: price,
             sourceQuoteID: quotes.contains { $0.id == quote.id } ? quote.id : nil,
+            imageID: quote.job.imageID,
             filamentID: quote.job.filamentID,
             filamentName: quote.job.filamentName,
             gramsPerUnit: FilamentUsage.gramsPerUnit(job: quote.job)

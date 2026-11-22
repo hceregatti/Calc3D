@@ -30,6 +30,9 @@ public struct PrintJob: Codable, Equatable, Sendable {
     /// Preço por grama do filamento escolhido (R$/g); substitui o do rolo padrão.
     public var filamentPricePerGram: Double?
 
+    /// Foto da peça (identificador de um arquivo guardado pelo app); nil quando não há foto.
+    public var imageID: UUID?
+
     public init() {}
 
     public static let defaults = PrintJob()

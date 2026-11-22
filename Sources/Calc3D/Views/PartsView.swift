@@ -216,9 +216,23 @@ private struct MultiplePartsSummary: View {
 }
 
 private struct QuoteRow: View {
+    @Environment(CalculatorViewModel.self) private var model
     let quote: QuoteRecord
 
     var body: some View {
+        HStack(spacing: 10) {
+            if let image = model.imageStore.image(for: quote.job.imageID) {
+                Image(nsImage: image)
+                    .resizable().aspectRatio(contentMode: .fill)
+                    .frame(width: 40, height: 40)
+                    .clipShape(.rect(cornerRadius: 8, style: .continuous))
+            }
+            details
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var details: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(quote.job.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                  ? "Peça sem nome" : quote.job.name)
@@ -233,11 +247,11 @@ private struct QuoteRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
     }
 }
 
 private struct QuoteDetail: View {
+    @Environment(CalculatorViewModel.self) private var model
     let quote: QuoteRecord
     @Binding var nameDraft: String
     let canSaveName: Bool
@@ -248,6 +262,12 @@ private struct QuoteDetail: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if let image = model.imageStore.image(for: quote.job.imageID) {
+                    Image(nsImage: image)
+                        .resizable().aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: 220)
+                        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline) {
                         TextField("Nome da peça", text: $nameDraft)

@@ -40,7 +40,18 @@ struct PrintJobForm: View {
 
         Form {
             Section {
-                TextField("Nome da peça ou pedido", text: j.name, prompt: Text("Ex.: Suporte de headset"))
+                HStack(alignment: .top, spacing: 12) {
+                    ImageSlot(
+                        image: appModel.imageStore.image(for: model.job.imageID),
+                        width: 72, height: 72,
+                        placeholderSymbol: "photo",
+                        placeholderText: "Foto",
+                        onChoose: { appModel.choosePartPhoto(for: calculator) },
+                        onDropFile: { appModel.setPartPhoto(from: $0, for: calculator) },
+                        onRemove: { appModel.removePartPhoto(for: calculator) }
+                    )
+                    TextField("Nome da peça ou pedido", text: j.name, prompt: Text("Ex.: Suporte de headset"))
+                }
                 Button {
                     model.importModel()
                 } label: {

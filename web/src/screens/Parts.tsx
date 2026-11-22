@@ -4,6 +4,7 @@ import { CATEGORIES, PRICING_ERROR, money, canPrice, derived, number, plateCost,
 import { pricePerBulk, weight } from '../core/format'
 import { displayName, type QuoteRecord } from '../core/models'
 import { Empty, PageHeader, Row, Section } from '../components/ui'
+import { useImage } from '../images'
 import { useApp } from '../store'
 
 export function PartsScreen() {
@@ -48,6 +49,7 @@ export function PartsScreen() {
                       onChange={() => toggle(q.id)}
                       aria-label="Selecionar peça"
                     />
+                    <Thumb imageId={q.job.imageId ?? null} size={40} />
                     <div className="grow text">
                       <strong className="ellipsis">{displayName(q.job.name, 'Peça sem nome')}</strong>
                       <small className="muted">
@@ -108,6 +110,19 @@ export function AddToProposalMenu({ quotes, label }: { quotes: QuoteRecord[]; la
   )
 }
 
+/** Miniatura da foto da peça; sem foto, não ocupa espaço. */
+function Thumb({ imageId, size }: { imageId: string | null; size: number }) {
+  const url = useImage(imageId)
+  if (!url) return null
+  return <img src={url} alt="" width={size} height={size} style={{ borderRadius: 8, objectFit: 'cover', flex: 'none' }} />
+}
+
+function QuotePhoto({ imageId }: { imageId: string | null }) {
+  const url = useImage(imageId)
+  if (!url) return null
+  return <img src={url} alt="Foto da peça" style={{ width: '100%', maxHeight: 240, objectFit: 'contain', borderRadius: 12 }} />
+}
+
 function QuoteDetail({ quote }: { quote: QuoteRecord }) {
   const { renameQuote, useQuoteAsBase, deleteQuote, askConfirm } = useApp()
   const [name, setName] = useState(quote.job.name)
@@ -124,6 +139,7 @@ function QuoteDetail({ quote }: { quote: QuoteRecord }) {
         <button className="btn" disabled={!canSave} onClick={() => renameQuote(quote.id, name)}>Salvar nome</button>
       </div>
       <p className="muted">Salvo em {new Date(quote.savedAt).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })}</p>
+      <QuotePhoto imageId={quote.job.imageId ?? null} />
 
       <div className="card">
         <span className="muted">Preço sugerido por peça</span>
