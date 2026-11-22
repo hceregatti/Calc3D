@@ -180,6 +180,25 @@ extension CalculatorViewModel {
         catalogMessage = "Peça salva no seu histórico ✔"
     }
 
+    /// Move o arquivo para a Lixeira (recuperável). Como a pasta é compartilhada, some para todos que a usam.
+    func deleteCatalogFile(_ file: CatalogFile) {
+        do {
+            try FileManager.default.trashItem(at: file.url, resultingItemURL: nil)
+            catalogMessage = "\"\(file.url.lastPathComponent)\" movido para a Lixeira ✔"
+        } catch {
+            catalogMessage = "Não foi possível excluir \"\(file.name)\": \(error.localizedDescription)"
+        }
+        if selectedCatalogFileID == file.id { selectedCatalogFileID = nil }
+        catalogFileInfo[file.id] = nil
+        refreshCatalogKeepingMessage()
+    }
+
+    private func refreshCatalogKeepingMessage() {
+        let message = catalogMessage
+        refreshCatalog()
+        if let message { catalogMessage = [message, catalogMessage].compactMap { $0 }.joined(separator: " ") }
+    }
+
     func revealCatalogFile(_ file: CatalogFile) {
         NSWorkspace.shared.activateFileViewerSelecting([file.url])
     }

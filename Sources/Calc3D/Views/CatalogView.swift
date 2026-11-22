@@ -56,6 +56,12 @@ private struct CatalogBrowser: View {
                 List(selection: $model.selectedCatalogFileID) {
                     ForEach(files) { file in
                         CatalogFileRow(file: file).tag(Optional(file.id))
+                            .contextMenu {
+                                Button("Baixar") { model.downloadCatalogFile(file) }
+                                Button("Mostrar no Finder") { model.revealCatalogFile(file) }
+                                Divider()
+                                Button("Excluir…", role: .destructive) { model.catalogFilePendingDeletionID = file.id }
+                            }
                     }
                 }
                 .overlay {
@@ -90,6 +96,20 @@ private struct CatalogBrowser: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        }
+        .confirmationDialog(
+            "Excluir este modelo do catálogo?",
+            isPresented: Binding(
+                get: { model.catalogFilePendingDeletionID != nil },
+                set: { if !$0 { model.catalogFilePendingDeletionID = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: model.catalogFiles.first { $0.id == model.catalogFilePendingDeletionID }
+        ) { file in
+            Button("Excluir \"\(file.name)\"", role: .destructive) { model.deleteCatalogFile(file) }
+            Button("Cancelar", role: .cancel) {}
+        } message: { _ in
+            Text("O arquivo vai para a Lixeira e some do catálogo para todas as pessoas que usam esta pasta.")
         }
         .toolbar {
             ToolbarItemGroup {
@@ -223,19 +243,22 @@ private struct CatalogFileDetail: View {
             Section {
                 HStack {
                     Button { model.openCatalogFileInCalculator(file) } label: {
-                        Label("Abrir em Calcular peça", systemImage: "function")
+                        Label("Calcular", systemImage: "function")
                     }
                     .disabled(!isLoaded)
                     Button { model.saveCatalogFileToHistory(file) } label: {
-                        Label("Salvar no meu histórico", systemImage: "square.and.arrow.down.fill")
+                        Label("Salvar", systemImage: "square.and.arrow.down.fill")
                     }
                     .disabled(job == nil)
                     Button { model.downloadCatalogFile(file) } label: {
-                        Label("Baixar para o computador", systemImage: "arrow.down.circle")
+                        Label("Baixar", systemImage: "arrow.down.circle")
                     }
                     Spacer()
                     Button { model.revealCatalogFile(file) } label: {
                         Label("Mostrar no Finder", systemImage: "folder")
+                    }
+                    Button(role: .destructive) { model.catalogFilePendingDeletionID = file.id } label: {
+                        Label("Excluir", systemImage: "trash.fill")
                     }
                 }
             }

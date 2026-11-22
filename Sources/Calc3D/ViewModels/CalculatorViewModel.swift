@@ -178,6 +178,8 @@ final class CalculatorViewModel {
     var catalogFileInfo: [String: CatalogFileInfo] = [:]
     /// Mesa escolhida em arquivos com mais de uma mesa fatiada.
     var catalogPlateChoice: [String: Int] = [:]
+    /// Arquivo aguardando a confirmação para ser excluído da pasta do catálogo.
+    var catalogFilePendingDeletionID: String?
     @ObservationIgnored let catalogSettings = CatalogSettingsStore()
     var filamentPendingDeletionID: UUID?
     private(set) var settingsFeedback: String?
