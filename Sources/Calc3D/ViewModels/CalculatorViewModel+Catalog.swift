@@ -188,12 +188,14 @@ extension CalculatorViewModel {
             catalogMessage = "Não foi possível preparar \"\(file.name)\": \(error.localizedDescription)"
             return
         }
-        NSWorkspace.shared.open([copy], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
+        // O macOS chama este callback numa thread de fundo. Com `@Sendable` explícito o fechamento não herda
+        // o isolamento da thread principal (nos SDKs mais antigos herdava, e o Swift 6 encerrava o app).
+        let completion: @Sendable (NSRunningApplication?, (any Error)?) -> Void = { [weak self] _, error in
             guard let error else { return }
-            Task { @MainActor in
-                self?.catalogMessage = "Não foi possível abrir no \(slicer.title): \(error.localizedDescription)"
-            }
+            let message = "Não foi possível abrir no \(slicer.title): \(error.localizedDescription)"
+            Task { @MainActor in self?.catalogMessage = message }
         }
+        NSWorkspace.shared.open([copy], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration(), completionHandler: completion)
     }
 
     /// Salva uma cópia do arquivo do catálogo no computador.

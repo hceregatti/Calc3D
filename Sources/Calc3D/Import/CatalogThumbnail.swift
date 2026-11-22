@@ -36,13 +36,16 @@ enum CatalogThumbnail {
             fileAt: url, size: CGSize(width: 512, height: 512),
             scale: NSScreen.main?.backingScaleFactor ?? 2, representationTypes: .thumbnail
         )
-        let png: Data? = await withCheckedContinuation { continuation in
-            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { representation, _ in
+        let png: Data? = await withCheckedContinuation { (continuation: CheckedContinuation<Data?, Never>) in
+            // `@Sendable` explícito: o Quick Look chama o callback numa thread de fundo e o fechamento
+            // não pode herdar o isolamento da thread principal.
+            let completion: @Sendable (QLThumbnailRepresentation?, (any Error)?) -> Void = { representation, _ in
                 let data = representation.flatMap {
                     NSBitmapImageRep(cgImage: $0.cgImage).representation(using: .png, properties: [:])
                 }
                 continuation.resume(returning: data)
             }
+            QLThumbnailGenerator.shared.generateBestRepresentation(for: request, completion: completion)
         }
         return png.flatMap { NSImage(data: $0) }
     }
