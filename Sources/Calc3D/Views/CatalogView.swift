@@ -57,6 +57,10 @@ private struct CatalogBrowser: View {
                     CatalogFileRow(file: file)
                         .contextMenu {
                             Button("Baixar") { model.downloadCatalogFile(file) }
+                            ForEach(Slicer.allCases) { slicer in
+                                Button("Abrir no \(slicer.title)") { model.openCatalogFile(file, in: slicer) }
+                                    .disabled(slicer.applicationURL == nil)
+                            }
                             Button("Mostrar no Finder") { model.revealCatalogFile(file) }
                             Divider()
                             Button("Excluir…", role: .destructive) { model.catalogFilePendingDeletionID = file.id }
@@ -220,6 +224,20 @@ private struct CatalogFileDetail: View {
                         }
                     }
                     let data = model.catalogData(for: file) ?? raw
+                    if let printer = raw.printer {
+                        if let name = printer.model ?? printer.profile {
+                            LabeledContent("Impressora", value: name)
+                        }
+                        if let nozzle = printer.nozzleDiameter {
+                            LabeledContent("Bico", value: nozzle.replacingOccurrences(of: ".", with: ",") + " mm")
+                        }
+                        if let layer = printer.layerHeight {
+                            LabeledContent("Altura de camada", value: layer.replacingOccurrences(of: ".", with: ",") + " mm")
+                        }
+                        if let profile = printer.printProfile {
+                            LabeledContent("Perfil de impressão", value: profile)
+                        }
+                    }
                     LabeledContent("Peso", value: data.weightGrams.map { Weight.format(grams: $0) } ?? "Não informado no arquivo")
                     LabeledContent("Tempo de impressão", value: data.durationSeconds.flatMap { $0 > 0 ? Self.format(seconds: $0) : nil } ?? "Não informado no arquivo")
                     if data.weightGrams == nil, let estimate = raw.estimatedWeight {
@@ -282,10 +300,24 @@ private struct CatalogFileDetail: View {
                     Button { model.downloadCatalogFile(file) } label: {
                         Label("Baixar", systemImage: "arrow.down.circle")
                     }
+                    Menu {
+                        ForEach(Slicer.allCases) { slicer in
+                            Button(slicer.title + (slicer.applicationURL == nil ? " (não instalado)" : "")) {
+                                model.openCatalogFile(file, in: slicer)
+                            }
+                            .disabled(slicer.applicationURL == nil)
+                        }
+                    } label: {
+                        Label("Abrir no fatiador", systemImage: "square.and.arrow.up.on.square")
+                    }
+                    .help("Abre uma cópia do modelo no Bambu Studio ou no Creality Print")
                     Spacer()
+                }
+                HStack {
                     Button { model.revealCatalogFile(file) } label: {
                         Label("Mostrar no Finder", systemImage: "folder")
                     }
+                    Spacer()
                     Button(role: .destructive) { model.catalogFilePendingDeletionID = file.id } label: {
                         Label("Excluir", systemImage: "trash.fill")
                     }

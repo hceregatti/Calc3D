@@ -121,6 +121,24 @@ enum ModelVolumeEstimator {
         return found ? sum : nil
     }
 
+    // MARK: Impressora do projeto
+
+    /// Impressora, bico, camada e perfil gravados em project_settings.config (Bambu Studio, Orca, Creality Print).
+    static func printer(from projectSettings: Data) -> ImportedPrinter? {
+        guard let json = try? JSONSerialization.jsonObject(with: projectSettings) as? [String: Any] else { return nil }
+        func text(_ key: String) -> String? {
+            let value: String?
+            if let s = json[key] as? String { value = s } else if let list = json[key] as? [Any], let s = list.first as? String { value = s } else { value = nil }
+            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (trimmed?.isEmpty ?? true) ? nil : trimmed
+        }
+        return ImportedPrinter(
+            model: text("printer_model"), profile: text("printer_settings_id"),
+            nozzleDiameter: text("nozzle_diameter"), layerHeight: text("layer_height"),
+            printProfile: text("print_settings_id")
+        )
+    }
+
     // MARK: Parâmetros do projeto
 
     /// Densidade, preenchimento e paredes gravados em Metadata/project_settings.config (Bambu/Orca/Prusa).

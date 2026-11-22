@@ -171,6 +171,31 @@ extension CalculatorViewModel {
         catalogMessage = parts.joined(separator: " ")
     }
 
+    /// Abre uma cópia do modelo no fatiador. A cópia fica em pasta temporária para que alterações no fatiador
+    /// não mexam no arquivo compartilhado do catálogo.
+    func openCatalogFile(_ file: CatalogFile, in slicer: Slicer) {
+        guard let app = slicer.applicationURL else {
+            catalogMessage = "\(slicer.title) não foi encontrado em Aplicativos. Instale-o para abrir o modelo nele."
+            return
+        }
+        let fm = FileManager.default
+        let folder = fm.temporaryDirectory.appending(path: "Calc3D-Fatiador/\(UUID().uuidString)", directoryHint: .isDirectory)
+        let copy = folder.appending(path: file.url.lastPathComponent)
+        do {
+            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            try fm.copyItem(at: file.url, to: copy)
+        } catch {
+            catalogMessage = "Não foi possível preparar \"\(file.name)\": \(error.localizedDescription)"
+            return
+        }
+        NSWorkspace.shared.open([copy], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration()) { [weak self] _, error in
+            guard let error else { return }
+            Task { @MainActor in
+                self?.catalogMessage = "Não foi possível abrir no \(slicer.title): \(error.localizedDescription)"
+            }
+        }
+    }
+
     /// Salva uma cópia do arquivo do catálogo no computador.
     func downloadCatalogFile(_ file: CatalogFile) {
         let panel = NSSavePanel()

@@ -15,6 +15,17 @@ struct ImportedPlate: Sendable, Identifiable {
     var id: Int { index }
 }
 
+/// Impressora e perfil para os quais o projeto foi configurado no fatiador.
+struct ImportedPrinter: Sendable, Equatable {
+    var model: String?
+    var profile: String?
+    var nozzleDiameter: String?
+    var layerHeight: String?
+    var printProfile: String?
+
+    var isEmpty: Bool { [model, profile, nozzleDiameter, layerHeight, printProfile].allSatisfy { $0 == nil } }
+}
+
 struct ImportedModelData: Sendable {
     let name: String
     let weightGrams: Double?
@@ -23,11 +34,13 @@ struct ImportedModelData: Sendable {
     var plates: [ImportedPlate] = []
     /// Peso estimado pelo volume da malha (só quando o arquivo não traz o peso do fatiador). Aproximação.
     var estimatedWeight: WeightEstimate? = nil
+    /// Impressora configurada no projeto (nil em STL ou quando o 3MF não traz as configurações).
+    var printer: ImportedPrinter? = nil
 
     /// Mesmos dados, usando só a mesa escolhida.
     func selecting(_ plate: ImportedPlate) -> ImportedModelData {
         ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates,
-                          estimatedWeight: estimatedWeight)
+                          estimatedWeight: estimatedWeight, printer: printer)
     }
 }
 
@@ -96,10 +109,14 @@ enum ModelFileImporter {
 
     private static func import3MF(at url: URL, name: String) throws -> ImportedModelData {
         var data = try readSliceInfo(at: url, name: name)
+        let entries = try? archiveEntries(at: url)
+        let settingsData = entries?.first { $0.caseInsensitiveCompare("Metadata/project_settings.config") == .orderedSame }
+            .flatMap { try? runUnzip(["-p", url.path, $0], maxBytes: 8 * 1024 * 1024) }
+        if let settingsData, let printer = ModelVolumeEstimator.printer(from: settingsData), !printer.isEmpty {
+            data.printer = printer
+        }
         let hasWeight = data.weightGrams != nil || data.plates.contains { $0.weightGrams != nil }
-        if !hasWeight, let entries = try? archiveEntries(at: url) {
-            let settingsData = entries.first { $0.caseInsensitiveCompare("Metadata/project_settings.config") == .orderedSame }
-                .flatMap { try? runUnzip(["-p", url.path, $0], maxBytes: 8 * 1024 * 1024) }
+        if !hasWeight, let entries {
             let settings = settingsData.map(ModelVolumeEstimator.settings(from:)) ?? EstimationSettings()
             if let (metrics, pieces) = ModelVolumeEstimator.metricsFor3MF(at: url, entries: entries),
                let grams = ModelVolumeEstimator.estimateWeight(metrics: metrics, settings: settings) {
