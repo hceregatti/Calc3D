@@ -18,6 +18,7 @@ struct PartsView: View {
                             .contextMenu {
                                 Button("Usar como base") { model.useQuoteAsBase(quote) }
                                 AddToProposalMenu(quotes: contextQuotes(for: quote))
+                                CatalogPublishMenu(quotes: contextQuotes(for: quote))
                                 Divider()
                                 Button("Excluir…", role: .destructive) {
                                     model.quotePendingDeletionID = quote.id
@@ -96,6 +97,14 @@ struct PartsView: View {
                     Label("Calcular peça", systemImage: "plus.circle.fill")
                 }
                 .help("Calcular uma nova peça")
+
+                Menu {
+                    CatalogPublishMenu(quotes: selected)
+                } label: {
+                    Label("Catálogo", systemImage: "books.vertical.fill")
+                }
+                .disabled(selected.isEmpty)
+                .help("Publicar as peças selecionadas no catálogo compartilhado")
 
                 Button {
                     model.addQuotesToProposal(selected, proposalID: nil)
@@ -322,5 +331,29 @@ private struct QuoteDetail: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bg)
+    }
+}
+
+/// Publicar, atualizar ou retirar peças do catálogo compartilhado.
+struct CatalogPublishMenu: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let quotes: [QuoteRecord]
+
+    var body: some View {
+        let published = quotes.filter { model.catalogEntry(for: $0) != nil }
+        let pending = quotes.filter { model.catalogEntry(for: $0) == nil }
+        if !pending.isEmpty {
+            Button(pending.count == 1 ? "Publicar no catálogo" : "Publicar \(pending.count) no catálogo") {
+                model.publishToCatalog(pending)
+            }
+        }
+        if !published.isEmpty {
+            Button(published.count == 1 ? "Atualizar no catálogo" : "Atualizar \(published.count) no catálogo") {
+                model.publishToCatalog(published)
+            }
+            Button(published.count == 1 ? "Retirar do catálogo" : "Retirar \(published.count) do catálogo") {
+                model.retractFromCatalog(published.map(\.id))
+            }
+        }
     }
 }
