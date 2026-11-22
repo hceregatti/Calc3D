@@ -93,4 +93,16 @@ import Foundation
         let back = try decoder.decode(CatalogEntry.self, from: data)
         #expect(back.note == "" && back.updatedAt == back.publishedAt)
     }
+
+    @Test func listaModelosSoltosNaPasta() throws {
+        let root = try tempFolder()
+        let sub = root.appendingPathComponent(FolderCatalogStore.folderName, isDirectory: true)
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        try Data([1]).write(to: root.appendingPathComponent("Celular.3MF"))
+        try Data([1]).write(to: sub.appendingPathComponent("Vaso.stl"))
+        try Data([1]).write(to: sub.appendingPathComponent("nota.txt"))
+        let listing = try FolderCatalogStore(root: root).list()
+        #expect(Set(listing.files.map(\.name)) == ["Celular", "Vaso"])
+        #expect(listing.entries.isEmpty)
+    }
 }

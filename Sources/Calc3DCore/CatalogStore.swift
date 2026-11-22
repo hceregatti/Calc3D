@@ -6,9 +6,27 @@ public enum CatalogError: Error, Equatable, Sendable {
     case folderUnavailable
 }
 
+/// Modelo 3D (3MF/STL) solto na pasta do catálogo, sem cálculo publicado (ex.: enviado pelo celular).
+public struct CatalogFile: Identifiable, Equatable, Sendable {
+    public var url: URL
+    public var modifiedAt: Date
+    public var id: String { url.path }
+    public var name: String { url.deletingPathExtension().lastPathComponent }
+    public var fileExtension: String { url.pathExtension.lowercased() }
+
+    public init(url: URL, modifiedAt: Date) {
+        self.url = url
+        self.modifiedAt = modifiedAt
+    }
+
+    public static let supportedExtensions: Set<String> = ["3mf", "stl"]
+}
+
 /// Conteúdo lido do catálogo.
 public struct CatalogListing: Sendable {
     public var entries: [CatalogEntry] = []
+    /// Modelos 3D soltos na pasta, que ainda não têm cálculo publicado.
+    public var files: [CatalogFile] = []
     /// Arquivos ilegíveis ou de versão mais nova, ignorados.
     public var skipped: [String] = []
     /// Arquivos da nuvem ainda não baixados (entram na próxima atualização).
@@ -62,7 +80,7 @@ public struct FolderCatalogStore: CatalogStoring {
             throw CatalogError.folderUnavailable
         }
         var listing = CatalogListing()
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: entriesDirectory.path) else { return listing }
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: entriesDirectory.path)) ?? []
         for name in names.sorted() {
             // Placeholder do iCloud (".<arquivo>.json.icloud"): pede o download e tenta na próxima vez.
             if name.hasPrefix("."), name.hasSuffix(".json.icloud") {
@@ -83,7 +101,38 @@ public struct FolderCatalogStore: CatalogStoring {
             listing.entries.append(entry)
         }
         listing.entries.sort { $0.updatedAt > $1.updatedAt }
+        scanLooseModels(into: &listing)
         return listing
+    }
+
+    /// Procura 3MF/STL na pasta escolhida (só no primeiro nível) e dentro de "Calc3D-Catalogo" (em qualquer nível).
+    private func scanLooseModels(into listing: inout CatalogListing) {
+        let fm = FileManager.default
+        let catalogDir = root.appendingPathComponent(Self.folderName, isDirectory: true)
+        var found: [URL] = []
+        if let top = try? fm.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) { found += top }
+        if let deep = fm.enumerator(at: catalogDir, includingPropertiesForKeys: nil) {
+            for case let url as URL in deep where url.deletingLastPathComponent().lastPathComponent != "entries" { found.append(url) }
+        }
+        var seen = Set<String>()
+        for var url in found {
+            // Placeholder do iCloud (".<arquivo>.3mf.icloud"): pede o download e mostra na próxima vez.
+            let name = url.lastPathComponent
+            if name.hasPrefix("."), name.hasSuffix(".icloud") {
+                let real = String(name.dropFirst().dropLast(".icloud".count))
+                guard CatalogFile.supportedExtensions.contains((real as NSString).pathExtension.lowercased()) else { continue }
+                try? fm.startDownloadingUbiquitousItem(at: url.deletingLastPathComponent().appendingPathComponent(real))
+                listing.pendingDownloads += 1
+                continue
+            }
+            guard CatalogFile.supportedExtensions.contains(url.pathExtension.lowercased()) else { continue }
+            url = url.standardizedFileURL
+            guard seen.insert(url.path).inserted else { continue }
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .contentModificationDateKey])
+            guard values?.isRegularFile == true else { continue }
+            listing.files.append(CatalogFile(url: url, modifiedAt: values?.contentModificationDate ?? .distantPast))
+        }
+        listing.files.sort { $0.modifiedAt > $1.modifiedAt }
     }
 
     public func publish(_ entry: CatalogEntry) throws {
