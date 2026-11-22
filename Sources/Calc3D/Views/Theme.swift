@@ -20,16 +20,16 @@ enum Theme {
     static let warn = adaptive(light: 0x8A5A12, dark: 0xE0B067)
     static let success = adaptive(light: 0x2F5D3A, dark: 0x8FC39B)
 
-    /// Escala de cinzas dos gráficos, do mais forte (1) ao mais claro (8).
+    /// Cores categóricas dos gráficos, distintas entre si (uma por categoria de custo).
     static let chart: [Color] = [
-        adaptive(light: 0x1C1C1A, dark: 0xF2F1EE),
-        adaptive(light: 0x3D3C39, dark: 0xD6D5D0),
-        adaptive(light: 0x5C5B57, dark: 0xB5B4AF),
-        adaptive(light: 0x7A7975, dark: 0x9A9994),
-        adaptive(light: 0x9A9994, dark: 0x7A7975),
-        adaptive(light: 0xB5B4AF, dark: 0x5C5B57),
-        adaptive(light: 0xCDCCC7, dark: 0x45443F),
-        adaptive(light: 0xE0DFDA, dark: 0x34342F),
+        adaptive(light: 0x2F6FDB, dark: 0x6EA4F5),
+        adaptive(light: 0xE07B1A, dark: 0xF0A24F),
+        adaptive(light: 0x1A9E8F, dark: 0x4FC7B8),
+        adaptive(light: 0x7A4FD1, dark: 0xA98AF0),
+        adaptive(light: 0xC9A21A, dark: 0xE5C75A),
+        adaptive(light: 0xD6403A, dark: 0xF0766F),
+        adaptive(light: 0x3F9E3F, dark: 0x7FCF7F),
+        adaptive(light: 0xD1479B, dark: 0xEE86C4),
     ]
 
     // Raios
