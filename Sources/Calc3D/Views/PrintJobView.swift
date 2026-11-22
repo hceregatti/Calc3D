@@ -22,6 +22,7 @@ struct PrintJobView: View {
                     Label("Nova peça", systemImage: "plus.circle.fill")
                 }
                 .help("Começa o cálculo de uma nova peça (⌘N)")
+                    .pointerCursor()
             }
         }
     }
@@ -58,6 +59,7 @@ struct PrintJobForm: View {
                     Label(model.isImportingModel ? "Lendo arquivo…" : "Importar STL ou 3MF", systemImage: "square.and.arrow.down.fill")
                 }
                 .disabled(model.isImportingModel)
+                    .pointerCursor()
                 if let feedback = model.importFeedback {
                     Text(feedback)
                         .font(.caption)
@@ -119,6 +121,7 @@ struct PrintJobForm: View {
                     if let onEditSettings {
                         Button("Editar…", action: onEditSettings)
                             .buttonStyle(.subtleLink)
+                            .pointerCursor()
                     }
                 }
             }

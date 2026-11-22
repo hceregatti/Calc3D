@@ -134,6 +134,7 @@ struct ShopSettingsView: View {
                 }
                 .disabled(!model.settingsHaveUnsavedChanges)
                 .help("Salva todos os parâmetros fixos alterados")
+                    .pointerCursor()
             }
             ToolbarItem {
                 Button {
@@ -142,6 +143,7 @@ struct ShopSettingsView: View {
                     Label("Restaurar padrões", systemImage: "arrow.counterclockwise.circle.fill")
                 }
                 .help("Volta todos os parâmetros fixos aos valores padrão")
+                    .pointerCursor()
             }
             ToolbarItem {
                 Button {
@@ -150,6 +152,7 @@ struct ShopSettingsView: View {
                     Label("Calcular peça", systemImage: "cube.fill")
                 }
                 .help("Ir para o cálculo de peça (⌘2)")
+                    .pointerCursor()
             }
         }
     }

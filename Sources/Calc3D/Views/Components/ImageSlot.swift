@@ -50,6 +50,7 @@ struct ImageSlot: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .pointerCursor()
         .help(image == nil ? "Clique ou arraste uma imagem para adicionar" : "Clique para trocar a imagem")
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
@@ -57,8 +58,10 @@ struct ImageSlot: View {
         } isTargeted: { targeted.wrappedValue = $0 }
         .contextMenu {
             Button(image == nil ? "Escolher imagem…" : "Trocar imagem…", action: onChoose)
+                .pointerCursor()
             if image != nil {
                 Button("Remover imagem", role: .destructive, action: onRemove)
+                    .pointerCursor()
             }
         }
     }

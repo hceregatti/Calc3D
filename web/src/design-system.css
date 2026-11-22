@@ -364,3 +364,14 @@ input[type='checkbox'] { accent-color: var(--c-accent); }
 }
 .theme-toggle button:hover { color: var(--c-ink); }
 .theme-toggle button.active { background: var(--c-surface); color: var(--c-accent); }
+
+
+/* --------------------------------------------------------------------------
+   Cursor de mãozinha em todo controle clicável
+   -------------------------------------------------------------------------- */
+button:not(:disabled), [role='button']:not([aria-disabled='true']), select:not(:disabled), summary,
+label[for], a[href], input[type='checkbox']:not(:disabled), input[type='radio']:not(:disabled),
+input[type='file'], input[type='color'], input[type='range']:not(:disabled), .list-row:not(.disabled) {
+  cursor: pointer;
+}
+button:disabled, [aria-disabled='true'] { cursor: default; }

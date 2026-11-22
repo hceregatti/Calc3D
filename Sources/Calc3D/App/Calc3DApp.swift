@@ -25,26 +25,32 @@ struct Calc3DApp: App {
         .commands {
             CommandGroup(after: .appInfo) {
                 Button("Verificar se há Atualizações…") { Task { await updater.check(manual: true) } }
+                    .pointerCursor()
             }
             CommandGroup(replacing: .newItem) {
                 Button("Nova peça") { model.newJob() }
                     .keyboardShortcut("n")
+                    .pointerCursor()
                 Button("Novo orçamento") { model.startNewProposal() }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
+                    .pointerCursor()
             }
             CommandGroup(replacing: .appSettings) {
                 Button("Parâmetros fixos…") { model.screen = .settings }
                     .keyboardShortcut(",")
+                    .pointerCursor()
             }
             CommandGroup(after: .pasteboard) {
                 Divider()
                 Button("Copiar orçamento") { model.copySummary() }
                     .keyboardShortcut("c", modifiers: [.command, .shift])
+                    .pointerCursor()
             }
             CommandMenu("Ir") {
                 ForEach(Array(Screen.allCases.enumerated()), id: \.element) { index, screen in
                     Button(screen.title) { model.screen = screen }
                         .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")))
+                        .pointerCursor()
                 }
             }
         }

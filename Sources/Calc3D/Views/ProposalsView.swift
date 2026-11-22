@@ -20,6 +20,7 @@ struct ProposalsView: View {
                         Label("Novo", systemImage: "plus.circle.fill")
                     }
                     .help("Criar um orçamento")
+                        .pointerCursor()
                 }
                 .padding(12)
 
@@ -95,6 +96,7 @@ struct ProposalsView: View {
                 }
                 model.proposalPendingDeletionID = nil
             }
+                .pointerCursor()
         } message: { proposalID in
             let title = model.proposals.first(where: { $0.id == proposalID })?.title ?? ""
             Text("\(title.isEmpty ? "Este orçamento" : "\"\(title)\"") será removido permanentemente.")

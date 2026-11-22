@@ -14,12 +14,16 @@ struct FilamentsView: View {
                 FilamentRow(filament: filament)
                     .contextMenu {
                         Button("Duplicar") { model.duplicateFilament(filament) }
+                            .pointerCursor()
                         Button("Buscar na web") { model.openFilamentSearch(filament) }
+                            .pointerCursor()
                         if filament.purchaseLink != nil {
                             Button("Abrir link de compra") { model.openFilamentPurchase(filament) }
+                                .pointerCursor()
                         }
                         Divider()
                         Button("Excluir…", role: .destructive) { model.filamentPendingDeletionID = filament.id }
+                            .pointerCursor()
                     }
             }
             .overlay {
@@ -30,6 +34,7 @@ struct FilamentsView: View {
                         Text("Cadastre os rolos que você tem: marca, peso, valor e parâmetros de impressão.")
                     } actions: {
                         Button("Adicionar filamento") { model.addFilament() }
+                            .pointerCursor()
                     }
                 }
             }
@@ -56,6 +61,7 @@ struct FilamentsView: View {
                     Label("Novo filamento", systemImage: "plus.circle.fill")
                 }
                 .help("Adicionar um rolo à biblioteca")
+                    .pointerCursor()
             }
             ToolbarItem {
                 Button { model.filamentPendingDeletionID = model.selectedFilamentID } label: {
@@ -63,6 +69,7 @@ struct FilamentsView: View {
                 }
                 .disabled(model.selectedFilamentID == nil)
                 .help("Excluir o filamento selecionado")
+                    .pointerCursor()
             }
         }
         .confirmationDialog(
@@ -77,7 +84,9 @@ struct FilamentsView: View {
                 if let id = model.filamentPendingDeletionID { model.deleteFilament(id) }
                 model.filamentPendingDeletionID = nil
             }
+                .pointerCursor()
             Button("Cancelar", role: .cancel) { model.filamentPendingDeletionID = nil }
+                .pointerCursor()
         } message: {
             Text("Peças já calculadas mantêm o preço usado na época.")
         }
@@ -162,6 +171,7 @@ private struct FilamentEditor: View {
                     filament.applyTypicalProfile()
                 }
                 .buttonStyle(.subtleLink)
+                    .pointerCursor()
             } header: {
                 BadgeLabel("Impressão", systemImage: "thermometer.medium", color: .orange)
             }
@@ -173,10 +183,12 @@ private struct FilamentEditor: View {
                     Button { model.openFilamentSearch(filament) } label: {
                         Label("Buscar na web", systemImage: "magnifyingglass")
                     }
+                        .pointerCursor()
                     Button { model.openFilamentPurchase(filament) } label: {
                         Label("Abrir link", systemImage: "arrow.up.right.square")
                     }
                     .disabled(filament.purchaseLink == nil)
+                        .pointerCursor()
                     Spacer()
                 }
                 if !filament.purchaseURL.isEmpty && filament.purchaseLink == nil {
@@ -219,6 +231,7 @@ private struct FilamentEditor: View {
                 Button(role: .destructive) { model.filamentPendingDeletionID = filament.id } label: {
                     Label("Excluir filamento", systemImage: "trash.fill")
                 }
+                    .pointerCursor()
             }
         }
         .themedForm()

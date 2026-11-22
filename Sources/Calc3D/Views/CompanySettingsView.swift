@@ -47,8 +47,10 @@ struct CompanySettingsView: View {
                             .foregroundStyle(.secondary)
                         HStack {
                             Button("Escolher logo…") { model.chooseCompanyLogo() }
+                                .pointerCursor()
                             if model.companyProfile.logoImageID != nil {
                                 Button("Remover", role: .destructive) { model.companyProfile.logoImageID = nil }
+                                    .pointerCursor()
                             }
                         }
                     }
@@ -128,6 +130,7 @@ struct CompanySettingsView: View {
                 }
                 .disabled(!model.companyHasUnsavedChanges)
                 .help("Salva os dados da empresa e os padrões do orçamento")
+                    .pointerCursor()
             }
             ToolbarItem {
                 Button {
@@ -136,6 +139,7 @@ struct CompanySettingsView: View {
                     Label("Pré-visualizar PDF", systemImage: "eye.fill")
                 }
                 .help("Gera um orçamento de exemplo com estes dados e abre no Preview")
+                    .pointerCursor()
             }
             ToolbarItem {
                 Button {
@@ -144,6 +148,7 @@ struct CompanySettingsView: View {
                     Label("Restaurar condições padrão", systemImage: "arrow.counterclockwise.circle.fill")
                 }
                 .help("Volta pagamento, prazo, validade, observações e rodapé aos textos sugeridos")
+                    .pointerCursor()
             }
         }
     }

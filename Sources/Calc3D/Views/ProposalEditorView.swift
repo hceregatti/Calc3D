@@ -52,6 +52,7 @@ struct ProposalEditorView: View {
                             Label("Calcular nova peça…", systemImage: "plus.circle.fill")
                         }
                         .help("Abre o cálculo completo da peça e adiciona o resultado ao orçamento")
+                            .pointerCursor()
 
                         Button {
                             model.isPickingParts = true
@@ -59,6 +60,7 @@ struct ProposalEditorView: View {
                             Label("Adicionar do histórico…", systemImage: "square.stack.3d.up.fill")
                         }
                         .disabled(model.quotes.isEmpty)
+                            .pointerCursor()
                     }
                 } header: {
                     Text("Peças e itens")
@@ -107,6 +109,7 @@ struct ProposalEditorView: View {
                     Button(role: .destructive, action: onDelete) {
                         Label("Excluir orçamento", systemImage: "trash.fill")
                     }
+                        .pointerCursor()
                 }
                 Spacer()
                 Button {
@@ -116,6 +119,7 @@ struct ProposalEditorView: View {
                 }
                 .disabled(proposal.items.isEmpty || proposal.total == nil || !isSaved || model.proposalHasUnsavedChanges)
                 .help("Salve o orçamento antes de exportar o PDF")
+                    .pointerCursor()
                 Button {
                     model.saveProposalDraft()
                 } label: {
@@ -123,6 +127,7 @@ struct ProposalEditorView: View {
                 }
                 .buttonStyle(.primary)
                 .disabled(!model.proposalHasUnsavedChanges)
+                    .pointerCursor()
             }
             .padding(16)
 
@@ -215,6 +220,7 @@ private struct ProposalItemEditor: View {
                 }
                 .buttonStyle(.borderless)
                 .help("Remover do orçamento")
+                    .pointerCursor()
             }
 
             TextField("Descrição (opcional)", text: binding(\.details))
@@ -313,15 +319,18 @@ private struct PartsPickerSheet: View {
                         model.partsPickerSelection = []
                     }
                 }
+                    .pointerCursor()
                 Spacer()
                 Button("Cancelar", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
+                    .pointerCursor()
                 Button(chosen.count > 1 ? "Adicionar \(chosen.count) peças" : "Adicionar") {
                     onAdd(chosen)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(chosen.isEmpty)
+                    .pointerCursor()
             }
             .padding(16)
         }
@@ -382,6 +391,7 @@ private struct PartCalculatorSheet: View {
                 Spacer()
                 Button("Cancelar", role: .cancel) { model.cancelPartDraft() }
                     .keyboardShortcut(.cancelAction)
+                    .pointerCursor()
                 Button {
                     model.commitPartDraft()
                 } label: {
@@ -390,6 +400,7 @@ private struct PartCalculatorSheet: View {
                 .buttonStyle(.primary)
                 .keyboardShortcut(.defaultAction)
                 .disabled(!calculator.canPrice)
+                    .pointerCursor()
             }
             .padding(16)
         }
@@ -439,6 +450,7 @@ private struct FilamentUsageSection: View {
                     }
                     Button("Estornar baixa") { model.revertStock(for: proposal) }
                         .help("Devolve aos rolos o filamento descontado por este orçamento")
+                        .pointerCursor()
                 } else {
                     Button {
                         model.deductStock(for: proposal)
@@ -447,6 +459,7 @@ private struct FilamentUsageSection: View {
                     }
                     .disabled(requirements.allSatisfy { model.filament(withID: $0.filamentID) == nil })
                     .help("Desconta o filamento deste orçamento do peso restante dos rolos e salva o orçamento")
+                        .pointerCursor()
                 }
             } header: {
                 Text("Consumo de filamento")
@@ -475,6 +488,7 @@ private struct ProposalStatusRow: View {
                     Label("Confirmar venda", systemImage: "checkmark.seal.fill")
                 }
                 .disabled(blocked)
+                    .pointerCursor()
             case .expired:
                 LabeledContent("Situação") {
                     Label("Vencido em \(proposal.validUntil?.formatted(date: .abbreviated, time: .omitted) ?? "—")",
@@ -484,10 +498,12 @@ private struct ProposalStatusRow: View {
                     Button { model.confirmSale(for: proposal) } label: {
                         Label("Confirmar venda", systemImage: "checkmark.seal.fill")
                     }
+                        .pointerCursor()
                     Button { model.renewProposal(proposal) } label: {
                         Label("Renovar validade", systemImage: "arrow.clockwise")
                     }
                     .help("Reinicia a contagem da validade a partir de hoje e devolve o orçamento à fila")
+                        .pointerCursor()
                 }
                 .disabled(blocked)
             case .sold:
@@ -497,6 +513,7 @@ private struct ProposalStatusRow: View {
                 }
                 Button("Desfazer venda") { model.reopenProposal(proposal) }
                     .disabled(blocked)
+                    .pointerCursor()
             }
             if blocked {
                 Text("Salve as alterações para mudar a situação.").font(.caption).foregroundStyle(Theme.muted)

@@ -15,11 +15,13 @@ struct PartsView: View {
                     QuoteRow(quote: quote)
                         .contextMenu {
                             Button("Usar como base") { model.useQuoteAsBase(quote) }
+                                .pointerCursor()
                             AddToProposalMenu(quotes: contextQuotes(for: quote))
                             Divider()
                             Button("Excluir…", role: .destructive) {
                                 model.quotePendingDeletionID = quote.id
                             }
+                                .pointerCursor()
                         }
                 }
                 .overlay {
@@ -30,6 +32,7 @@ struct PartsView: View {
                             Text("Calcule uma peça e clique em “Salvar peça” para guardá-la aqui.")
                         } actions: {
                             Button("Calcular peça") { model.newJob() }
+                                .pointerCursor()
                         }
                     }
                 }
@@ -51,6 +54,7 @@ struct PartsView: View {
                     .buttonStyle(.subtleLink)
                     .font(.caption)
                     .disabled(model.quotes.isEmpty)
+                        .pointerCursor()
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -93,6 +97,7 @@ struct PartsView: View {
                     Label("Calcular peça", systemImage: "plus.circle.fill")
                 }
                 .help("Calcular uma nova peça")
+                    .pointerCursor()
 
                 Button {
                     model.addQuotesToProposal(selected, proposalID: nil)
@@ -101,6 +106,7 @@ struct PartsView: View {
                 }
                 .disabled(!selected.contains(where: CalculatorViewModel.canAddToProposal))
                 .help("Cria um orçamento com as peças selecionadas")
+                    .pointerCursor()
             }
         }
         .confirmationDialog(
@@ -118,6 +124,7 @@ struct PartsView: View {
                 }
                 model.quotePendingDeletionID = nil
             }
+                .pointerCursor()
         } message: { quoteID in
             let name = model.quotes.first(where: { $0.id == quoteID })?.job.name ?? ""
             Text("\(name.isEmpty ? "Esta peça" : "\"\(name)\"") será removida do histórico. Orçamentos já criados não mudam.")
@@ -155,6 +162,7 @@ struct AddToProposalMenu: View {
             }
         }
         .disabled(count == 0)
+            .pointerCursor()
     }
 }
 
@@ -202,6 +210,7 @@ private struct MultiplePartsSummary: View {
                     }
                     .buttonStyle(.primary)
                     .disabled(priced.isEmpty)
+                        .pointerCursor()
 
                     AddToProposalMenu(quotes: quotes)
                         .fixedSize()
@@ -274,6 +283,7 @@ private struct QuoteDetail: View {
                             .font(.title2.bold())
                         Button("Salvar nome", action: onSaveName)
                             .disabled(!canSaveName)
+                            .pointerCursor()
                     }
                     Text("Salvo em \(quote.savedAt.formatted(date: .long, time: .shortened))")
                         .font(.callout)
@@ -328,10 +338,12 @@ private struct QuoteDetail: View {
                     Button(action: useAsBase) {
                         Label("Usar como base", systemImage: "arrow.uturn.backward.circle.fill")
                     }
+                        .pointerCursor()
                     Spacer()
                     Button(role: .destructive, action: onDelete) {
                         Label("Excluir peça", systemImage: "trash.fill")
                     }
+                        .pointerCursor()
                 }
             }
             .padding(20)

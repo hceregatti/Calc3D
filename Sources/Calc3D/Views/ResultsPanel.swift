@@ -29,12 +29,14 @@ struct ResultsPanel: View {
                     Label("Salvar peça", systemImage: "bookmark.fill")
                 }
                 .buttonStyle(.primary)
+                    .pointerCursor()
 
                 Button {
                     model.copySummary()
                 } label: {
                     Label("Copiar", systemImage: "doc.on.doc.fill")
                 }
+                    .pointerCursor()
             }
             Menu {
                 Button {
@@ -60,8 +62,10 @@ struct ResultsPanel: View {
             .buttonStyle(.bordered)
             .disabled(!(model.result.suggestedPrice.map { $0.isFinite && $0 >= 0 } ?? false))
             .help("Adiciona o cálculo atual a um orçamento sem salvá-lo no histórico de peças")
+                .pointerCursor()
 
             Button("Nova peça") { model.newJob() }
+                .pointerCursor()
             if let feedback = model.quoteFeedback ?? model.copyFeedback {
                 Text(feedback)
                     .font(.callout)

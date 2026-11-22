@@ -50,6 +50,7 @@ struct SelectionList<Item: Identifiable, Row: View>: View where Item.ID: Hashabl
                         }
                         .contentShape(.rect)
                         .onTapGesture { select(item) }
+                        .pointerCursor()
                         .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }

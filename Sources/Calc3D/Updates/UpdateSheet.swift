@@ -17,11 +17,13 @@ struct UpdateSheet: View {
                        message: "O Calc3D \(updater.currentVersion.description) é a versão mais recente.") {
                     Button("OK") { updater.dismiss() }
                         .buttonStyle(.primary).keyboardShortcut(.defaultAction)
+                        .pointerCursor()
                 }
             case .failed(let message):
                 status(icon: "exclamationmark.triangle", title: "Algo deu errado", message: message) {
                     Button("Fechar") { updater.dismiss() }
                         .buttonStyle(.primary).keyboardShortcut(.defaultAction)
+                        .pointerCursor()
                 }
             case .available(let release):
                 available(release, downloading: false)
@@ -78,6 +80,7 @@ struct UpdateSheet: View {
             HStack {
                 Button("Pular esta versão") { updater.skip(release) }
                     .buttonStyle(.subtleLink)
+                    .pointerCursor()
                 Spacer()
                 if downloading {
                     ProgressView().controlSize(.small)
@@ -85,8 +88,10 @@ struct UpdateSheet: View {
                 } else {
                     Button("Mais tarde") { updater.remindLater() }
                         .keyboardShortcut(.cancelAction)
+                        .pointerCursor()
                     Button("Atualizar agora") { Task { await updater.install(release) } }
                         .buttonStyle(.primary).keyboardShortcut(.defaultAction)
+                        .pointerCursor()
                 }
             }
             .disabled(downloading)

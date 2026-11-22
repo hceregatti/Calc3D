@@ -33,6 +33,7 @@ private struct CatalogSetup: View {
             )
             Button("Escolher pasta…") { model.chooseCatalogFolder() }
                 .buttonStyle(.borderedProminent)
+                .pointerCursor()
             if let message = model.catalogMessage {
                 Text(message).font(.caption).foregroundStyle(Theme.warn)
             }
@@ -58,13 +59,17 @@ private struct CatalogBrowser: View {
                     CatalogFileRow(file: file)
                         .contextMenu {
                             Button("Baixar") { model.downloadCatalogFile(file) }
+                                .pointerCursor()
                             ForEach(Slicer.allCases) { slicer in
                                 Button("Abrir no \(slicer.title)") { model.openCatalogFile(file, in: slicer) }
                                     .disabled(slicer.applicationURL == nil)
+                                    .pointerCursor()
                             }
                             Button("Mostrar no Finder") { model.revealCatalogFile(file) }
+                                .pointerCursor()
                             Divider()
                             Button("Excluir…", role: .destructive) { model.catalogFilePendingDeletionID = file.id }
+                                .pointerCursor()
                         }
                 }
                 .overlay {
@@ -110,7 +115,9 @@ private struct CatalogBrowser: View {
             presenting: model.catalogFiles.first { $0.id == model.catalogFilePendingDeletionID }
         ) { file in
             Button("Excluir \"\(file.name)\"", role: .destructive) { model.deleteCatalogFile(file) }
+                .pointerCursor()
             Button("Cancelar", role: .cancel) {}
+                .pointerCursor()
         } message: { _ in
             Text("O arquivo vai para a Lixeira e some do catálogo para todas as pessoas que usam esta pasta.")
         }
@@ -120,12 +127,14 @@ private struct CatalogBrowser: View {
                     Label("Enviar arquivo", systemImage: "square.and.arrow.up")
                 }
                 .help("Envia arquivos 3MF/STL do seu computador para a pasta do catálogo")
+                    .pointerCursor()
 
                 Button { model.refreshCatalog() } label: {
                     Label("Atualizar", systemImage: "arrow.clockwise")
                 }
                 .disabled(model.isRefreshingCatalog)
                 .help("Relê a pasta compartilhada")
+                    .pointerCursor()
 
                 Menu {
                     Text(model.catalogFolderPath ?? "")
@@ -135,6 +144,7 @@ private struct CatalogBrowser: View {
                     Label("Pasta", systemImage: "folder")
                 }
                 .help("Pasta do catálogo")
+                    .pointerCursor()
             }
         }
     }
@@ -210,6 +220,7 @@ private struct SlicerButton: View {
         .buttonStyle(SlicerCardStyle())
         .disabled(app == nil)
         .help(app == nil ? "\(slicer.title) não foi encontrado em Aplicativos" : "Abrir uma cópia do modelo no \(slicer.title)")
+            .pointerCursor()
     }
 
     @ViewBuilder
@@ -369,23 +380,28 @@ private struct CatalogFileDetail: View {
                         Label("Calcular", systemImage: "function")
                     }
                     .disabled(!isLoaded)
+                        .pointerCursor()
                     Button { model.saveCatalogFileToHistory(file) } label: {
                         Label("Salvar", systemImage: "square.and.arrow.down.fill")
                     }
                     .disabled(job == nil)
+                        .pointerCursor()
                     Button { model.downloadCatalogFile(file) } label: {
                         Label("Baixar", systemImage: "arrow.down.circle")
                     }
+                        .pointerCursor()
                     Spacer()
                 }
                 HStack {
                     Button { model.revealCatalogFile(file) } label: {
                         Label("Mostrar no Finder", systemImage: "folder")
                     }
+                        .pointerCursor()
                     Spacer()
                     Button(role: .destructive) { model.catalogFilePendingDeletionID = file.id } label: {
                         Label("Excluir", systemImage: "trash.fill")
                     }
+                        .pointerCursor()
                 }
             }
         }

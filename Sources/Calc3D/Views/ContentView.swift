@@ -89,9 +89,11 @@ struct ContentView: View {
             Button("Descartar e continuar", role: .destructive) {
                 model.confirmDiscardProposalDraft()
             }
+                .pointerCursor()
             Button("Continuar editando", role: .cancel) {
                 model.cancelDiscardProposalDraft()
             }
+                .pointerCursor()
         } message: {
             Text("As alterações não salvas neste orçamento serão perdidas.")
         }
@@ -136,5 +138,6 @@ private struct SidebarButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .pointerCursor()
     }
 }

@@ -165,6 +165,7 @@ private struct ActionCard: View {
             .contentShape(.rect(cornerRadius: Theme.radiusLg))
         }
         .buttonStyle(CardPressStyle())
+            .pointerCursor()
     }
 }
 
@@ -217,6 +218,7 @@ private struct RecentSection<Content: View>: View {
                 Button("Ver todos", action: seeAll)
                     .buttonStyle(.subtleLink)
                     .disabled(isEmpty)
+                    .pointerCursor()
             }
             if isEmpty {
                 Text(emptyText)
@@ -264,5 +266,6 @@ private struct RecentRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+            .pointerCursor()
     }
 }
