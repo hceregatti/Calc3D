@@ -1,3 +1,4 @@
+import AppKit
 import Calc3DCore
 import SwiftUI
 
@@ -182,6 +183,68 @@ private struct CatalogFileRow: View {
     }
 }
 
+/// Cartão de um fatiador: ícone real do app, nome e estado (instalado ou não).
+private struct SlicerButton: View {
+    @Environment(CalculatorViewModel.self) private var model
+    let slicer: Slicer
+    let file: CatalogFile
+
+    var body: some View {
+        let app = slicer.applicationURL
+        Button { model.openCatalogFile(file, in: slicer) } label: {
+            HStack(spacing: 12) {
+                icon(for: app)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(slicer.title).fontWeight(.semibold).foregroundStyle(Theme.ink)
+                    Text(app == nil ? "Não instalado" : "Abrir cópia do modelo")
+                        .font(.caption).foregroundStyle(Theme.muted)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "arrow.up.forward.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(app == nil ? Theme.muted : Theme.accent)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(SlicerCardStyle())
+        .disabled(app == nil)
+        .help(app == nil ? "\(slicer.title) não foi encontrado em Aplicativos" : "Abrir uma cópia do modelo no \(slicer.title)")
+    }
+
+    @ViewBuilder
+    private func icon(for app: URL?) -> some View {
+        if let app {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                .resizable().frame(width: 36, height: 36)
+        } else {
+            RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.fill)
+                .frame(width: 36, height: 36)
+                .overlay { Image(systemName: "questionmark.app").foregroundStyle(Theme.muted) }
+        }
+    }
+}
+
+private struct SlicerCardStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: Theme.radiusMd, style: .continuous)
+                    .fill(configuration.isPressed ? Theme.accent.opacity(0.10) : Theme.surface)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusMd, style: .continuous)
+                    .strokeBorder(configuration.isPressed ? Theme.accent : Theme.border, lineWidth: configuration.isPressed ? 1.5 : 1)
+            }
+            .opacity(isEnabled ? 1 : 0.55)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .contentShape(.rect(cornerRadius: Theme.radiusMd))
+    }
+}
+
 private struct CatalogFileDetail: View {
     @Environment(CalculatorViewModel.self) private var model
     let file: CatalogFile
@@ -288,6 +351,19 @@ private struct CatalogFileDetail: View {
             }
 
             Section {
+                HStack(spacing: 12) {
+                    ForEach(Slicer.allCases) { slicer in
+                        SlicerButton(slicer: slicer, file: file)
+                    }
+                }
+            } header: {
+                BadgeLabel("Abrir no fatiador", systemImage: "square.and.arrow.up.on.square", color: .orange)
+            } footer: {
+                Text("Abre uma cópia do modelo: salvar no fatiador não altera o arquivo do catálogo.")
+                    .font(.caption).foregroundStyle(Theme.muted)
+            }
+
+            Section {
                 HStack {
                     Button { model.openCatalogFileInCalculator(file) } label: {
                         Label("Calcular", systemImage: "function")
@@ -300,17 +376,6 @@ private struct CatalogFileDetail: View {
                     Button { model.downloadCatalogFile(file) } label: {
                         Label("Baixar", systemImage: "arrow.down.circle")
                     }
-                    Menu {
-                        ForEach(Slicer.allCases) { slicer in
-                            Button(slicer.title + (slicer.applicationURL == nil ? " (não instalado)" : "")) {
-                                model.openCatalogFile(file, in: slicer)
-                            }
-                            .disabled(slicer.applicationURL == nil)
-                        }
-                    } label: {
-                        Label("Abrir no fatiador", systemImage: "square.and.arrow.up.on.square")
-                    }
-                    .help("Abre uma cópia do modelo no Bambu Studio ou no Creality Print")
                     Spacer()
                 }
                 HStack {
