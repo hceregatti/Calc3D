@@ -32,9 +32,13 @@
   --c-surface:    #ffffff;   /* cartões */
   --c-offwhite:   #f2f1ee;   /* fundo do ícone */
 
+  /* Cor de destaque (terracota) e o texto sobre ela */
+  --c-accent:    #c2410c;
+  --c-on-accent: #ffffff;
+
   /* Cores categóricas dos gráficos (distintas entre si, uma por categoria de custo) */
   --c-chart-1: #2f6fdb;
-  --c-chart-2: #e07b1a;
+  --c-chart-2: #38a6e8;
   --c-chart-3: #1a9e8f;
   --c-chart-4: #7a4fd1;
   --c-chart-5: #c9a21a;
@@ -80,8 +84,8 @@
   --separator: var(--c-border);
   --fill: var(--c-fill);
   --fill-strong: #e2e1dc;
-  --accent: var(--c-ink);
-  --accent-text: var(--c-ink);
+  --accent: var(--c-accent);
+  --accent-text: var(--c-accent);
   --danger: var(--c-danger);
   --warn: var(--c-warn);
   --success: var(--c-success);
@@ -105,7 +109,9 @@
     --c-active:   #34342f;
     --c-bg:       #161614;
     --c-surface:  #1f1f1c;
-    --c-chart-1: #6ea4f5; --c-chart-2: #f0a24f; --c-chart-3: #4fc7b8; --c-chart-4: #a98af0;
+    --c-accent:    #f2784b;
+    --c-on-accent: #161614;
+    --c-chart-1: #6ea4f5; --c-chart-2: #7cc4f2; --c-chart-3: #4fc7b8; --c-chart-4: #a98af0;
     --c-chart-5: #e5c75a; --c-chart-6: #f0766f; --c-chart-7: #7fcf7f; --c-chart-8: #ee86c4;
     --c-danger:  #e8867c;
     --c-warn:    #e0b067;
@@ -145,7 +151,7 @@ body { background: var(--bg); }
   color: var(--c-ink-2);
 }
 .nav-item:hover { background: var(--c-fill); }
-.nav-item.active { background: var(--c-active); color: var(--c-ink); font-weight: 600; }
+.nav-item.active { background: color-mix(in srgb, var(--c-accent) 12%, transparent); color: var(--c-accent); font-weight: 600; }
 .nav-item.active small { color: var(--c-muted); }
 
 
@@ -183,7 +189,7 @@ body { background: var(--bg); }
 .price {
   font-size: var(--fs-price);
   font-weight: 600;
-  color: var(--c-ink);
+  color: var(--c-accent);
   letter-spacing: -0.035em;
   line-height: 1;
 }
@@ -221,15 +227,15 @@ body { background: var(--bg); }
   box-shadow: none;
 }
 .btn:hover:not(:disabled) { background: var(--c-fill); }
-.btn.primary { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-surface); }
-.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--c-ink) 86%, var(--c-surface)); }
+.btn.primary { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-on-accent); }
+.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--c-accent) 88%, black); border-color: color-mix(in srgb, var(--c-accent) 88%, black); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--c-ink-2); }
 .btn.danger { background: var(--c-danger); border-color: var(--c-danger); color: #fff; }
 .danger-text { color: var(--c-danger) !important; }
 .btn.full { justify-content: center; }
 
 .link { color: var(--c-ink-2); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--c-border); }
-.link:hover:not(:disabled) { color: var(--c-ink); text-decoration-color: currentColor; }
+.link:hover:not(:disabled) { color: var(--c-accent); text-decoration-color: currentColor; }
 
 .icon-btn { border-radius: var(--radius-sm); color: var(--c-muted); }
 
@@ -246,8 +252,8 @@ body { background: var(--bg); }
 }
 .input:focus {
   outline: none;
-  border-color: var(--c-ink);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-ink) 12%, transparent);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 18%, transparent);
 }
 .input.subtle { background: var(--c-fill); border-color: transparent; }
 .input.title { font-weight: 600; letter-spacing: -0.01em; }
@@ -255,8 +261,8 @@ body { background: var(--bg); }
 
 .stepper button { border-radius: var(--radius-sm); border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-ink); }
 
-input[type='checkbox'] { accent-color: var(--c-ink); }
-.switch:checked { background: var(--c-ink); }
+input[type='checkbox'] { accent-color: var(--c-accent); }
+.switch:checked { background: var(--c-accent); }
 
 .search { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--radius-md); }
 
@@ -266,7 +272,8 @@ input[type='checkbox'] { accent-color: var(--c-ink); }
    -------------------------------------------------------------------------- */
 .list-row { border-color: var(--c-divider); border-radius: var(--radius-md); }
 .list-row:hover, .recent-row:hover { background: var(--c-fill); }
-.list-row.selected { background: var(--c-active); }
+.list-row.selected { background: color-mix(in srgb, var(--c-accent) 10%, transparent); }
+.menu button:hover { background: var(--c-accent); color: var(--c-on-accent); }
 
 .menu { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(28, 28, 26, 0.08); }
 .menu button:hover { background: var(--c-fill); color: var(--c-ink); }

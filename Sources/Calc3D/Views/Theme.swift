@@ -15,6 +15,10 @@ enum Theme {
     static let bg = adaptive(light: 0xF6F6F4, dark: 0x161614)
     static let surface = adaptive(light: 0xFFFFFF, dark: 0x1F1F1C)
 
+    // Cor de destaque (terracota) e o texto sobre ela
+    static let accent = adaptive(light: 0xC2410C, dark: 0xF2784B)
+    static let onAccent = adaptive(light: 0xFFFFFF, dark: 0x161614)
+
     // Estados (discretos)
     static let danger = adaptive(light: 0x8A2B22, dark: 0xE8867C)
     static let warn = adaptive(light: 0x8A5A12, dark: 0xE0B067)
@@ -23,7 +27,7 @@ enum Theme {
     /// Cores categóricas dos gráficos, distintas entre si (uma por categoria de custo).
     static let chart: [Color] = [
         adaptive(light: 0x2F6FDB, dark: 0x6EA4F5),
-        adaptive(light: 0xE07B1A, dark: 0xF0A24F),
+        adaptive(light: 0x38A6E8, dark: 0x7CC4F2),
         adaptive(light: 0x1A9E8F, dark: 0x4FC7B8),
         adaptive(light: 0x7A4FD1, dark: 0xA98AF0),
         adaptive(light: 0xC9A21A, dark: 0xE5C75A),
@@ -52,17 +56,17 @@ enum Theme {
     }
 }
 
-/// Botão primário do design system: fundo em tinta, texto na cor da superfície.
+/// Botão primário do design system: fundo na cor de destaque, texto legível sobre ela.
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.medium))
-            .foregroundStyle(Theme.surface)
+            .foregroundStyle(Theme.onAccent)
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
-            .background(Theme.ink.opacity(configuration.isPressed ? 0.8 : 1),
+            .background(Theme.accent.opacity(configuration.isPressed ? 0.85 : 1),
                         in: .rect(cornerRadius: Theme.radiusMd, style: .continuous))
             .opacity(isEnabled ? 1 : 0.45)
             .contentShape(.rect(cornerRadius: Theme.radiusMd))
@@ -80,7 +84,7 @@ struct SubtleLinkButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .fontWeight(.medium)
-            .foregroundStyle(configuration.isPressed ? Theme.ink : Theme.ink2)
+            .foregroundStyle(configuration.isPressed ? Theme.accent : Theme.ink2)
             .underline(color: Theme.border)
             .opacity(isEnabled ? 1 : 0.4)
             .contentShape(.rect)

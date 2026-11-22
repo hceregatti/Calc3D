@@ -85,7 +85,7 @@ struct PriceCard: View {
                 Text(result.suggestedPrice.map(Currency.format) ?? "—")
                     .font(.system(size: 44, weight: .semibold))
                     .tracking(-1.5)
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.accent)
                     .contentTransition(.numericText())
                 if case .failure(let error) = result.pricing {
                     Label(error.message, systemImage: "exclamationmark.triangle.fill")

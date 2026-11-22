@@ -55,7 +55,7 @@ struct ContentView: View {
                 CompanySettingsView()
             }
         }
-        .tint(Theme.ink)
+        .tint(Theme.accent)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshCatalogIfConfigured()
         }
@@ -107,7 +107,7 @@ private struct SidebarButton: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(screen.title)
                         .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundStyle(isSelected ? Theme.ink : Theme.ink2)
+                        .foregroundStyle(isSelected ? Theme.accent : Theme.ink2)
                     Text(screen.subtitle)
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
@@ -119,7 +119,7 @@ private struct SidebarButton: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: Theme.radiusMd, style: .continuous)
-                    .fill(isSelected ? Theme.active : .clear)
+                    .fill(isSelected ? Theme.accent.opacity(0.12) : .clear)
             }
             .contentShape(.rect)
         }
