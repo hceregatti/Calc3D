@@ -35,7 +35,7 @@ enum Screen: String, CaseIterable, Identifiable {
         case .printJob: "Dados da impressão e preço"
         case .parts: "Histórico de cálculos de peças"
         case .filaments: "Biblioteca de rolos e preços"
-        case .catalog: "Peças compartilhadas"
+        case .catalog: "Modelos compartilhados"
         case .proposals: "Orçamentos com várias peças"
         case .settings: "Máquina, energia, custos e taxas"
         case .company: "Logo, empresa e condições"
@@ -166,21 +166,16 @@ final class CalculatorViewModel {
     var selectedFilamentID: UUID?
 
     // Catálogo compartilhado (pasta sincronizada com outras pessoas).
-    var catalogEntries: [CatalogEntry] = []
     var catalogFiles: [CatalogFile] = []
-    var selectedCatalogEntryID: UUID?
     var selectedCatalogFileID: String?
-    var catalogOnlyMine = false
     var catalogSearch = ""
     var catalogFolderPath: String? {
         didSet { catalogSettings.folderPath = catalogFolderPath }
     }
-    var catalogUserName: String {
-        didSet { catalogSettings.userName = catalogUserName }
-    }
-    let catalogUserID: UUID
     var catalogMessage: String?
     var isRefreshingCatalog = false
+    /// Dados lidos de cada arquivo já aberto (nil enquanto lê; erro vira mensagem).
+    var catalogFileInfo: [String: CatalogFileInfo] = [:]
     @ObservationIgnored let catalogSettings = CatalogSettingsStore()
     var filamentPendingDeletionID: UUID?
     private(set) var settingsFeedback: String?
@@ -204,8 +199,6 @@ final class CalculatorViewModel {
         self.filamentsStore = filamentsStore
         let catalogPrefs = CatalogSettingsStore()
         self.catalogFolderPath = catalogPrefs.folderPath
-        self.catalogUserName = catalogPrefs.userName
-        self.catalogUserID = catalogPrefs.userID
         self.filaments = filamentsStore.load()
         self.imageStore = imageStore
         let company = store.loadCompany()

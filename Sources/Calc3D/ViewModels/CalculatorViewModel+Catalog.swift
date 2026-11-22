@@ -1,79 +1,46 @@
 import AppKit
 import Calc3DCore
 
+/// O que foi possível ler de um modelo do catálogo.
+enum CatalogFileInfo {
+    case loaded(ImportedModelData)
+    case failed(String)
+}
+
 extension CalculatorViewModel {
-    var isCatalogConfigured: Bool {
-        catalogFolderPath != nil && !catalogUserName.trimmingCharacters(in: .whitespaces).isEmpty
-    }
+    var isCatalogConfigured: Bool { catalogFolderPath != nil }
 
     private var catalogStore: FolderCatalogStore? {
         catalogFolderPath.map { FolderCatalogStore(root: URL(fileURLWithPath: $0, isDirectory: true)) }
     }
 
-    func isMine(_ entry: CatalogEntry) -> Bool { entry.authorID == catalogUserID }
-
-    /// Peça do histórico que já está publicada por mim.
-    func catalogEntry(for quote: QuoteRecord) -> CatalogEntry? {
-        catalogEntries.first { $0.id == quote.id && isMine($0) }
-    }
-
-    /// Entradas visíveis, aplicando o filtro "Minhas" e a busca.
-    var visibleCatalogEntries: [CatalogEntry] {
-        let query = catalogSearch.trimmingCharacters(in: .whitespaces)
-        return catalogEntries.filter { entry in
-            if catalogOnlyMine && !isMine(entry) { return false }
-            guard !query.isEmpty else { return true }
-            return [entry.job.name, entry.authorName, entry.note, entry.job.filamentName ?? ""]
-                .contains { $0.localizedCaseInsensitiveContains(query) }
-        }
-    }
-
-    /// Modelos soltos visíveis, aplicando a busca (e escondendo no filtro "Minhas").
     var visibleCatalogFiles: [CatalogFile] {
-        guard !catalogOnlyMine else { return [] }
         let query = catalogSearch.trimmingCharacters(in: .whitespaces)
-        return catalogFiles.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }
-    }
-
-    /// Importa o modelo solto e abre em "Calcular peça" com os meus parâmetros.
-    func calculateCatalogFile(_ file: CatalogFile) {
-        let url = file.url
-        Task { @MainActor [weak self] in
-            do {
-                let data = try await Task.detached(priority: .userInitiated) {
-                    try ModelFileImporter.importFile(at: url)
-                }.value
-                guard let self else { return }
-                self.calculator.load(self.calculator.job)
-                self.calculator.applyImportedModel(data)
-                self.screen = .printJob
-            } catch {
-                self?.catalogMessage = "Não foi possível ler \"\(file.name)\": \(error.localizedDescription)"
-            }
+        return catalogFiles.filter {
+            query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) || $0.folder.localizedCaseInsensitiveContains(query)
         }
     }
 
     func chooseCatalogFolder() {
         let panel = NSOpenPanel()
-        panel.title = "Escolher a pasta compartilhada do catálogo"
-        panel.message = "Use uma pasta sincronizada (iCloud Drive, Google Drive, Dropbox…) que as outras pessoas também acessem."
+        panel.title = "Escolher a pasta do catálogo"
+        panel.message = "Pasta com os arquivos 3MF/STL já configurados, compartilhada (iCloud Drive, Google Drive, Dropbox…) com as outras pessoas."
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.prompt = "Usar esta pasta"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         catalogFolderPath = url.path
-        selectedCatalogEntryID = nil
         selectedCatalogFileID = nil
+        catalogFileInfo = [:]
         refreshCatalog()
     }
 
     func disconnectCatalog() {
         catalogFolderPath = nil
-        catalogEntries = []
         catalogFiles = []
-        selectedCatalogEntryID = nil
         selectedCatalogFileID = nil
+        catalogFileInfo = [:]
         catalogMessage = nil
     }
 
@@ -84,22 +51,15 @@ extension CalculatorViewModel {
         defer { isRefreshingCatalog = false }
         do {
             let listing = try store.list()
-            catalogEntries = listing.entries
-            catalogFiles = listing.files.filter { !$0.name.isEmpty }
-            if let id = selectedCatalogFileID, !catalogFiles.contains(where: { $0.id == id }) {
+            catalogFiles = listing.files
+            if let id = selectedCatalogFileID, !listing.files.contains(where: { $0.id == id }) {
                 selectedCatalogFileID = nil
             }
-            if let id = selectedCatalogEntryID, !listing.entries.contains(where: { $0.id == id }) {
-                selectedCatalogEntryID = nil
-            }
-            var notes: [String] = []
-            if !listing.skipped.isEmpty {
-                notes.append("\(listing.skipped.count) arquivo(s) ignorado(s) por estarem ilegíveis ou virem de uma versão mais nova.")
-            }
-            if listing.pendingDownloads > 0 {
-                notes.append("\(listing.pendingDownloads) peça(s) ainda sendo baixada(s) da nuvem; atualize em instantes.")
-            }
-            catalogMessage = notes.isEmpty ? nil : notes.joined(separator: " ")
+            // Arquivos que mudaram precisam ser lidos de novo.
+            catalogFileInfo = catalogFileInfo.filter { key, _ in listing.files.contains { $0.id == key } }
+            catalogMessage = listing.pendingDownloads > 0
+                ? "\(listing.pendingDownloads) arquivo(s) ainda sendo baixado(s) da nuvem; atualize em instantes."
+                : nil
         } catch {
             catalogMessage = "Não foi possível abrir a pasta do catálogo. Ela existe e está acessível?"
         }
@@ -109,80 +69,52 @@ extension CalculatorViewModel {
         if isCatalogConfigured { refreshCatalog() }
     }
 
-    /// Publica (ou atualiza) as peças escolhidas. Retorna quantas foram publicadas.
-    @discardableResult
-    func publishToCatalog(_ quotes: [QuoteRecord]) -> Int {
-        guard isCatalogConfigured, let store = catalogStore else {
-            screen = .catalog
-            catalogMessage = "Escolha a pasta e informe seu nome para publicar peças."
-            return 0
-        }
-        var published = 0
-        let name = catalogUserName.trimmingCharacters(in: .whitespaces)
-        for quote in quotes {
-            let previous = catalogEntry(for: quote)
-            let entry = CatalogEntry(
-                id: quote.id, authorID: catalogUserID, authorName: name, note: previous?.note ?? "",
-                job: quote.job, settings: quote.settings, result: quote.result,
-                publishedAt: previous?.publishedAt ?? .now, updatedAt: .now
-            )
+    /// Lê peso e tempo gravados no arquivo (uma vez por arquivo, em segundo plano).
+    func loadCatalogFileInfo(_ file: CatalogFile) {
+        guard catalogFileInfo[file.id] == nil else { return }
+        let url = file.url, id = file.id
+        Task { @MainActor [weak self] in
+            let info: CatalogFileInfo
             do {
-                try store.publish(entry)
-                published += 1
+                info = .loaded(try await Task.detached(priority: .userInitiated) {
+                    try ModelFileImporter.importFile(at: url)
+                }.value)
             } catch {
-                catalogMessage = "Não foi possível publicar \"\(quote.job.name)\": \(describe(error))"
+                info = .failed(error.localizedDescription)
             }
-        }
-        refreshCatalog()
-        if published > 0 {
-            showQuoteFeedback(published == 1 ? "Peça publicada no catálogo ✔" : "\(published) peças publicadas no catálogo ✔")
-        }
-        return published
-    }
-
-    func retractFromCatalog(_ ids: [UUID]) {
-        guard let store = catalogStore else { return }
-        for id in ids {
-            do { try store.remove(id: id, authorID: catalogUserID) } catch {
-                catalogMessage = describe(error)
-            }
-        }
-        if let selected = selectedCatalogEntryID, ids.contains(selected) { selectedCatalogEntryID = nil }
-        refreshCatalog()
-    }
-
-    /// Atualiza a nota que acompanha uma peça minha publicada.
-    func updateCatalogNote(_ note: String, for entry: CatalogEntry) {
-        guard isMine(entry), entry.note != note, let store = catalogStore else { return }
-        var updated = entry
-        updated.note = note
-        updated.updatedAt = .now
-        do {
-            try store.publish(updated)
-            if let index = catalogEntries.firstIndex(where: { $0.id == entry.id }) { catalogEntries[index] = updated }
-        } catch {
-            catalogMessage = describe(error)
+            self?.catalogFileInfo[id] = info
         }
     }
 
-    /// Abre a peça em "Calcular peça" com os meus parâmetros fixos.
-    func useCatalogEntryAsBase(_ entry: CatalogEntry) {
-        calculator.load(entry.localJob)
+    /// Peça calculada com os meus parâmetros a partir do que o arquivo traz; nil se faltar peso ou tempo.
+    func catalogJob(for file: CatalogFile) -> PrintJob? {
+        guard case .loaded(let data)? = catalogFileInfo[file.id],
+              let weight = data.weightGrams, let seconds = data.durationSeconds, seconds > 0 else { return nil }
+        var job = calculator.job
+        job.name = data.name
+        job.partWeight = weight
+        let totalMinutes = seconds / 60
+        job.printHours = floor(totalMinutes / 60)
+        job.printMinutes = totalMinutes.truncatingRemainder(dividingBy: 60)
+        return job
+    }
+
+    /// Abre o modelo em "Calcular peça" com os meus parâmetros fixos.
+    func openCatalogFileInCalculator(_ file: CatalogFile) {
+        guard case .loaded(let data)? = catalogFileInfo[file.id] else { return }
+        calculator.load(calculator.job)
+        calculator.applyImportedModel(data)
         screen = .printJob
     }
 
-    /// Guarda uma cópia da peça no meu histórico, calculada com os meus parâmetros.
-    func saveCatalogEntryCopy(_ entry: CatalogEntry) {
-        let job = entry.localJob
+    /// Guarda no meu histórico a peça calculada com os meus parâmetros.
+    func saveCatalogFileToHistory(_ file: CatalogFile) {
+        guard let job = catalogJob(for: file) else { return }
         addQuoteToHistory(QuoteRecord(job: job, settings: settings, result: CostCalculator.calculate(settings: settings, job: job)))
-        catalogMessage = "Cópia salva no seu histórico de peças ✔"
+        catalogMessage = "Peça salva no seu histórico ✔"
     }
 
-    private func describe(_ error: Error) -> String {
-        switch error as? CatalogError {
-        case .notAuthor: "só quem publicou pode alterar ou remover esta peça."
-        case .folderUnavailable: "a pasta do catálogo não está acessível."
-        case nil: error.localizedDescription
-        }
+    func revealCatalogFile(_ file: CatalogFile) {
+        NSWorkspace.shared.activateFileViewerSelecting([file.url])
     }
 }
