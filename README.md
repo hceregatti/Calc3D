@@ -54,6 +54,7 @@ Sources/
     ViewModels/                #   estado da tela (Observation)
     Persistence/               #   salva parâmetros no UserDefaults
     Import/                    #   leitura de STL/3MF (fatiamento e estimativa de peso por volume)
+    Models/AppearanceMode.swift #  modo claro/escuro/automático
     Views/
       ContentView.swift        #   barra lateral com as telas
       PrintJobView.swift       #   tela de impressão: dados da peça + resultado
@@ -71,12 +72,17 @@ scripts/
 
 - **Início** (⌘1): atalhos (calcular peça, novo orçamento), números gerais e peças/orçamentos recentes.
 - **Calcular peça** (⌘2): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
-  preparação, pós-processamento, insumos e margem, com o resultado ao lado. "Salvar peça" guarda
-  o cálculo no histórico; "Adicionar a orçamento" inclui o cálculo atual direto em um orçamento.
-- **Peças** (⌘3): histórico de cálculos de peças, com os parâmetros originais. Selecione várias
+  preparação, pós-processamento, insumos e margem, com o resultado ao lado. Cada peça aceita uma
+  **foto** (clique ou arraste uma imagem para o quadro ao lado do nome). "Salvar peça" guarda o
+  cálculo e a foto no histórico; "Adicionar a orçamento" inclui o cálculo atual direto em um
+  orçamento, já com a foto.
+- **Peças** (⌘3): histórico de cálculos de peças, com os parâmetros originais e a foto (miniatura na
+  lista, imagem no detalhe). Selecione várias
   (⌘-clique/⇧-clique) para gerar um orçamento ou adicioná-las a um orçamento existente.
 - **Filamentos** (⌘4): biblioteca de rolos com preço, cor e peso restante. A peça usa o preço do filamento
-  escolhido, e o consumo dos orçamentos pode dar baixa no peso restante do rolo.
+  escolhido, e o consumo dos orçamentos pode dar baixa no peso restante do rolo. Para remover um
+  rolo, use "Excluir" na ficha (no macOS também na barra de ferramentas ou no clique direito); peças
+  já calculadas mantêm o preço usado na época.
 - **Catálogo** (⌘5): pasta compartilhada com modelos 3MF/STL já configurados (veja [Catálogo](#catálogo)).
 - **Orçamentos** (⌘6): orçamentos com várias peças, quantidades, cliente e exportação em PDF.
   "Calcular nova peça…" abre o mesmo formulário da tela Calcular peça (inclusive importação de
@@ -91,6 +97,14 @@ scripts/
   orçamento aceita uma foto; sem foto, o PDF usa uma imagem padrão.
 
 ⌘N inicia uma nova peça, ⇧⌘N cria um novo orçamento e ⇧⌘C copia o resumo da peça.
+
+### Aparência
+
+- **Modo claro/escuro**: o seletor no rodapé da barra lateral escolhe entre **Automático** (acompanha
+  o sistema), **Claro** e **Escuro**. A escolha fica salva neste Mac ou neste navegador.
+- **Cor de destaque**: terracota (`#C2410C` no claro, `#F2784B` no escuro) em botões primários, item
+  ativo da barra lateral, foco dos campos, links e no preço sugerido. As categorias do gráfico de
+  custo têm cores distintas para facilitar a leitura.
 
 ### Importar STL e 3MF
 
@@ -161,7 +175,7 @@ make web-build  # gera web/dist/, pronto para hospedar em qualquer servidor est�
   (escolha "Salvar como PDF" e desmarque "Cabeçalhos e rodapés"). Rodapé e número de página em
   todas as folhas funcionam no Chrome/Edge.
 - **Backup**: os dados ficam só no navegador onde foram criados. Em Parâmetros fixos → Backup dos
-  dados, exporte um arquivo JSON (inclui as imagens) para guardar ou importar em outro computador.
+  dados, exporte um arquivo JSON (inclui as imagens, como as fotos das peças) para guardar ou importar em outro computador.
 - **Hospedagem**: `web/dist/` usa caminhos relativos, então funciona no GitHub Pages, Netlify,
   Vercel ou em qualquer pasta de um servidor.
 - **GitHub Pages**: o workflow `.github/workflows/pages.yml` roda os testes, gera o build e publica
