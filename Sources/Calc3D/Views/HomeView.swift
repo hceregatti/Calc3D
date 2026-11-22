@@ -72,7 +72,7 @@ struct HomeView: View {
         return HStack(spacing: 14) {
             StatTile(value: "\(model.quotes.count)", title: "Peças no histórico", systemImage: Screen.parts.systemImage, color: Screen.parts.color)
             StatTile(value: "\(model.proposals.count)", title: "Orçamentos", systemImage: Screen.proposals.systemImage, color: Screen.proposals.color)
-            StatTile(value: Currency.format(waitingTotal), title: "Aguardando aprovação (\(waiting.count))", systemImage: model.settings.currency.systemImage, color: .teal)
+            StatTile(value: Currency.format(waitingTotal), title: "Aguardando aprovação (\(waiting.count))", systemImage: "banknote.fill", color: .teal)
             StatTile(
                 value: model.result.suggestedPrice.map(Currency.format) ?? "—",
                 title: model.job.name.isEmpty ? "Cálculo em andamento" : "Em andamento: \(model.job.name)",

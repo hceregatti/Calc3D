@@ -1,4 +1,4 @@
-import { Box, ChevronRight, DollarSign, FilePlus2, FileText, PencilRuler, type LucideIcon } from 'lucide-react'
+import { Box, Banknote, ChevronRight, FilePlus2, FileText, PencilRuler, type LucideIcon } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { money, calculate } from '../core/calculator'
 import { displayName, fromCents, proposalsIn, totalCents } from '../core/models'
@@ -31,7 +31,7 @@ export function HomeScreen() {
       <div className="stat-grid">
         <Stat value={String(quotes.length)} title="Peças no histórico" icon={SCREEN_INFO.parts.icon} color={SCREEN_INFO.parts.color} />
         <Stat value={String(proposals.length)} title="Orçamentos" icon={FileText} color={SCREEN_INFO.proposals.color} />
-        <Stat value={money(waitingTotal)} title={`Aguardando aprovação (${waiting.length})`} icon={DollarSign} color="#30b0c7" />
+        <Stat value={money(waitingTotal)} title={`Aguardando aprovação (${waiting.length})`} icon={Banknote} color="#30b0c7" />
         <Stat
           value={result.suggestedPrice === null ? '—' : money(result.suggestedPrice)}
           title={job.name ? `Em andamento: ${job.name}` : 'Cálculo em andamento'}
