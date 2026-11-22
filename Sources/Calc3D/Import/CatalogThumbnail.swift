@@ -28,12 +28,22 @@ enum CatalogThumbnail {
     }
 
     /// Miniatura gerada pelo Quick Look (funciona para STL e 3MF sem imagem embutida).
+    /// Usa a versão com callback e devolve só os bytes da imagem: `QLThumbnailRepresentation` não é
+    /// `Sendable`, e o compilador do macOS 15 recusa passá-lo entre contextos de concorrência.
     @MainActor
     static func quickLookImage(for url: URL) async -> NSImage? {
         let request = QLThumbnailGenerator.Request(
             fileAt: url, size: CGSize(width: 512, height: 512),
             scale: NSScreen.main?.backingScaleFactor ?? 2, representationTypes: .thumbnail
         )
-        return try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request).nsImage
+        let png: Data? = await withCheckedContinuation { continuation in
+            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { representation, _ in
+                let data = representation.flatMap {
+                    NSBitmapImageRep(cgImage: $0.cgImage).representation(using: .png, properties: [:])
+                }
+                continuation.resume(returning: data)
+            }
+        }
+        return png.flatMap { NSImage(data: $0) }
     }
 }
