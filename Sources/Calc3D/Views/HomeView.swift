@@ -138,30 +138,30 @@ private struct ActionCard: View {
                 if prominent {
                     Image(systemName: systemImage)
                         .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(Theme.surface)
+                        .foregroundStyle(Theme.onAccent)
                         .frame(width: 36, height: 36)
-                        .background(Theme.surface.opacity(0.12), in: .rect(cornerRadius: Theme.radiusMd, style: .continuous))
+                        .background(Theme.onAccent.opacity(0.16), in: .rect(cornerRadius: Theme.radiusMd, style: .continuous))
                 } else {
-                    SymbolBadge(systemImage: systemImage, color: color, size: 36)
+                    SymbolBadge(systemImage: systemImage, color: color, size: 36, iconColor: Theme.accent)
                 }
                 Spacer(minLength: 0)
                 Text(title)
                     .font(.headline)
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(prominent ? AnyShapeStyle(Theme.surface.opacity(0.75)) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(prominent ? AnyShapeStyle(Theme.onAccent.opacity(0.8)) : AnyShapeStyle(.secondary))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(prominent ? AnyShapeStyle(Theme.surface) : AnyShapeStyle(Theme.ink))
+            .foregroundStyle(prominent ? AnyShapeStyle(Theme.onAccent) : AnyShapeStyle(Theme.ink))
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 130, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous)
-                    .fill(prominent ? Theme.ink : Theme.surface)
+                    .fill(prominent ? Theme.accent : Theme.surface)
             }
             .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous)
-                .strokeBorder(prominent ? Theme.ink : Theme.border))
+                .strokeBorder(prominent ? Theme.accent : Theme.border))
             .contentShape(.rect(cornerRadius: Theme.radiusLg))
         }
         .buttonStyle(CardPressStyle())
@@ -185,7 +185,7 @@ private struct StatTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SymbolBadge(systemImage: systemImage, color: color, size: 24)
+            SymbolBadge(systemImage: systemImage, color: color, size: 24, iconColor: Theme.accent)
             Text(value)
                 .font(.title2.bold())
                 .monospacedDigit()
