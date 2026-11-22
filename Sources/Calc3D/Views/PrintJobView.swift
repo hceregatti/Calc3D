@@ -50,7 +50,7 @@ struct PrintJobForm: View {
                 if let feedback = model.importFeedback {
                     Text(feedback)
                         .font(.caption)
-                        .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput ? Theme.warn : Theme.muted)
+                        .foregroundColor(model.importedWeightNeedsInput || model.importedTimeNeedsInput || model.importedWeightIsEstimate ? Theme.warn : Theme.muted)
                 }
             } header: {
                 BadgeLabel("Identificação", systemImage: "tag.fill", color: .blue)
@@ -59,7 +59,7 @@ struct PrintJobForm: View {
             Section {
                 filamentPicker
                 NumberField(title: "Peso da mesa", value: j.partWeight, unit: "g",
-                            hint: model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças",
+                            hint: model.importedWeightIsEstimate ? "Estimado pelo volume do modelo (aproximação). Confira o peso no fatiador." : model.importedWeightNeedsInput ? "Não encontrado no arquivo. Preencha o peso do fatiador." : "Valor do fatiador, somando todas as peças",
                             style: .weight)
                 NumberField(title: "Desperdício", value: j.wastePercent, unit: "%",
                             hint: "Purga, skirt/brim e troca de cor (AMS/MMU pode passar de 20%)",

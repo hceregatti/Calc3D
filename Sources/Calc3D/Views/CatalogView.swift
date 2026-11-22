@@ -173,6 +173,13 @@ private struct CatalogFileDetail: View {
                     let data = model.catalogData(for: file) ?? raw
                     LabeledContent("Peso", value: data.weightGrams.map { Weight.format(grams: $0) } ?? "Não informado no arquivo")
                     LabeledContent("Tempo de impressão", value: data.durationSeconds.flatMap { $0 > 0 ? Self.format(seconds: $0) : nil } ?? "Não informado no arquivo")
+                    if data.weightGrams == nil, let estimate = raw.estimatedWeight {
+                        LabeledContent("Peso estimado") {
+                            Text("≈ " + Weight.format(grams: estimate.grams)).foregroundStyle(Theme.warn)
+                        }
+                        Text("Calculado pelo volume do modelo (\(estimate.pieces == 1 ? "1 peça" : "\(estimate.pieces) peças")), com a densidade e o preenchimento do projeto, ou PLA a 15% se não constarem. É uma aproximação; o tempo não pode ser estimado.")
+                            .font(.caption).foregroundStyle(Theme.muted)
+                    }
                     if raw.plates.count > 1 {
                         Text("Arquivo com \(raw.plates.count) mesas fatiadas; escolha qual calcular.")
                             .font(.caption).foregroundStyle(Theme.muted)

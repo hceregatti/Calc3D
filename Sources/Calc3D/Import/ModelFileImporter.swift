@@ -21,10 +21,13 @@ struct ImportedModelData: Sendable {
     let durationSeconds: Double?
     /// Todas as mesas fatiadas do arquivo (vazio em STL ou 3MF sem fatiamento).
     var plates: [ImportedPlate] = []
+    /// Peso estimado pelo volume da malha (só quando o arquivo não traz o peso do fatiador). Aproximação.
+    var estimatedWeight: WeightEstimate? = nil
 
     /// Mesmos dados, usando só a mesa escolhida.
     func selecting(_ plate: ImportedPlate) -> ImportedModelData {
-        ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates)
+        ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates,
+                          estimatedWeight: estimatedWeight)
     }
 }
 
@@ -58,7 +61,12 @@ enum ModelFileImporter {
         switch url.pathExtension.lowercased() {
         case "stl":
             try validateSTL(at: url)
-            return ImportedModelData(name: name, weightGrams: nil, durationSeconds: nil)
+            var data = ImportedModelData(name: name, weightGrams: nil, durationSeconds: nil)
+            if let metrics = ModelVolumeEstimator.metricsForSTL(at: url),
+               let grams = ModelVolumeEstimator.estimateWeight(metrics: metrics, settings: EstimationSettings()) {
+                data.estimatedWeight = WeightEstimate(grams: grams, pieces: 1)
+            }
+            return data
         case "3mf":
             return try import3MF(at: url, name: name)
         default:
@@ -87,6 +95,27 @@ enum ModelFileImporter {
     }
 
     private static func import3MF(at url: URL, name: String) throws -> ImportedModelData {
+        var data = try readSliceInfo(at: url, name: name)
+        let hasWeight = data.weightGrams != nil || data.plates.contains { $0.weightGrams != nil }
+        if !hasWeight, let entries = try? archiveEntries(at: url) {
+            let settingsData = entries.first { $0.caseInsensitiveCompare("Metadata/project_settings.config") == .orderedSame }
+                .flatMap { try? runUnzip(["-p", url.path, $0], maxBytes: 8 * 1024 * 1024) }
+            let settings = settingsData.map(ModelVolumeEstimator.settings(from:)) ?? EstimationSettings()
+            if let (metrics, pieces) = ModelVolumeEstimator.metricsFor3MF(at: url, entries: entries),
+               let grams = ModelVolumeEstimator.estimateWeight(metrics: metrics, settings: settings) {
+                data.estimatedWeight = WeightEstimate(grams: grams, pieces: pieces)
+            }
+        }
+        return data
+    }
+
+    private static func archiveEntries(at url: URL) throws -> [String] {
+        let listing = try runUnzip(["-Z1", url.path], maxBytes: maxArchiveListingBytes)
+        guard let paths = String(data: listing, encoding: .utf8) else { throw ModelFileImportError.invalid3MF }
+        return paths.split(whereSeparator: \.isNewline).map(String.init)
+    }
+
+    private static func readSliceInfo(at url: URL, name: String) throws -> ImportedModelData {
         let listing = try runUnzip(["-Z1", url.path], maxBytes: maxArchiveListingBytes)
         guard let paths = String(data: listing, encoding: .utf8) else {
             throw ModelFileImportError.invalid3MF
@@ -124,7 +153,7 @@ enum ModelFileImporter {
         return ImportedModelData(name: name, weightGrams: plate.weightGrams, durationSeconds: plate.durationSeconds, plates: plates)
     }
 
-    private static func runUnzip(_ arguments: [String], maxBytes: Int) throws -> Data {
+    static func runUnzip(_ arguments: [String], maxBytes: Int) throws -> Data {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         process.arguments = arguments

@@ -11,7 +11,7 @@ final class PartCalculator {
     var job: PrintJob {
         didSet {
             guard job != oldValue else { return }
-            if job.partWeight != oldValue.partWeight { importedWeightNeedsInput = false }
+            if job.partWeight != oldValue.partWeight { importedWeightNeedsInput = false; importedWeightIsEstimate = false }
             if job.printHours != oldValue.printHours || job.printMinutes != oldValue.printMinutes {
                 importedTimeNeedsInput = false
             }
@@ -34,6 +34,8 @@ final class PartCalculator {
     private(set) var importFeedback: String?
     private(set) var isImportingModel = false
     private(set) var importedWeightNeedsInput = false
+    /// Peso preenchido por estimativa de volume (aproximação), não pelo fatiador.
+    private(set) var importedWeightIsEstimate = false
     private(set) var importedTimeNeedsInput = false
 
     @ObservationIgnored var onJobChange: ((PrintJob) -> Void)?
@@ -61,6 +63,7 @@ final class PartCalculator {
     func clearImportState() {
         importFeedback = nil
         importedWeightNeedsInput = false
+        importedWeightIsEstimate = false
         importedTimeNeedsInput = false
     }
 
@@ -94,7 +97,7 @@ final class PartCalculator {
         importFeedback = nil
         var importedJob = job
         importedJob.name = data.name
-        importedJob.partWeight = data.weightGrams ?? 0
+        importedJob.partWeight = data.weightGrams ?? data.estimatedWeight.map { ($0.grams * 10).rounded() / 10 } ?? 0
         if let seconds = data.durationSeconds, seconds > 0 {
             let totalMinutes = seconds / 60
             importedJob.printHours = floor(totalMinutes / 60)
@@ -104,7 +107,9 @@ final class PartCalculator {
             importedJob.printMinutes = 0
         }
         job = importedJob
-        importedWeightNeedsInput = data.weightGrams == nil
+        let estimated = data.weightGrams == nil && data.estimatedWeight != nil
+        importedWeightNeedsInput = data.weightGrams == nil && !estimated
+        importedWeightIsEstimate = estimated
         importedTimeNeedsInput = data.durationSeconds == nil || data.durationSeconds == 0
 
         refreshImportFeedback()
@@ -115,9 +120,12 @@ final class PartCalculator {
             importedWeightNeedsInput ? "peso" : nil,
             importedTimeNeedsInput ? "tempo de impressão" : nil,
         ].compactMap { $0 }
-        importFeedback = missing.isEmpty
+        let base = missing.isEmpty
             ? "Dados importados. Revise os valores antes de calcular."
             : "Arquivo importado; preencha: " + missing.joined(separator: " e ") + "."
+        importFeedback = importedWeightIsEstimate
+            ? base + " O peso é uma estimativa pelo volume do modelo; confira no fatiador."
+            : base
     }
 
     private func recalculate() {
