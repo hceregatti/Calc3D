@@ -197,3 +197,7 @@ make web-build  # gera web/dist/, pronto para hospedar em qualquer servidor est�
   Vercel ou em qualquer pasta de um servidor.
 - **GitHub Pages**: o workflow `.github/workflows/pages.yml` roda os testes, gera o build e publica
   a cada push na `main` que altere `web/`. Endereço: https://hceregatti.github.io/Calc3D/
+
+## Licença
+
+Distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE).
