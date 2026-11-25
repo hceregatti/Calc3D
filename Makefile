@@ -9,7 +9,7 @@ TEST_FLAGS := $(if $(wildcard $(CLT)/usr/lib/swift/host/plugins/testing), \
 	-Xlinker -F -Xlinker $(CLT)/Library/Developer/Frameworks \
 	-Xlinker -rpath -Xlinker $(CLT)/Library/Developer/Frameworks)
 
-.PHONY: build run test app dmg open install clean web web-test web-build
+.PHONY: build run test app dmg open install clean web web-test web-build windows windows-test windows-dist
 
 build:          ## Compila em modo debug
 	swift build
@@ -34,7 +34,7 @@ install: app    ## Copia o .app para /Applications
 	cp -R "$(APP)" /Applications/
 
 clean:
-	rm -rf .build build web/dist
+	rm -rf .build build web/dist windows/dist windows/release
 
 web:            ## Versão web em modo desenvolvimento
 	cd web && npm install && npm run dev
@@ -44,3 +44,15 @@ web-test:       ## Testes da versão web
 
 web-build:      ## Gera a versão web em web/dist
 	cd web && npm install && npm run build
+
+windows:        ## App Windows (Electron) em modo desenvolvimento; roda também no macOS
+	cd web && npm install
+	cd windows && npm install && npm start
+
+windows-test:   ## Testes do app Windows e do que ele reaproveita da web
+	cd web && npm install && npm test
+	cd windows && npm install && npm test && npm run typecheck
+
+windows-dist:   ## Gera o instalador .exe em windows/release (precisa ser no Windows)
+	cd web && npm install
+	cd windows && npm install && npm run dist
