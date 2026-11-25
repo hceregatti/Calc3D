@@ -1,0 +1,27 @@
+# Testa e compila o app Windows (windows/) quando ele ou o código web que ele reaproveita mudam.
+name: App Windows
+
+on:
+  push:
+    branches: [main]
+    paths: ['windows/**', 'web/src/**', 'web/package*.json', '.github/workflows/windows.yml']
+  pull_request:
+    paths: ['windows/**', 'web/src/**', 'web/package*.json', '.github/workflows/windows.yml']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --prefix web
+      - run: npm ci --prefix windows
+      - run: npm test --prefix web
+      - run: npm test --prefix windows
+      - run: npm run typecheck --prefix windows
+      - run: npm run dist --prefix windows

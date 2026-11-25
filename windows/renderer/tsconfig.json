@@ -1,0 +1,18 @@
+{
+  "extends": "../../web/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true,
+    "paths": {
+      "@web/*": ["../../web/src/*"],
+      "react": ["../../web/node_modules/@types/react"],
+      "react/*": ["../../web/node_modules/@types/react/*"],
+      "react-dom": ["../../web/node_modules/@types/react-dom"],
+      "react-dom/*": ["../../web/node_modules/@types/react-dom/*"],
+      "zustand": ["../../web/node_modules/zustand"],
+      "lucide-react": ["../../web/node_modules/lucide-react"],
+      "fflate": ["../../web/node_modules/fflate"]
+    }
+  },
+  "include": ["./**/*.ts", "./**/*.tsx"]
+}

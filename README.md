@@ -6,7 +6,7 @@ App nativo para macOS (SwiftUI, Apple Silicon) que calcula o custo real e o pre�
   <img src="docs/images/inicio.png" alt="Tela inicial do Calc3D" width="800">
 </p>
 
-Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador (veja [Versão web](#versão-web)).
+Também há uma **versão web** em [`web/`](web/), que roda inteira no navegador (veja [Versão web](#versão-web)), e um **app para Windows** em [`windows/`](windows/) (veja [App para Windows](#app-para-windows)).
 
 ## Requisitos
 
@@ -30,7 +30,7 @@ Atualizações…** faz a checagem na hora. Ele consulta a API do GitHub e, se e
 consultas por hora sem login), usa a página pública de releases, então a busca continua funcionando.
 A atualização baixa o `.dmg`, troca o app e o reabre.
 
-Para publicar uma nova versão, atualize `CFBundleShortVersionString` e `CFBundleVersion` em `Resources/Info.plist` (e a versão em `web/package.json`), faça push da `main` e depois envie a tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` e o anexa ao Release.
+Para publicar uma nova versão, atualize `CFBundleShortVersionString` e `CFBundleVersion` em `Resources/Info.plist` (e a versão em `web/package.json` e `windows/package.json`), faça push da `main` e depois envie a tag (`git tag v1.0.1 && git push origin v1.0.1`): o workflow `release.yml` gera o `.dmg` (macOS) e o instalador `.exe` (Windows) e anexa os dois ao Release.
 
 ## Comandos
 
@@ -205,6 +205,46 @@ make web-build  # gera web/dist/, pronto para hospedar em qualquer servidor est�
   Vercel ou em qualquer pasta de um servidor.
 - **GitHub Pages**: o workflow `.github/workflows/pages.yml` roda os testes, gera o build e publica
   a cada push na `main` que altere `web/`. Endereço: https://hceregatti.github.io/Calc3D/
+
+## App para Windows
+
+Em `windows/` está o Calc3D para Windows 10/11 (64 bits), um app desktop em [Electron](https://www.electronjs.org/)
+que embute a versão web (`web/`, mesmas fórmulas, telas, orçamentos em PDF e backup) e acrescenta o que no
+macOS vem do sistema:
+
+| macOS | Windows |
+|---|---|
+| Catálogo (⌘5) com miniaturas do Quick Look | Catálogo (Ctrl+5): miniatura embutida no 3MF ou desenhada pelo app a partir da malha |
+| Abrir no Bambu Studio / Creality Print (em Aplicativos) | Mesmos cartões; procura os programas em `Arquivos de Programas` e `AppData\Local\Programs`, com o ícone do `.exe` |
+| Estimativa de peso por volume, mesas e impressora do 3MF | Idem (também na versão web) |
+| Excluir vai para a Lixeira, "Mostrar no Finder" | Vai para a Lixeira do Windows, "Mostrar no Explorer" |
+| Menus e atalhos ⌘1…⌘8, ⌘N, ⇧⌘N, ⇧⌘C, ⌘, | Os mesmos com Ctrl no lugar de ⌘ |
+| Atualização pelo `.dmg` do GitHub Releases | Baixa o `Calc3D-Setup.exe` do Release, fecha o app e abre o instalador |
+
+**Instalação**: baixe o [Calc3D-Setup.exe](https://github.com/hceregatti/Calc3D/releases/latest/download/Calc3D-Setup.exe)
+e execute (instala só para o seu usuário, sem pedir administrador). O instalador não é assinado, então o
+SmartScreen pode avisar na primeira vez: clique em **Mais informações → Executar assim mesmo**.
+
+Os dados (parâmetros, peças, orçamentos, filamentos e fotos) ficam no próprio app, em
+`%APPDATA%\Calc3D`, e não são compartilhados com o macOS: para levar os dados de um computador a outro,
+use **Parâmetros fixos → Backup dos dados**.
+
+```bash
+make windows        # roda em modo desenvolvimento (funciona também no macOS)
+make windows-test   # testes do app Windows e do que ele reaproveita da web
+make windows-dist   # gera windows/release/Calc3D-Setup-<versão>.exe (execute no Windows)
+```
+
+Requer Node.js 18+. O instalador é gerado no Windows (ou no GitHub Actions, workflows `release.yml` e
+`windows.yml`). Estrutura:
+
+```
+windows/
+  main.cjs, preload.cjs   # processo principal: janela, menu, catálogo, fatiadores, atualização
+  lib/                    # lógica sem Electron (testada em test/): catálogo, fatiadores, versões, releases
+  renderer/               # tela do Catálogo e ligação com o menu; importa o código de web/src
+  assets/icon.png         # ícone do app e do instalador
+```
 
 ## Licença
 
