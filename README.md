@@ -2,6 +2,14 @@
 
 App nativo para macOS (SwiftUI, Apple Silicon) que calcula o custo real e o preço de venda de peças impressas em 3D.
 
+<p align="center">
+  <img src="docs/images/inicio.png" alt="Tela inicial do Calc3D" width="800">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo.gif" alt="Demonstração do Calc3D" width="800">
+</p>
+
 Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador (veja [Versão web](#versão-web)).
 
 ## Requisitos
