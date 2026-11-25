@@ -221,7 +221,14 @@ macOS vem do sistema:
 | Menus e atalhos ⌘1…⌘8, ⌘N, ⇧⌘N, ⇧⌘C, ⌘, | Os mesmos com Ctrl no lugar de ⌘ |
 | Atualização pelo `.dmg` do GitHub Releases | Baixa o `Calc3D-Setup.exe` do Release, fecha o app e abre o instalador |
 
-**Instalação**: baixe o [Calc3D-Setup.exe](https://github.com/hceregatti/Calc3D/releases/latest/download/Calc3D-Setup.exe)
+> **Aviso**: o app para Windows foi pouco testado. Ele foi desenvolvido e verificado no macOS (testes automatizados e
+> execução no Electron), e o instalador ainda não foi experimentado num Windows real. Pode haver falhas, principalmente
+> na detecção do Bambu Studio/Creality Print, no instalador e na atualização automática. Se encontrar algo,
+> [abra uma issue](https://github.com/hceregatti/Calc3D/issues).
+
+**Instalação**: o `.exe` só aparece nos [Releases](https://github.com/hceregatti/Calc3D/releases) a partir da primeira
+versão publicada depois da inclusão do app Windows (o workflow gera o instalador quando a tag `vX.Y.Z` é enviada).
+Com ele disponível, baixe o [Calc3D-Setup.exe](https://github.com/hceregatti/Calc3D/releases/latest/download/Calc3D-Setup.exe)
 e execute (instala só para o seu usuário, sem pedir administrador). O instalador não é assinado, então o
 SmartScreen pode avisar na primeira vez: clique em **Mais informações → Executar assim mesmo**.
 
