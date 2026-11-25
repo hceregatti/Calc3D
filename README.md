@@ -6,10 +6,6 @@ App nativo para macOS (SwiftUI, Apple Silicon) que calcula o custo real e o pre�
   <img src="docs/images/inicio.png" alt="Tela inicial do Calc3D" width="800">
 </p>
 
-<p align="center">
-  <img src="docs/images/demo.gif" alt="Demonstração do Calc3D" width="800">
-</p>
-
 Também há uma **versão web** em [`web/`](web/) que roda inteira no navegador (veja [Versão web](#versão-web)).
 
 ## Requisitos
@@ -83,6 +79,10 @@ scripts/
 ```
 
 ## Telas
+
+<p align="center">
+  <img src="docs/images/demo.gif" alt="Demonstração do Calc3D" width="800">
+</p>
 
 - **Início** (⌘1): atalhos (calcular peça, novo orçamento), números gerais e peças/orçamentos recentes.
 - **Calcular peça** (⌘2): o que muda a cada peça. Nome, peso e tempo do fatiador, peças por mesa,
