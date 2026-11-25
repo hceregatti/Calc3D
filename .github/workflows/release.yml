@@ -1,6 +1,6 @@
-# Gera o instalador .dmg do app macOS e publica no GitHub Releases
+# Gera os instaladores (.dmg do macOS e .exe do Windows) e publica no GitHub Releases
 # sempre que uma tag "v*" (ex.: v1.0.0) é enviada.
-name: Release macOS
+name: Release
 
 on:
   push:
@@ -14,23 +14,62 @@ on:
 permissions:
   contents: write
 
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
-  release:
+  # Cria o Release uma única vez; os jobs de cada plataforma só anexam o instalador.
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Calc3D $TAG" --generate-notes
+
+  macos:
+    needs: create
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Gera o .app e o .dmg
         run: ./scripts/build-dmg.sh
-      - name: Publica no Releases
+      - name: Anexa ao Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
           DMG="$(ls build/Calc3D-*.dmg)"
           # Cópia com nome fixo: releases/latest/download/Calc3D.dmg sempre aponta para a última versão.
           cp "$DMG" build/Calc3D.dmg
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$DMG" build/Calc3D.dmg --clobber
-          else
-            gh release create "$TAG" "$DMG" build/Calc3D.dmg --title "Calc3D $TAG" --generate-notes
-          fi
+          gh release upload "$TAG" "$DMG" build/Calc3D.dmg --clobber
+
+  windows:
+    needs: create
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Dependências
+        run: |
+          npm ci --prefix web
+          npm ci --prefix windows
+      - name: Testes
+        run: |
+          npm test --prefix web
+          npm test --prefix windows
+      - name: Gera o instalador
+        run: npm run dist --prefix windows
+      - name: Anexa ao Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXE="$(ls windows/release/Calc3D-Setup-*.exe)"
+          # Cópia com nome fixo: releases/latest/download/Calc3D-Setup.exe sempre aponta para a última versão.
+          cp "$EXE" windows/release/Calc3D-Setup.exe
+          gh release upload "$TAG" "$EXE" windows/release/Calc3D-Setup.exe --clobber
