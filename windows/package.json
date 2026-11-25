@@ -1,0 +1,43 @@
+{
+  "name": "calc3d-windows",
+  "productName": "Calc3D",
+  "version": "1.12.4",
+  "description": "Calc3D para Windows: custo e preço de peças impressas em 3D",
+  "private": true,
+  "main": "main.cjs",
+  "author": "hceregatti",
+  "license": "MIT",
+  "scripts": {
+    "build:web": "vite build --config renderer/vite.config.ts",
+    "typecheck": "tsc -p renderer/tsconfig.json",
+    "start": "npm run build:web && electron .",
+    "test": "node --test test/*.test.cjs",
+    "dist": "npm run build:web && electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.3",
+    "electron": "45.5.0",
+    "electron-builder": "26.18.0",
+    "typescript": "5.6.3",
+    "vite": "5.4.11"
+  },
+  "build": {
+    "appId": "br.com.calc3d.app",
+    "productName": "Calc3D",
+    "artifactName": "Calc3D-Setup-${version}.${ext}",
+    "directories": { "output": "release" },
+    "files": ["main.cjs", "preload.cjs", "lib/**", "assets/**", "package.json"],
+    "extraResources": [{ "from": "dist", "to": "web" }],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "Calc3D"
+    }
+  }
+}

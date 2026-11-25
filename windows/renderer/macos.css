@@ -1,0 +1,114 @@
+/*
+ * Aparência do app para Windows: reproduz o app nativo do macOS (SwiftUI) sobre as telas da versão web.
+ * Mesmos tokens de cor (design-system.css); aqui mudam a janela, a barra lateral, as seções e os controles.
+ */
+:root {
+  --titlebar-h: 44px;
+  --sidebar-w: 250px;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'SF Pro Text', sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+body, button, input, select, textarea { font-family: var(--font-sans); }
+html, body { background: var(--c-bg); overflow: hidden; }
+
+/* ---- Janela: barra de título própria, com o nome da tela (como a barra de ferramentas do macOS) ---- */
+.titlebar {
+  position: fixed; inset: 0 0 auto 0; height: var(--titlebar-h); z-index: 20;
+  display: flex; align-items: center; -webkit-app-region: drag; user-select: none;
+  /* Reserva o espaço dos botões de minimizar/maximizar/fechar do Windows. */
+  padding-right: 150px;
+}
+html[data-platform='darwin'] .titlebar { padding-left: 78px; padding-right: 0; }
+.titlebar-left { width: var(--sidebar-w); flex: none; display: flex; align-items: center; padding-left: 14px; }
+html[data-sidebar='hidden'] .titlebar-left { width: auto; padding-right: 8px; }
+html[data-platform='darwin'] .titlebar-left { width: calc(var(--sidebar-w) - 78px); }
+.titlebar button {
+  -webkit-app-region: no-drag; display: grid; place-items: center; width: 30px; height: 28px;
+  border: 0; border-radius: 6px; background: none; color: var(--c-muted);
+}
+.titlebar button:hover { background: var(--c-fill); color: var(--c-ink); }
+.titlebar-title { font-size: 15px; font-weight: 600; padding-left: 22px; letter-spacing: -0.01em; color: var(--c-ink); }
+
+.app { height: 100%; padding-top: var(--titlebar-h); box-sizing: border-box; }
+.content { overflow-y: auto; }
+html[data-sidebar='hidden'] .sidebar { display: none; }
+
+/* ---- Barra lateral: sem logotipo, como no macOS ---- */
+.sidebar { width: var(--sidebar-w); background: var(--c-bg); padding: 8px 12px 12px; }
+.brand { display: none; }
+.nav-item { min-height: 52px; padding: 6px 10px; gap: 12px; border-radius: 10px; font-size: 14px; }
+.nav-item .nav-text span { font-size: 14.5px; }
+.nav-item.active { background: color-mix(in srgb, var(--c-accent) 14%, transparent); }
+.nav-footer { border-top: 1px solid var(--c-divider); padding-top: 10px; }
+.theme-toggle { padding: 0; gap: 0; background: var(--c-active); border-radius: 6px; overflow: hidden; margin: 0 0 8px; }
+.theme-toggle button { height: 24px; border-radius: 0; color: var(--c-ink-2); }
+.theme-toggle button.active { background: var(--c-accent); color: var(--c-on-accent); }
+
+/* ---- Páginas: o título vai para a barra; ficam só as ações, à direita ---- */
+.page { padding: 16px 32px 48px; max-width: 1280px; }
+.page-header h1 { display: none; }
+.page-header { justify-content: flex-end; margin-bottom: 12px; min-height: 0; }
+.page-header:not(:has(.page-actions > *)) { display: none; }
+.home-header img { display: none; }
+.home-header h1 { display: block; font-size: 34px; font-weight: 700; letter-spacing: -0.03em; }
+.home-header p { font-size: 17px; }
+
+/* ---- Seções agrupadas: título fora, corpo em cartão com divisórias (Form .grouped) ---- */
+.section { background: none; border: 0; border-radius: 0; box-shadow: none; margin-bottom: 22px; }
+.section-header { padding: 0 2px 8px; font-size: 14px; gap: 8px; }
+.section-body {
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 2px 16px;
+}
+.section-footer { padding: 6px 4px 0; font-size: 12px; }
+.row { min-height: 46px; }
+.detail-inner .section { margin-bottom: 0; }
+
+/* ---- Controles: botões cinza "bordered" do macOS, destaque em terracota ---- */
+.btn {
+  background: var(--c-active); border: 1px solid transparent; border-radius: 8px;
+  padding: 5px 13px; font-weight: 500; color: var(--c-ink);
+}
+.btn:hover:not(:disabled) { background: color-mix(in srgb, var(--c-active) 80%, var(--c-ink) 12%); }
+.btn.primary { background: var(--c-accent); color: var(--c-on-accent); }
+.btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--c-accent) 88%, black); }
+.btn.ghost { background: none; }
+.input { border-radius: 7px; }
+.master { box-shadow: none; }
+
+/* ---- Barras de rolagem finas, como as de sobreposição do macOS ---- */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-ink) 28%, transparent); border-radius: 8px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--c-ink) 45%, transparent); }
+
+/* ---- Ações da página na barra de título, como a barra de ferramentas do macOS ---- */
+.page-header {
+  position: fixed; top: 8px; right: 156px; z-index: 21; margin: 0; width: auto; gap: 8px; flex-wrap: nowrap;
+}
+html[data-platform='darwin'] .page-header { right: 16px; }
+.page-header .btn { height: 28px; padding: 0 12px; font-size: 13px; }
+.page { padding-top: 8px; }
+
+/* ---- Campos compactos ---- */
+.input { min-height: 0; height: 28px; padding: 0 9px; font-size: 13.5px; }
+textarea.input { height: auto; padding: 6px 9px; }
+.input.title { height: 34px; }
+.row { min-height: 40px; }
+.stepper button { height: 26px; }
+
+/* ---- Espaçamentos internos dos cartões ---- */
+.section-body { padding: 12px 16px; }
+.section-body > * + *:not(.row) { margin-top: 12px; }
+.section-body > .row:first-child { margin-top: -4px; }
+.section-body > .row:last-child { margin-bottom: -4px; }
+.section-body > .row:has(.btn):not(:last-child) { padding-bottom: 12px; }
+.section-body > .feedback, .section-body > p.muted { margin-bottom: 0; }
+.image-slot { margin: 0; }
+.section-footer { padding: 8px 4px 0; }
+.section-header { padding-bottom: 10px; }
+
+.page { padding-top: 16px; }
