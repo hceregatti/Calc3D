@@ -24,9 +24,12 @@ import {
 } from './core/models'
 import { deduct, filamentDisplayName, filamentPricePerGram, gramsPerUnit, newFilament, normalizeFilament, requirements, revert, type Filament } from './core/filament'
 import { pruneImages } from './images'
+import { extraScreens } from './extensions'
 
-export type Screen = 'home' | 'printJob' | 'parts' | 'filaments' | 'proposals' | 'company' | 'settings'
-export const SCREENS: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals', 'company', 'settings']
+export type BuiltinScreen = 'home' | 'printJob' | 'parts' | 'filaments' | 'proposals' | 'company' | 'settings'
+/** Telas próprias ou registradas por extensões (veja extensions.ts). */
+export type Screen = BuiltinScreen | (string & {})
+export const SCREENS: BuiltinScreen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals', 'company', 'settings']
 
 const KEYS = {
   settings: 'calc3d.web.settings.v1',
@@ -162,7 +165,7 @@ interface AppState {
 
 const screenFromHash = (): Screen => {
   const hash = location.hash.replace('#/', '') as Screen
-  return SCREENS.includes(hash) ? hash : 'home'
+  return SCREENS.includes(hash as BuiltinScreen) || extraScreens.some((e) => e.id === hash) ? hash : 'home'
 }
 
 const sortProposals = (list: Proposal[]) => [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))

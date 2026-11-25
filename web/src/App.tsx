@@ -7,10 +7,15 @@ import { HomeScreen } from './screens/Home'
 import { PartsScreen } from './screens/Parts'
 import { PrintJobScreen } from './screens/PrintJob'
 import { ProposalsScreen } from './screens/Proposals'
-import { loadTheme, saveTheme, useApp, type Screen, type ThemeMode } from './store'
+import { extraScreens } from './extensions'
+import { loadTheme, saveTheme, useApp, type BuiltinScreen, type Screen, type ThemeMode } from './store'
 
-const MAIN: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals']
+const BUILTIN_MAIN: Screen[] = ['home', 'printJob', 'parts', 'filaments', 'proposals']
 const FOOTER: Screen[] = ['company', 'settings']
+
+/** Telas principais, com as registradas por extensões logo depois da tela indicada em `after`. */
+const mainScreens = (): Screen[] =>
+  BUILTIN_MAIN.flatMap((id) => [id, ...extraScreens.filter((e) => e.after === id).map((e) => e.id)])
 
 const THEMES: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
   { mode: 'system', label: 'Automático', icon: Monitor },
@@ -37,7 +42,7 @@ export function App() {
   const go = useApp((s) => s.go)
 
   const link = (id: Screen) => {
-    const info = SCREEN_INFO[id]
+    const info = extraScreens.find((e) => e.id === id) ?? SCREEN_INFO[id as BuiltinScreen]
     return (
       <button key={id} className={`nav-item ${screen === id ? 'active' : ''}`} onClick={() => go(id)} aria-current={screen === id ? 'page' : undefined}>
         <Badge icon={info.icon} color={info.color} size={28} />
@@ -56,7 +61,7 @@ export function App() {
           <img src="./icon.png" alt="" width={28} height={28} />
           <strong>Calc3D</strong>
         </div>
-        <div className="nav-main">{MAIN.map(link)}</div>
+        <div className="nav-main">{mainScreens().map(link)}</div>
         <div className="nav-footer"><ThemeToggle />{FOOTER.map(link)}</div>
       </nav>
       <main className="content">
@@ -67,6 +72,7 @@ export function App() {
         {screen === 'proposals' && <ProposalsScreen />}
         {screen === 'company' && <CompanyScreen />}
         {screen === 'settings' && <ShopSettingsScreen />}
+        {extraScreens.map((e) => screen === e.id && <e.component key={e.id} />)}
       </main>
       <ConfirmDialog />
       <Toast />

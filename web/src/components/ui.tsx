@@ -9,10 +9,10 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { useApp, type Screen } from '../store'
+import { useApp, type BuiltinScreen } from '../store'
 import { WEIGHT_UNITS, currencySymbol, formatNumber, fromGrams, liveMask, parseMasked, toGrams } from '../core/format'
 
-export const SCREEN_INFO: Record<Screen, { title: string; subtitle: string; icon: LucideIcon; color: string }> = {
+export const SCREEN_INFO: Record<BuiltinScreen, { title: string; subtitle: string; icon: LucideIcon; color: string }> = {
   home: { title: 'Início', subtitle: 'Visão geral e atalhos', icon: Home, color: '#0a84ff' },
   printJob: { title: 'Calcular peça', subtitle: 'Dados da impressão e preço', icon: Box, color: '#ff9f0a' },
   parts: { title: 'Peças', subtitle: 'Histórico de cálculos de peças', icon: Layers, color: '#bf5af2' },
