@@ -1,7 +1,7 @@
 {
   "name": "calc3d-windows",
   "productName": "Calc3D",
-  "version": "1.12.4",
+  "version": "1.13.0",
   "description": "Calc3D para Windows: custo e preço de peças impressas em 3D",
   "private": true,
   "main": "main.cjs",
@@ -25,12 +25,32 @@
     "appId": "br.com.calc3d.app",
     "productName": "Calc3D",
     "artifactName": "Calc3D-Setup-${version}.${ext}",
-    "directories": { "output": "release" },
-    "files": ["main.cjs", "preload.cjs", "lib/**", "assets/**", "package.json"],
-    "extraResources": [{ "from": "dist", "to": "web" }],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "lib/**",
+      "assets/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dist",
+        "to": "web"
+      }
+    ],
     "win": {
       "icon": "assets/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": true,
