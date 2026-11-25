@@ -11,7 +11,7 @@
     "build:web": "vite build --config renderer/vite.config.ts",
     "typecheck": "tsc -p renderer/tsconfig.json",
     "start": "npm run build:web && electron .",
-    "test": "node --test test/*.test.cjs",
+    "test": "node --test",
     "dist": "npm run build:web && electron-builder --win nsis --x64 --publish never"
   },
   "devDependencies": {
