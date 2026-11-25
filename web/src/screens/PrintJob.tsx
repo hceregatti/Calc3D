@@ -32,7 +32,7 @@ import {
   type ShopSettings,
 } from '../core/calculator'
 import { pricePerBulk } from '../core/format'
-import { importModelFile } from '../core/importer'
+import { importModelFile, jobPatchFromImport } from '../core/importer'
 import { filamentDisplayName } from '../core/filament'
 import { displayName, uid } from '../core/models'
 import { Donut } from '../components/Donut'
@@ -91,22 +91,19 @@ export function PartForm({
     setFeedback(null)
     try {
       const data = await importModelFile(f)
-      const seconds = data.durationSeconds ?? 0
-      const minutes = seconds / 60
-      setJob({
-        name: data.name,
-        partWeight: data.weightGrams ?? 0,
-        printHours: Math.floor(minutes / 60),
-        printMinutes: Math.round((minutes % 60) * 100) / 100,
-      })
-      const m = { weight: data.weightGrams === null, time: !seconds }
+      const patch = jobPatchFromImport(data)
+      setJob(patch)
+      const estimated = data.weightGrams === null && data.estimatedWeight !== null
+      const m = { weight: data.weightGrams === null && !estimated, time: !data.durationSeconds }
       setMissing(m)
       const list = [m.weight && 'peso', m.time && 'tempo de impressão'].filter(Boolean)
-      setFeedback(
-        list.length
-          ? { text: `Arquivo importado; preencha: ${list.join(' e ')}.`, warn: true }
-          : { text: 'Dados importados. Revise os valores antes de calcular.', warn: false },
-      )
+      const base = list.length
+        ? `Arquivo importado; preencha: ${list.join(' e ')}.`
+        : 'Dados importados. Revise os valores antes de calcular.'
+      setFeedback({
+        text: estimated ? `${base} O peso é uma estimativa pelo volume do modelo; confira no fatiador.` : base,
+        warn: list.length > 0 || estimated,
+      })
     } catch (e) {
       setFeedback({ text: (e as Error).message, warn: true })
     } finally {
